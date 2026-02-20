@@ -8,10 +8,21 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+const IS_RENDER = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
+const HAS_SUPABASE_CONFIG = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+const IS_PUBLISHABLE_KEY = String(SUPABASE_SERVICE_ROLE_KEY || '').startsWith('sb_publishable_');
+const USE_SUPABASE = HAS_SUPABASE_CONFIG;
 const SUPABASE_TABLE = 'app_state';
 const SUPABASE_ROW_ID = 'cfcardona_main';
 const supabaseBaseUrl = USE_SUPABASE ? new URL(SUPABASE_URL) : null;
+
+if (IS_RENDER && !HAS_SUPABASE_CONFIG) {
+    throw new Error('Render sense Supabase configurat: cal definir SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY');
+}
+
+if (HAS_SUPABASE_CONFIG && IS_PUBLISHABLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY no pot ser una clau publishable (sb_publishable_*). Usa service_role o secret de servidor.');
+}
 
 function ensureLocalDataFile() {
     const dataDir = path.dirname(DATA_FILE);
