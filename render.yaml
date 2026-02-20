@@ -6,3 +6,12 @@ services:
     buildCommand: npm install
     startCommand: npm start
     autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_FILE
+        value: /var/data/data.json
+    disk:
+      name: cfcardona-data
+      mountPath: /var/data
+      sizeGB: 1
