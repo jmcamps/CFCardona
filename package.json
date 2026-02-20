@@ -1,0 +1,13 @@
+{
+  "name": "cfcardona",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web CF Cardona amb servidor Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

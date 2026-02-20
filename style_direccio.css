@@ -1,0 +1,263 @@
+:root {
+    --primary: #d91d1d;
+    --bg-main: #f1f5f9;
+    --border: #e2e8f0;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --text-main: #0f172a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 2rem;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background-image: url('/Web jugadors/ESCUT CF CARDONA.jpeg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.03;
+    filter: blur(2px);
+    z-index: -1;
+}
+
+header {
+    max-width: 1000px;
+    margin: 0 auto 2rem auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 1.75rem;
+}
+
+.dashboard-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.context-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    border-left: 5px solid var(--primary);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    white-space: pre-line;
+}
+
+.org-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.org-node {
+    background: white;
+    border: 2px solid var(--primary);
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    position: relative;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.org-node:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(217, 29, 29, 0.2);
+    border-color: var(--primary);
+    background: #fff5f5;
+}
+
+.org-line {
+    width: 2px;
+    height: 20px;
+    background: var(--border);
+}
+
+.org-children {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    width: 100%;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+
+.card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    border-bottom: 2px solid #fee2e2;
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    outline: none;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+textarea:focus {
+    border-color: var(--primary);
+}
+
+/* List Styles */
+.list-container {
+    background: #fffafa;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.list-item {
+    background: white;
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.list-item:last-child {
+    margin-bottom: 0;
+}
+
+.list-item-info {
+    display: flex;
+    gap: 1.5rem;
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.item-name {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.item-secondary {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.btn-add-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 0.5rem;
+}
+
+input {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #b91c1c;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    text-decoration: none;
+    padding: 0.8rem 2rem;
+    display: inline-block;
+    border-radius: 0.5rem;
+    font-weight: 800;
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.section-link {
+    padding: 3rem;
+    text-align: center;
+    background: linear-gradient(135deg, #fff, #fff5f5);
+}
+
+.staff-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}

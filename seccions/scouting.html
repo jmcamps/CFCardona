@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scouting & Captació | CF Cardona</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
+        header{max-width:960px;margin:0 auto 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+        h1{color:var(--primary);font-weight:800;font-size:1.5rem;}
+        .breadcrumb{font-size:0.85rem;color:#64748b;margin-top:0.25rem;}
+        .breadcrumb a{color:var(--primary);text-decoration:none;font-weight:600;}
+        .breadcrumb a:hover{text-decoration:underline;}
+        .card{background:white;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
+        .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
+        label{display:block;font-weight:700;font-size:0.82rem;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
+        textarea{width:100%;min-height:120px;padding:0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;resize:vertical;line-height:1.6;}
+        textarea:focus{border-color:var(--primary);}
+        input[type=text],input[type=tel],input[type=date],input[type=time],input[type=url]{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;}
+        input:focus,select:focus{border-color:var(--primary);}
+        select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:white;}
+        .staff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;}
+        .staff-member{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;}
+        .role-title{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:0.75rem;}
+        .staff-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
+        .horari-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;margin-top:1rem;}
+        .horari-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .horari-form-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:0.6rem;align-items:end;}
+        .horari-table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+        .horari-table thead tr{background:#fee2e2;color:var(--primary);}
+        .horari-table th{padding:0.6rem 1rem;text-align:left;font-weight:700;}
+        .horari-table td{padding:0.65rem 1rem;border-bottom:1px solid var(--border);}
+        .horari-table tr:last-child td{border-bottom:none;}
+        .dia-badge{font-weight:800;color:var(--primary);}
+        .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+        .comp-link-box{background:#fff5f5;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;}
+        .fed-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.6rem 1.2rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;width:fit-content;transition:all 0.2s;}
+        .fed-link:hover{background:#b91c1c;}
+        .partit-list{margin-bottom:1rem;}
+        .partit-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
+        .partit-info{flex:1;}
+        .partit-header{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.3rem;}
+        .partit-date{font-weight:800;color:var(--primary);}
+        .type-amisto{background:#dbeafe;color:#1d4ed8;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
+        .type-torneig{background:#fef9c3;color:#854d0e;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
+        .partit-rival{font-weight:700;}
+        .partit-lloc{font-size:0.82rem;color:#64748b;}
+        .partit-result{font-size:0.82rem;color:#475569;}
+        .add-form-box{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
+        .add-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .form-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;}
+        .form-row-3{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;}
+        .plantilla-placeholder{text-align:center;padding:3rem 2rem;background:#f8fafc;border-radius:0.75rem;border:2px dashed var(--border);}
+        .plantilla-placeholder span{font-size:2.5rem;display:block;margin-bottom:1rem;}
+        .plantilla-placeholder p{color:#94a3b8;font-size:0.95rem;margin-bottom:0.5rem;}
+        .obs-list{margin-bottom:1rem;}
+        .obs-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;}
+        .obs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+        .obs-meta{font-size:0.82rem;color:#64748b;}
+        .obs-meta strong{color:var(--primary);}
+        .obs-text{font-size:0.9rem;line-height:1.6;white-space:pre-wrap;}
+        .add-obs-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
+        .form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .obs-form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;align-items:end;}
+        .btn{padding:0.65rem 1.5rem;border-radius:0.5rem;font-weight:700;cursor:pointer;border:none;font-size:0.88rem;}
+        .btn-primary{background:var(--primary);color:white;}
+        .btn-primary:hover{background:#b91c1c;}
+        .btn-save-main{background:var(--primary);color:white;border:none;padding:0.75rem 2rem;border-radius:0.5rem;font-weight:700;cursor:pointer;font-size:0.95rem;}
+        .btn-remove{background:none;border:none;color:var(--primary);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;}
+        .empty-msg{color:#94a3b8;font-size:0.85rem;padding:0.5rem;}
+        .coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+        .link-card{text-align:center;padding:2rem;background:linear-gradient(135deg,#fff,#fff5f5);border-radius:0.75rem;border:2px dashed #fca5a5;}
+        .link-card p{color:#64748b;font-size:0.9rem;margin-bottom:1.2rem;}
+        .btn-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.75rem 1.5rem;border-radius:0.5rem;font-weight:700;font-size:0.9rem;transition:all 0.2s;}
+        .btn-link:hover{background:#b91c1c;transform:translateY(-2px);box-shadow:0 4px 12px rgba(217,29,29,0.2);}
+        .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
+        
+        /* Scouting Styles */
+        .scouting-container { display: flex; gap: 2rem; align-items: flex-start; }
+        .scouting-sidebar { width: 350px; flex-shrink: 0; background: white; border-radius: 1rem; border: 1px solid var(--border); padding: 1.5rem; max-height: 800px; overflow-y: auto; }
+        .scouting-content { flex: 1; min-width: 0; }
+        
+        .scouting-list { display: grid; gap: 0.75rem; }
+        .scouting-list-item { padding: 1rem; background: #fffafa; border: 1px solid #fecaca; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; position: relative; }
+        .scouting-list-item:hover { transform: translateX(5px); background: #fee2e2; }
+        .scouting-list-item.active { border-left: 5px solid var(--primary); background: #fee2e2; }
+        .scouting-list-name { font-weight: 800; color: var(--primary); font-size: 1rem; }
+        .scouting-list-meta { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+
+        .scouting-detail-card { background: white; border-radius: 1rem; padding: 2rem; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); }
+        .scouting-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #fee2e2; padding-bottom: 1rem; }
+        .scouting-header-actions h2 { margin: 0; border: none; padding: 0; }
+        
+        .contact-item { background: white; border: 1px solid #e2e8f0; padding: 0.8rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+        .contact-content { flex: 1; }
+        .contact-meta { font-weight: 700; color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
+        .btn-delete-small { color: #94a3b8; background: none; border: none; cursor: pointer; padding: 0.2rem; font-size: 1rem; }
+        .btn-delete-small:hover { color: var(--primary); }
+
+        .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; padding: 0.5rem; background: #fff5f5; border: 1px solid #fecaca; border-radius: 0.5rem; margin-top: 0.4rem; }
+        .pos-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .pos-item input { width: auto; }
+        .scouting-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+        .v-line{width:2px;height:20px;background:#fca5a5;margin:0 auto;}
+        .children-row{display:flex;gap:2rem;justify-content:center;position:relative;}
+        .children-row::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);height:2px;background:#fca5a5;width:calc(100% - 60px);}
+        .child-col{display:flex;flex-direction:column;align-items:center;}
+        .tree-node{display:inline-flex;align-items:center;justify-content:center;padding:0.6rem 1.4rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;text-decoration:none;color:var(--primary);background:white;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(217,29,29,0.1);transition:all 0.2s;white-space:nowrap;}
+        .tree-node:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(217,29,29,0.2);background:#fff5f5;}
+        .tree-node.root{background:#fee2e2;}
+        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>&#x1F50E; Scouting & Captació</h1>
+            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; <a href="../estructura.html">Estructura Esportiva</a> &rarr; <a href="comissio-esportiva.html">Comissió Esportiva</a> &rarr; Scouting</div>
+        </div>
+    </header>
+    <div class="scouting-container">
+        <!-- Sidebar: Llista de jugadors -->
+        <div class="scouting-sidebar">
+            <h2 style="color:var(--primary); font-size:1rem; margin-bottom:1rem; border-bottom:1px solid #fee2e2; padding-bottom:0.5rem;">&#x1F465; Jugadors en Cartera</h2>
+            <div id="scouting_list" class="scouting-list">
+                <!-- Injected by JS -->
+            </div>
+            <button class="btn btn-primary" onclick="showAddForm()" style="width:100%; margin-top:1.5rem; font-size:0.8rem;">+ NOU JUGADOR</button>
+        </div>
+
+        <!-- Main: Detalls o Formulari -->
+        <div class="scouting-content">
+            <div id="scouting_main_view">
+                <div class="card" style="text-align:center; padding:5rem 2rem;">
+                    <span style="font-size:3rem;">&#x1F50E;</span>
+                    <p style="color:#94a3b8; margin-top:1rem;">Selecciona un jugador per veure'n els detalls o afegeix-ne un de nou.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Template per al formulari d'alta -->
+    <template id="tpl_add_form">
+        <div class="card">
+            <h2>&#x2728; Nou Jugador a la Cartera</h2>
+            <div class="scouting-form-grid">
+                <div><label>Nom i Cognoms</label><input type="text" id="sc_nom" placeholder="Ex: Joan Ferran..."></div>
+                <div><label>Club Actual</label><input type="text" id="sc_club" placeholder="Ex: CE Manresa..."></div>
+                <div><label>Tel&egrave;fon</label><input type="tel" id="sc_tel" placeholder="Ex: 600 000 000..."></div>
+                <div><label>Poblaci&oacute;</label><input type="text" id="sc_poblacio" placeholder="Ex: Manresa..."></div>
+            </div>
+            <div style="margin-bottom:1.5rem;">
+                <label>Posicionament (pots marcar varies)</label>
+                <div class="pos-grid">
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Porter"> Porter
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Lateral Dret"> Lateral Dret
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Lateral Esquerre"> Lateral Esquerre
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Central"> Central
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Pivot Defensiu"> Pivot Defensiu
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Interior"> Interior
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Mitja Punta"> Mitja Punta
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Extrem Dret"> Extrem Dret
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Extrem Esquerre"> Extrem Esquerre
+        </label>
+    
+        <label class="pos-item">
+            <input type="checkbox" name="sc_pos" value="Davanter Centre"> Davanter Centre
+        </label>
+    </div>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label>Situaci&oacute; de mercat / Perfil r&agrave;pid</label>
+                <textarea id="sc_situacio" style="min-height:80px;" placeholder="Ex: Acaba contracte al juny..."></textarea>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <button class="btn btn-primary" onclick="addScoutingPlayer()" style="flex:2;">GUARDAR JUGADOR</button>
+                <button class="btn" onclick="clearMainView()" style="background:#e2e8f0; flex:1;">CANCEL·LAR</button>
+            </div>
+        </div>
+    </template>
+    
+    <script>
+        const API='/api/players';
+        const KEY='scouting_database';
+        const STORAGE_KEY=`${KEY}_local`;
+        const IS_FILE=window.location.protocol==='file:';
+        const ALL_POSITIONS = ['Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu', 'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'];
+        let db={}, players=[], selectedId=null;
+
+        function loadFromStorage(){
+            try{
+                const raw=localStorage.getItem(STORAGE_KEY);
+                return raw?JSON.parse(raw):{};
+            }catch(e){
+                return {};
+            }
+        }
+
+        function saveToStorage(){
+            try{
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            }catch(e){
+                console.warn('No es pot guardar a localStorage');
+            }
+        }
+
+        async function load(){
+            try {
+                if(!IS_FILE){
+                    const r=await fetch(API); db=await r.json();
+                }else{
+                    db=loadFromStorage();
+                }
+                players = db[KEY] || [];
+                renderList();
+            } catch(e) { 
+                console.warn('Servidor no disponible');
+                if(IS_FILE){
+                    db=loadFromStorage();
+                    players = db[KEY] || [];
+                    renderList();
+                }
+            }
+        }
+
+        async function save(){
+            db[KEY] = players;
+            if(IS_FILE){
+                saveToStorage();
+                return;
+            }
+            try {
+                await fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(db)});
+            } catch(e) { console.error('Error al guardar'); }
+        }
+
+        window.showAddForm = function() {
+            selectedId = null;
+            renderList();
+            const tpl = document.getElementById('tpl_add_form');
+            document.getElementById('scouting_main_view').innerHTML = tpl.innerHTML;
+        };
+
+        window.clearMainView = function() {
+            selectedId = null;
+            renderList();
+            document.getElementById('scouting_main_view').innerHTML = `
+                <div class="card" style="text-align:center; padding:5rem 2rem;">
+                    <span style="font-size:3rem;">&#x1F50E;</span>
+                    <p style="color:#94a3b8; margin-top:1rem;">Selecciona un jugador per veure'n els detalls o afegeix-ne un de nou.</p>
+                </div>`;
+        };
+
+        window.addScoutingPlayer = async function() {
+            const nom = document.getElementById('sc_nom').value.trim();
+            const club = document.getElementById('sc_club').value.trim();
+            const tel = document.getElementById('sc_tel').value.trim();
+            const poblacio = document.getElementById('sc_poblacio').value.trim();
+            const situacio = document.getElementById('sc_situacio').value.trim();
+            const posCheckboxes = document.querySelectorAll('input[name="sc_pos"]:checked');
+            const posicions = Array.from(posCheckboxes).map(cb => cb.value);
+
+            if(!nom) { alert('El nom és obligatori'); return; }
+
+            const newPlayer = {
+                id: Date.now(),
+                nom, club, tel, poblacio, posicions, situacio,
+                perfil: '',
+                contactes: []
+            };
+            players.push(newPlayer);
+            await save();
+            selectPlayer(newPlayer.id);
+        };
+
+        window.selectPlayer = function(id) {
+            selectedId = id;
+            renderList();
+            renderDetails();
+        };
+
+        window.deletePlayer = async function(id) {
+            if(!confirm('Segur que vols eliminar aquest jugador de la cartera?')) return;
+            players = players.filter(p => p.id !== id);
+            await save();
+            clearMainView();
+        };
+
+        window.updateField = async function(id, field, val) {
+            const p = players.find(x => x.id === id);
+            if(p) { 
+                p[field] = val; 
+                await save(); 
+                if(field === 'nom') renderList();
+            }
+        };
+
+        window.updatePositions = async function(id) {
+            const p = players.find(x => x.id === id);
+            if(p) {
+                const checks = document.querySelectorAll('input[name="detail_pos"]:checked');
+                p.posicions = Array.from(checks).map(cb => cb.value);
+                await save();
+                renderList();
+            }
+        };
+
+        window.updatePerfil = async function(id, val) {
+            const p = players.find(x => x.id === id);
+            if(p) { p.perfil = val; await save(); }
+        };
+
+        window.addContact = async function(pid) {
+            const data = document.getElementById(`c_data_${pid}`).value;
+            const autor = document.getElementById(`c_autor_${pid}`).value.trim();
+            const resultat = document.getElementById(`c_res_${pid}`).value.trim();
+            
+            if(!data || !autor || !resultat) { alert('Omple tots els camps del contacte'); return; }
+            
+            const p = players.find(x => x.id === pid);
+            if(p) {
+                p.contactes.unshift({ id: Date.now(), data, autor, resultat });
+                await save();
+                renderDetails();
+            }
+        };
+
+        window.deleteContact = async function(pid, cid) {
+            if(!confirm('Vols eliminar aquest contacte?')) return;
+            const p = players.find(x => x.id === pid);
+            if(p) {
+                p.contactes = p.contactes.filter(c => {
+                    const currentId = String(c.id || (c.data + c.autor + c.resultat));
+                    return currentId !== String(cid);
+                });
+                await save();
+                renderDetails();
+            }
+        };
+
+        function renderList() {
+            const el = document.getElementById('scouting_list');
+            if(!players.length) { el.innerHTML = '<div class="empty-msg">No hi ha jugadors.</div>'; return; }
+            
+            el.innerHTML = players.map(p => `
+                <div class="scouting-list-item ${p.id === selectedId ? 'active' : ''}" onclick="selectPlayer(${p.id})">
+                    <div class="scouting-list-name">${esc(p.nom)}</div>
+                    <div class="scouting-list-meta">${esc(p.club) || 'Lliure'} &middot; ${(p.posicions || []).slice(0,2).join(', ')}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderDetails() {
+            const p = players.find(x => x.id === selectedId);
+            if(!p) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const main = document.getElementById('scouting_main_view');
+
+            const posHTML = ALL_POSITIONS.map(pos => `
+                <label class="pos-item">
+                    <input type="checkbox" name="detail_pos" value="${pos}" 
+                        ${(p.posicions || []).includes(pos) ? 'checked' : ''} 
+                        onchange="updatePositions(${p.id})"> ${pos}
+                </label>
+            `).join('');
+
+            main.innerHTML = `
+                <div class="scouting-detail-card">
+                    <div class="scouting-header-actions" style="align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div style="flex:1;">
+                            <label style="font-size:0.65rem; margin-bottom:0.2rem;">Nom del Jugador</label>
+                            <input type="text" value="${esc(p.nom)}" 
+                                style="font-size:1.4rem; font-weight:800; color:var(--primary); padding:0.4rem; border:1px solid transparent; width:100%;"
+                                onchange="updateField(${p.id}, 'nom', this.value)"
+                                onfocus="this.style.borderColor='#fee2e2'"
+                                onblur="this.style.borderColor='transparent'">
+                        </div>
+                        <button class="btn" onclick="deletePlayer(${p.id})" style="color:var(--primary); font-size:0.75rem; border:1px solid var(--primary); padding:0.4rem 0.8rem;">ELIMINAR</button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                        <div>
+                            <label style="font-size:0.7rem;">Club Actual</label>
+                            <input type="text" value="${esc(p.club)}" placeholder="Lliure"
+                                onchange="updateField(${p.id}, 'club', this.value)">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;">Tel&egrave;fon Contacte</label>
+                            <input type="tel" value="${esc(p.tel)}" placeholder="600 000 000"
+                                onchange="updateField(${p.id}, 'tel', this.value)">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;">Poblaci&oacute;</label>
+                            <input type="text" value="${esc(p.poblacio)}" placeholder="Poblaci&oacute;..."
+                                onchange="updateField(${p.id}, 'poblacio', this.value)">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="font-size:0.7rem;">Posicions</label>
+                        <div class="pos-grid" style="margin-top:0.4rem;">
+                            ${posHTML}
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="font-size:0.7rem;">Situaci&oacute; de Mercat / Estat actual</label>
+                        <textarea style="min-height:60px; font-size:0.85rem; padding:0.6rem;" 
+                            placeholder="Situaci&oacute; actual del jugador..."
+                            onchange="updateField(${p.id}, 'situacio', this.value)">${p.situacio || ''}</textarea>
+                    </div>
+
+                    <div class="card" style="padding:1.5rem; margin:0 0 2rem 0; border-color:#fecaca; background:#fffafa;">
+                        <h3 style="font-size:0.9rem; color:var(--primary); margin-bottom:0.75rem;">&#x1F4DD; Perfil Tècnic / Informe</h3>
+                        <textarea style="min-height:100px; font-size:0.85rem;" 
+                            placeholder="Escriu aquí el perfil detallat del jugador..." 
+                            onchange="updateField(${p.id}, 'perfil', this.value)">${p.perfil || ''}</textarea>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size:1rem; margin-bottom:1rem; border-bottom:1px solid #fee2e2; padding-bottom:0.5rem;">&#x1F4DE; Seguiment de Contactes</h3>
+                        
+                        <div class="add-form-box" style="padding:1rem; margin-bottom:1.5rem; background:#f8fafc;">
+                            <div class="add-form-title" style="font-size:0.7rem;">Nou Contacte</div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr 2fr auto; gap:0.5rem; align-items:end;">
+                                <div><label style="font-size:0.65rem;">Data</label><input type="date" id="c_data_${p.id}" value="${today}"></div>
+                                <div><label style="font-size:0.65rem;">Responsable</label><input type="text" id="c_autor_${p.id}" placeholder="Qui..."></div>
+                                <div><label style="font-size:0.65rem;">Resultat</label><input type="text" id="c_res_${p.id}" placeholder="Detalls..."></div>
+                                <button class="btn btn-primary" onclick="addContact(${p.id})" style="padding:0.5rem 1rem; font-size:0.75rem;">AFEGIR</button>
+                            </div>
+                        </div>
+
+                        <div class="contact-log">
+                            ${p.contactes && p.contactes.length ? p.contactes.map(c => {
+                                const cid = c.id || (c.data+c.autor+c.resultat);
+                                return `
+                                <div class="contact-item">
+                                    <div class="contact-content">
+                                        <span class="contact-meta">${fmtDate(c.data)} &mdash; ${esc(c.autor)}</span>
+                                        <div>${esc(c.resultat)}</div>
+                                    </div>
+                                    <button class="btn-delete-small" onclick="deleteContact(${p.id}, '${cid}')">&#x00D7;</button>
+                                </div>`;
+                            }).join('') : '<div class="empty-msg">Sense contactes registrats.</div>'}
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function fmtDate(d){if(!d)return'-';return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});}
+        function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+        load();
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futbol Base Femení | CF Cardona</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
+        header{max-width:960px;margin:0 auto 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+        h1{color:var(--primary);font-weight:800;font-size:1.5rem;}
+        .breadcrumb{font-size:0.85rem;color:#64748b;margin-top:0.25rem;}
+        .breadcrumb a{color:var(--primary);text-decoration:none;font-weight:600;}
+        .breadcrumb a:hover{text-decoration:underline;}
+        .card{background:white;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
+        .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
+        label{display:block;font-weight:700;font-size:0.82rem;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
+        textarea{width:100%;min-height:120px;padding:0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;resize:vertical;line-height:1.6;}
+        textarea:focus{border-color:var(--primary);}
+        input[type=text],input[type=tel],input[type=date],input[type=time],input[type=url]{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;}
+        input:focus,select:focus{border-color:var(--primary);}
+        select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:white;}
+        .staff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;}
+        .staff-member{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;}
+        .role-title{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:0.75rem;}
+        .staff-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
+        .horari-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;margin-top:1rem;}
+        .horari-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .horari-form-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:0.6rem;align-items:end;}
+        .horari-table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+        .horari-table thead tr{background:#fee2e2;color:var(--primary);}
+        .horari-table th{padding:0.6rem 1rem;text-align:left;font-weight:700;}
+        .horari-table td{padding:0.65rem 1rem;border-bottom:1px solid var(--border);}
+        .horari-table tr:last-child td{border-bottom:none;}
+        .dia-badge{font-weight:800;color:var(--primary);}
+        .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+        .comp-link-box{background:#fff5f5;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;}
+        .fed-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.6rem 1.2rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;width:fit-content;transition:all 0.2s;}
+        .fed-link:hover{background:#b91c1c;}
+        .partit-list{margin-bottom:1rem;}
+        .partit-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
+        .partit-info{flex:1;}
+        .partit-header{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.3rem;}
+        .partit-date{font-weight:800;color:var(--primary);}
+        .type-amisto{background:#dbeafe;color:#1d4ed8;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
+        .type-torneig{background:#fef9c3;color:#854d0e;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
+        .partit-rival{font-weight:700;}
+        .partit-lloc{font-size:0.82rem;color:#64748b;}
+        .partit-result{font-size:0.82rem;color:#475569;}
+        .add-form-box{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
+        .add-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .form-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;}
+        .form-row-3{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;}
+        .plantilla-placeholder{text-align:center;padding:3rem 2rem;background:#f8fafc;border-radius:0.75rem;border:2px dashed var(--border);}
+        .plantilla-placeholder span{font-size:2.5rem;display:block;margin-bottom:1rem;}
+        .plantilla-placeholder p{color:#94a3b8;font-size:0.95rem;margin-bottom:0.5rem;}
+        .obs-list{margin-bottom:1rem;}
+        .obs-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;}
+        .obs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+        .obs-meta{font-size:0.82rem;color:#64748b;}
+        .obs-meta strong{color:var(--primary);}
+        .obs-text{font-size:0.9rem;line-height:1.6;white-space:pre-wrap;}
+        .add-obs-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
+        .form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .obs-form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;align-items:end;}
+        .btn{padding:0.65rem 1.5rem;border-radius:0.5rem;font-weight:700;cursor:pointer;border:none;font-size:0.88rem;}
+        .btn-primary{background:var(--primary);color:white;}
+        .btn-primary:hover{background:#b91c1c;}
+        .btn-save-main{background:var(--primary);color:white;border:none;padding:0.75rem 2rem;border-radius:0.5rem;font-weight:700;cursor:pointer;font-size:0.95rem;}
+        .btn-remove{background:none;border:none;color:var(--primary);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;}
+        .empty-msg{color:#94a3b8;font-size:0.85rem;padding:0.5rem;}
+        .coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+        .link-card{text-align:center;padding:2rem;background:linear-gradient(135deg,#fff,#fff5f5);border-radius:0.75rem;border:2px dashed #fca5a5;}
+        .link-card p{color:#64748b;font-size:0.9rem;margin-bottom:1.2rem;}
+        .btn-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.75rem 1.5rem;border-radius:0.5rem;font-weight:700;font-size:0.9rem;transition:all 0.2s;}
+        .btn-link:hover{background:#b91c1c;transform:translateY(-2px);box-shadow:0 4px 12px rgba(217,29,29,0.2);}
+        .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
+        
+        /* Scouting Styles */
+        .scouting-container { display: flex; gap: 2rem; align-items: flex-start; }
+        .scouting-sidebar { width: 350px; flex-shrink: 0; background: white; border-radius: 1rem; border: 1px solid var(--border); padding: 1.5rem; max-height: 800px; overflow-y: auto; }
+        .scouting-content { flex: 1; min-width: 0; }
+        
+        .scouting-list { display: grid; gap: 0.75rem; }
+        .scouting-list-item { padding: 1rem; background: #fffafa; border: 1px solid #fecaca; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; position: relative; }
+        .scouting-list-item:hover { transform: translateX(5px); background: #fee2e2; }
+        .scouting-list-item.active { border-left: 5px solid var(--primary); background: #fee2e2; }
+        .scouting-list-name { font-weight: 800; color: var(--primary); font-size: 1rem; }
+        .scouting-list-meta { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+
+        .scouting-detail-card { background: white; border-radius: 1rem; padding: 2rem; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); }
+        .scouting-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #fee2e2; padding-bottom: 1rem; }
+        .scouting-header-actions h2 { margin: 0; border: none; padding: 0; }
+        
+        .contact-item { background: white; border: 1px solid #e2e8f0; padding: 0.8rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+        .contact-content { flex: 1; }
+        .contact-meta { font-weight: 700; color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
+        .btn-delete-small { color: #94a3b8; background: none; border: none; cursor: pointer; padding: 0.2rem; font-size: 1rem; }
+        .btn-delete-small:hover { color: var(--primary); }
+
+        .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; padding: 0.5rem; background: #fff5f5; border: 1px solid #fecaca; border-radius: 0.5rem; margin-top: 0.4rem; }
+        .pos-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .pos-item input { width: auto; }
+        .scouting-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+        .v-line{width:2px;height:20px;background:#fca5a5;margin:0 auto;}
+        .children-row{display:flex;gap:2rem;justify-content:center;position:relative;}
+        .children-row::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);height:2px;background:#fca5a5;width:calc(100% - 60px);}
+        .child-col{display:flex;flex-direction:column;align-items:center;}
+        .tree-node{display:inline-flex;align-items:center;justify-content:center;padding:0.6rem 1.4rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;text-decoration:none;color:var(--primary);background:white;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(217,29,29,0.1);transition:all 0.2s;white-space:nowrap;}
+        .tree-node:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(217,29,29,0.2);background:#fff5f5;}
+        .tree-node.root{background:#fee2e2;}
+        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>&#x1F467; Futbol Base Femení</h1>
+            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; <a href="../estructura.html">Estructura Esportiva</a> &rarr; <a href="futbol-base.html">Futbol Base</a> &rarr; Futbol Base Femení</div>
+        </div>
+    </header>
+    <div class="card">
+        <h2>&#x1F464; Coordinador/a</h2>
+        <div class="coord-grid">
+            <div><label>Nom i Cognoms</label><input type="text" id="coord_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
+            <div><label>Tel&egrave;fon</label><input type="tel" id="coord_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>&#x1F4CA; Estructura</h2>
+        <div style="overflow-x:auto;">
+            <div class="tree">
+                <a href="../index.html" class="tree-node root">CF Cardona</a>
+                <div class="v-line"></div>
+                <div class="children-row">
+                    <div class="child-col">
+                        <div class="v-line"></div>
+                        <div class="tree-node" style="background:#fee2e2;">Futbol Base Femení</div>
+                        <div class="v-line"></div>
+                        <div class="children-row">
+                <div class="child-col"><div class="v-line"></div><a href="alevi-femeni.html" class="tree-node">Aleví</a></div>
+                <div class="child-col"><div class="v-line"></div><a href="infantil-femeni.html" class="tree-node">Infantil</a></div>
+                <div class="child-col"><div class="v-line"></div><a href="cadet-femeni.html" class="tree-node">Cadet</a></div>
+                <div class="child-col"><div class="v-line"></div><a href="juvenil-femeni.html" class="tree-node">Juvenil</a></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>&#x1F4AC; Observacions i Comentaris</h2>
+        <div id="obs_list" class="obs-list"><div class="empty-msg">Sense observacions registrades.</div></div>
+        <div class="add-obs-form">
+            <div class="form-title">Nou Comentari</div>
+            <div class="obs-form-row">
+                <div><label>Autor</label><input type="text" id="obs_autor" placeholder="Qui fa el comentari..."></div>
+                <div><label>Data</label><input type="date" id="obs_data"></div>
+                <div><button class="btn btn-primary" onclick="addObs()">AFEGIR</button></div>
+            </div>
+            <div><label>Comentari</label><textarea id="obs_text" style="min-height:100px;" placeholder="Escriu el comentari..."></textarea></div>
+        </div>
+    </div>
+    <script>
+        const API='/api/players';
+        const KEY='seccio_fb-femeni';        const STORAGE_KEY=`${KEY}_local`;
+        const IS_FILE=window.location.protocol==='file:';        let db={},observacions=[],horaris=[],partits=[];
+        const SF=["coord_nom","coord_tel"];
+        const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
+        const TEAMS=[
+            {id:'seccio_primer-equip', name:'Primer Equip'},
+            {id:'seccio_filial', name:'Filial'},
+            {id:'seccio_minis', name:'Minis'}, {id:'seccio_s7', name:'S7'},
+            {id:'seccio_s8', name:'S8'}, {id:'seccio_s9', name:'S9'},
+            {id:'seccio_s10', name:'S10'}, {id:'seccio_s11', name:'S11'},
+            {id:'seccio_s12', name:'S12'}, {id:'seccio_s16', name:'S16 (Cadet)'},
+            {id:'seccio_juvenil-masculi', name:'Juvenil Masculí'},
+            {id:'seccio_alevi-femeni', name:'Aleví Femení'},
+            {id:'seccio_cadet-femeni', name:'Cadet Femení'},
+            {id:'seccio_juvenil-femeni', name:'Juvenil Femení'}
+        ];
+
+        function loadFromStorage(){
+            try{
+                const raw=localStorage.getItem(STORAGE_KEY);
+                return raw?JSON.parse(raw):{};
+            }catch(e){
+                return {};
+            }
+        }
+
+        function saveToStorage(){
+            try{
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            }catch(e){
+                console.warn('No es pot guardar a localStorage');
+            }
+        }
+
+        async function load(){
+            try{
+                if(!IS_FILE){
+                    const r=await fetch(API); db=await r.json();
+                }else{
+                    db=loadFromStorage();
+                }
+                const d=db[KEY]||{};
+                if(document.getElementById('descripcio')) document.getElementById('descripcio').value=d.descripcio||'';
+                SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
+                ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
+                    const el=document.getElementById(f); if(el) el.value=d[f]||'';
+                });
+                horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
+                renderHorari(); renderPartits(); renderObs();
+            }catch(e){
+                console.warn('Servidor no disponible');
+                if(IS_FILE){
+                    db=loadFromStorage();
+                    const d=db[KEY]||{};
+                    horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
+                    renderHorari(); renderPartits(); renderObs();
+                }
+            }
+        }
+
+        async function saveAll(silent = false){
+            db[KEY]={horaris,partits,observacions};
+            if(document.getElementById('descripcio')) db[KEY].descripcio=document.getElementById('descripcio').value;
+            SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
+            ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
+                const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
+            });
+            if(IS_FILE){
+                saveToStorage();
+                if(!silent) console.log('Guardat automàtic correcte');
+                return;
+            }
+            try{
+                await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+                if(!silent) console.log('Guardat automàtic correcte');
+            }catch(e){ console.error('Error en el guardat automàtic'); }
+        }
+
+        window.openFedLink=function(e){
+            const url=document.getElementById('comp_url')?document.getElementById('comp_url').value.trim():'';
+            if(!url){e.preventDefault();alert("Introdueix primer l'enllaç de la FCF.");return;}
+            document.getElementById('comp_link_btn').href=url;
+        };
+
+        function renderHorari(){
+            const el=document.getElementById('horari_list'); if(!el)return;
+            if(!horaris.length){el.innerHTML='<div class="empty-msg">Sense sessions registrades.</div>';return;}
+            el.innerHTML='<table class="horari-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
+                +horaris.map((h,i)=>'<tr><td class="dia-badge">'+h.dia+'</td><td>'+(h.inici||'-')+'</td><td>'+(h.fi||'-')+'</td><td>'+(esc(h.vestidor)||'-')+'</td><td>'+(esc(h.camp)||'-')+'</td></tr>').join('')
+                +'</tbody></table>';
+        }
+
+        window.addPartit=async function(){
+            const rival=document.getElementById('p_rival').value.trim();
+            if(!rival){alert('Introdueix el nom del rival.');return;}
+            partits.push({data:document.getElementById('p_data').value,tipus:document.getElementById('p_tipus').value,
+                rival,lloc:document.getElementById('p_lloc').value,
+                resultat:document.getElementById('p_resultat').value,torneig:document.getElementById('p_torneig').value});
+            partits.sort((a,b)=>a.data.localeCompare(b.data));
+            ['p_data','p_rival','p_resultat','p_torneig'].forEach(id=>document.getElementById(id).value='');
+            renderPartits();
+            await saveAll(true);
+        };
+        window.removePartit=async function(i){
+            if(!confirm('Segur que vols eliminar aquest partit?')) return;
+            partits.splice(i,1);
+            renderPartits();
+            await saveAll(true);
+        };
+        function renderPartits(){
+            const el=document.getElementById('partits_list'); if(!el)return;
+            if(!partits.length){el.innerHTML='<div class="empty-msg">Sense partits registrats.</div>';return;}
+            el.innerHTML=partits.map((p,i)=>{
+                const tc=p.tipus==='Torneig'?'type-torneig':'type-amisto';
+                const tt=p.torneig?' &mdash; <em>'+esc(p.torneig)+'</em>':'';
+                const rt=p.resultat?'<div class="partit-result">Resultat: <strong>'+esc(p.resultat)+'</strong></div>':'';
+                return '<div class="partit-item"><div class="partit-info"><div class="partit-header"><span class="partit-date">'+fmtDate(p.data)+'</span><span class="'+tc+'">'+p.tipus+'</span><span class="partit-rival">vs '+esc(p.rival)+'</span><span class="partit-lloc">'+p.lloc+tt+'</span></div>'+rt+'</div><button class="btn-remove" onclick="removePartit('+i+')">&#x00D7;</button></div>';
+            }).join('');
+        }
+
+        const today=new Date().toISOString().split('T')[0];
+        if(document.getElementById('obs_data')) document.getElementById('obs_data').value=today;
+        window.addObs=async function(){
+            const text=document.getElementById('obs_text').value.trim(); if(!text)return;
+            observacions.unshift({autor:document.getElementById('obs_autor').value||'Anònim',
+                data:document.getElementById('obs_data').value,text});
+            document.getElementById('obs_text').value='';
+            document.getElementById('obs_autor').value='';
+            document.getElementById('obs_data').value=today;
+            renderObs();
+            await saveAll(true);
+        };
+        window.removeObs=async function(i){
+            if(!confirm('Segur que vols eliminar aquest comentari?')) return;
+            observacions.splice(i,1);
+            renderObs();
+            await saveAll(true);
+        };
+        function renderObs(){
+            const el=document.getElementById('obs_list'); if(!el)return;
+            if(!observacions.length){el.innerHTML='<div class="empty-msg">Sense observacions registrades.</div>';return;}
+            el.innerHTML=observacions.map((o,i)=>'<div class="obs-item"><div class="obs-header"><div class="obs-meta"><strong>'+esc(o.autor)+'</strong> &mdash; '+fmtDate(o.data)+'</div><button class="btn-remove" onclick="removeObs('+i+')">&#x00D7;</button></div><div class="obs-text">'+esc(o.text)+'</div></div>').join('');
+        }
+
+        function fmtDate(d){if(!d)return'-';return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});}
+        function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+        load();
+    </script>
+</body>
+</html>

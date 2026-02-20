@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horaris d'Entrenament | CF Cardona</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
+        header{max-width:960px;margin:0 auto 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+        h1{color:var(--primary);font-weight:800;font-size:1.5rem;}
+        .breadcrumb{font-size:0.85rem;color:#64748b;margin-top:0.25rem;}
+        .breadcrumb a{color:var(--primary);text-decoration:none;font-weight:600;}
+        .breadcrumb a:hover{text-decoration:underline;}
+        .card{background:white;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
+        .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
+        label{display:block;font-weight:700;font-size:0.82rem;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
+        textarea{width:100%;min-height:120px;padding:0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;resize:vertical;line-height:1.6;}
+        textarea:focus{border-color:var(--primary);}
+        input[type=text],input[type=tel],input[type=date],input[type=time],input[type=url]{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;}
+        input:focus,select:focus{border-color:var(--primary);}
+        select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:white;}
+        .staff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;}
+        .staff-member{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;}
+        .role-title{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:0.75rem;}
+        .staff-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
+        .horari-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;margin-top:1rem;}
+        .horari-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .horari-form-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:0.6rem;align-items:end;}
+        .horari-table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+        .horari-table thead tr{background:#fee2e2;color:var(--primary);}
+        .horari-table th{padding:0.6rem 1rem;text-align:left;font-weight:700;}
+        .horari-table td{padding:0.65rem 1rem;border-bottom:1px solid var(--border);}
+        .horari-table tr:last-child td{border-bottom:none;}
+        .dia-badge{font-weight:800;color:var(--primary);}
+        .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+        .comp-link-box{background:#fff5f5;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;}
+        .fed-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.6rem 1.2rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;width:fit-content;transition:all 0.2s;}
+        .fed-link:hover{background:#b91c1c;}
+        .partit-list{margin-bottom:1rem;}
+        .partit-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
+        .partit-info{flex:1;}
+        .partit-header{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.3rem;}
+        .partit-date{font-weight:800;color:var(--primary);}
+        .type-amisto{background:#dbeafe;color:#1d4ed8;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
+        .type-torneig{background:#fef9c3;color:#854d0e;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
+        .partit-rival{font-weight:700;}
+        .partit-lloc{font-size:0.82rem;color:#64748b;}
+        .partit-result{font-size:0.82rem;color:#475569;}
+        .add-form-box{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
+        .add-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .form-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;}
+        .form-row-3{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;}
+        .plantilla-placeholder{text-align:center;padding:3rem 2rem;background:#f8fafc;border-radius:0.75rem;border:2px dashed var(--border);}
+        .plantilla-placeholder span{font-size:2.5rem;display:block;margin-bottom:1rem;}
+        .plantilla-placeholder p{color:#94a3b8;font-size:0.95rem;margin-bottom:0.5rem;}
+        .obs-list{margin-bottom:1rem;}
+        .obs-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;}
+        .obs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+        .obs-meta{font-size:0.82rem;color:#64748b;}
+        .obs-meta strong{color:var(--primary);}
+        .obs-text{font-size:0.9rem;line-height:1.6;white-space:pre-wrap;}
+        .add-obs-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
+        .form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
+        .obs-form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;align-items:end;}
+        .btn{padding:0.65rem 1.5rem;border-radius:0.5rem;font-weight:700;cursor:pointer;border:none;font-size:0.88rem;}
+        .btn-primary{background:var(--primary);color:white;}
+        .btn-primary:hover{background:#b91c1c;}
+        .btn-save-main{background:var(--primary);color:white;border:none;padding:0.75rem 2rem;border-radius:0.5rem;font-weight:700;cursor:pointer;font-size:0.95rem;}
+        .btn-remove{background:none;border:none;color:var(--primary);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;}
+        .empty-msg{color:#94a3b8;font-size:0.85rem;padding:0.5rem;}
+        .coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+        .link-card{text-align:center;padding:2rem;background:linear-gradient(135deg,#fff,#fff5f5);border-radius:0.75rem;border:2px dashed #fca5a5;}
+        .link-card p{color:#64748b;font-size:0.9rem;margin-bottom:1.2rem;}
+        .btn-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.75rem 1.5rem;border-radius:0.5rem;font-weight:700;font-size:0.9rem;transition:all 0.2s;}
+        .btn-link:hover{background:#b91c1c;transform:translateY(-2px);box-shadow:0 4px 12px rgba(217,29,29,0.2);}
+        .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
+        
+        /* Scouting Styles */
+        .scouting-container { display: flex; gap: 2rem; align-items: flex-start; }
+        .scouting-sidebar { width: 350px; flex-shrink: 0; background: white; border-radius: 1rem; border: 1px solid var(--border); padding: 1.5rem; max-height: 800px; overflow-y: auto; }
+        .scouting-content { flex: 1; min-width: 0; }
+        
+        .scouting-list { display: grid; gap: 0.75rem; }
+        .scouting-list-item { padding: 1rem; background: #fffafa; border: 1px solid #fecaca; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; position: relative; }
+        .scouting-list-item:hover { transform: translateX(5px); background: #fee2e2; }
+        .scouting-list-item.active { border-left: 5px solid var(--primary); background: #fee2e2; }
+        .scouting-list-name { font-weight: 800; color: var(--primary); font-size: 1rem; }
+        .scouting-list-meta { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+
+        .scouting-detail-card { background: white; border-radius: 1rem; padding: 2rem; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); }
+        .scouting-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #fee2e2; padding-bottom: 1rem; }
+        .scouting-header-actions h2 { margin: 0; border: none; padding: 0; }
+        
+        .contact-item { background: white; border: 1px solid #e2e8f0; padding: 0.8rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+        .contact-content { flex: 1; }
+        .contact-meta { font-weight: 700; color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
+        .btn-delete-small { color: #94a3b8; background: none; border: none; cursor: pointer; padding: 0.2rem; font-size: 1rem; }
+        .btn-delete-small:hover { color: var(--primary); }
+
+        .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; padding: 0.5rem; background: #fff5f5; border: 1px solid #fecaca; border-radius: 0.5rem; margin-top: 0.4rem; }
+        .pos-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .pos-item input { width: auto; }
+        .scouting-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+        .v-line{width:2px;height:20px;background:#fca5a5;margin:0 auto;}
+        .children-row{display:flex;gap:2rem;justify-content:center;position:relative;}
+        .children-row::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);height:2px;background:#fca5a5;width:calc(100% - 60px);}
+        .child-col{display:flex;flex-direction:column;align-items:center;}
+        .tree-node{display:inline-flex;align-items:center;justify-content:center;padding:0.6rem 1.4rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;text-decoration:none;color:var(--primary);background:white;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(217,29,29,0.1);transition:all 0.2s;white-space:nowrap;}
+        .tree-node:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(217,29,29,0.2);background:#fff5f5;}
+        .tree-node.root{background:#fee2e2;}
+        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>&#x1F5D3; Horaris d'Entrenament</h1>
+            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; Horari Entrenaments</div>
+        </div>
+    </header>
+    <div class="card">
+        <h2>&#x1F5D3; Gestionar Horaris d'Entrenament</h2>
+        <div class="horari-form">
+            <div class="horari-form-title">Afegir Franja d'Entrenament</div>
+            <div class="horari-form-row" style="grid-template-columns: 1.2fr 1fr 0.8fr 0.8fr 1fr 1fr auto;">
+                <div><label>Equip</label><select id="h_team"></select></div>
+                <div><label>Dia</label><select id="h_dia"><option value="">Selecciona...</option><option>Dilluns</option><option>Dimarts</option><option>Dimecres</option><option>Dijous</option><option>Divendres</option></select></div>
+                <div><label>Inici</label><input type="time" id="h_inici"></div>
+                <div><label>Fi</label><input type="time" id="h_fi"></div>
+                <div><label>Vestidor</label><select id="h_vestidor"><option value="">Selecciona...</option><option>Vestidor 1</option><option>Vestidor 2</option><option>Vestidor 3</option><option>Vestidor 4</option><option>Vestidor 5</option><option>Vestidor 6</option></select></div>
+                <div><label>Camp</label><select id="h_camp"><option value="">Selecciona...</option><option>Espai 1</option><option>Espai 2</option><option>Espai 3</option><option>Espai 4</option></select></div>
+                <div><button class="btn btn-primary" onclick="addHorariGlobal()" style="white-space:nowrap;">AFEGIR</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="view-toggle">
+            <button class="tab-btn active" id="btn_view_day" onclick="switchView('day')">VISIÓ PER DIES</button>
+            <button class="tab-btn" id="btn_view_team" onclick="switchView('team')">VISIÓ PER EQUIPS</button>
+        </div>
+        
+        <div id="view_by_day"></div>
+        <div id="view_by_team" style="display:none;"></div>
+    </div>
+    <script>
+        const API='/api/players';
+        const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
+        const TEAMS = [{"id":"seccio_primer-equip","name":"Primer Equip"},{"id":"seccio_filial","name":"Filial"},{"id":"seccio_minis","name":"Minis"},{"id":"seccio_s7","name":"S7"},{"id":"seccio_s8","name":"S8"},{"id":"seccio_s9","name":"S9"},{"id":"seccio_s10","name":"S10"},{"id":"seccio_s11","name":"S11"},{"id":"seccio_s12","name":"S12"},{"id":"seccio_s16","name":"S16 (Cadet)"},{"id":"seccio_juvenil-masculi","name":"Juvenil Masculí"},{"id":"seccio_alevi-femeni","name":"Aleví Femení"},{"id":"seccio_cadet-femeni","name":"Cadet Femení"},{"id":"seccio_juvenil-femeni","name":"Juvenil Femení"}];
+        let db = {};
+
+        async function load() {
+            try {
+                const r = await fetch(API);
+                db = await r.json();
+                renderAll();
+            } catch(e) { console.warn('Servidor no disponible'); }
+        }
+
+        function renderAll() {
+            renderByDay();
+            renderByTeam();
+            populateTeamSelect();
+        }
+
+        function populateTeamSelect() {
+            const sel = document.getElementById('h_team');
+            if(!sel) return;
+            const current = sel.value;
+            sel.innerHTML = '<option value="">Selecciona Equip...</option>' + 
+                TEAMS.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            if(current) sel.value = current;
+        }
+
+        window.addHorariGlobal = async function() {
+            const teamId = document.getElementById('h_team').value;
+            const dia = document.getElementById('h_dia').value;
+            const h_inici = document.getElementById('h_inici').value;
+            const h_fi = document.getElementById('h_fi').value;
+            const h_vestidor = document.getElementById('h_vestidor').value;
+            const h_camp = document.getElementById('h_camp').value;
+
+            if(!teamId || !dia || !h_inici || !h_fi || !h_camp) { 
+                alert('Tots els camps són obligatoris (Equip, Dia, Inici, Fi, Camp).'); 
+                return; 
+            }
+
+            // Control de col·lisions
+            let collision = false;
+            let collisionMsg = '';
+            
+            TEAMS.forEach(t => {
+                const teamData = db[t.id] || {};
+                const horaris = teamData.horaris || [];
+                
+                horaris.forEach(h => {
+                    if (h.dia === dia && h.camp === h_camp) {
+                        // Check time overlap: (StartA < EndB) and (EndA > StartB)
+                        if (h_inici < h.fi && h_fi > h.inici) {
+                            collision = true;
+                            collisionMsg = `Col·lisió detectada: L'equip ${t.name} ja ocupa ${h_camp} de ${h.inici} a ${h.fi}.`;
+                        }
+                    }
+                });
+            });
+
+            if (collision) {
+                alert(collisionMsg);
+                return;
+            }
+            
+            if(!db[teamId]) db[teamId] = {};
+            if(!db[teamId].horaris) db[teamId].horaris = [];
+            
+            db[teamId].horaris.push({
+                dia,
+                inici: h_inici,
+                fi: h_fi,
+                vestidor: h_vestidor,
+                camp: h_camp
+            });
+            
+            db[teamId].horaris.sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
+            
+            try {
+                await fetch(API, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(db)
+                });
+                renderAll();
+                ['h_inici','h_fi','h_vestidor','h_camp'].forEach(id => document.getElementById(id).value = '');
+            } catch(e) { alert('Error al guardar'); }
+        };
+
+        window.removeHorariGlobal = async function(teamId, index) {
+            if(!confirm('Segur que vols eliminar aquesta franja?')) return;
+            db[teamId].horaris.splice(index, 1);
+            try {
+                await fetch(API, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(db)
+                });
+                renderAll();
+            } catch(e) { alert('Error al eliminar'); }
+        };
+
+        function renderByDay() {
+            const el = document.getElementById('view_by_day');
+            if(!el) return;
+            let html = '';
+            DIES.forEach(dia => {
+                let sessions = [];
+                TEAMS.forEach(t => {
+                    const h = (db[t.id] || {}).horaris || [];
+                    h.forEach((s, idx) => {
+                        if(s.dia === dia) sessions.push({...s, teamName: t.name, teamId: t.id, originalIndex: idx});
+                    });
+                });
+                sessions.sort((a,b) => (a.inici || '').localeCompare(b.inici || ''));
+                
+                html += `<div class="day-section">
+                    <h3 class="dia-badge" style="display:inline-block; margin-bottom:1rem; font-size:1.2rem;">${dia}</h3>
+                    <table class="horari-table">
+                        <thead><tr><th>Hora</th><th>Equip</th><th>Camp</th><th>Vestidor</th><th style="width:50px"></th></tr></thead>
+                        <tbody>
+                            ${sessions.length ? sessions.map(s => `
+                                <tr>
+                                    <td><strong>${s.inici || '-'}</strong> - ${s.fi || '-'}</td>
+                                    <td>${s.teamName}</td>
+                                    <td>${s.camp || '-'}</td>
+                                    <td>${s.vestidor || '-'}</td>
+                                    <td><button class="btn-remove" onclick="removeHorariGlobal('${s.teamId}', ${s.originalIndex})">&#x00D7;</button></td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="5" class="empty-msg">Sense entrenaments</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>`;
+            });
+            el.innerHTML = html;
+        }
+
+        function renderByTeam() {
+            const el = document.getElementById('view_by_team');
+            if(!el) return;
+            let html = '';
+            TEAMS.forEach(t => {
+                const h = (db[t.id] || {}).horaris || [];
+                if(h.length === 0) return;
+                html += `<div class="team-section">
+                    <h3>${t.name}</h3>
+                    <table class="horari-table">
+                        <thead><tr><th>Dia</th><th>Hora</th><th>Camp</th><th>Vestidor</th><th style="width:50px"></th></tr></thead>
+                        <tbody>
+                            ${h.map((s, idx) => `
+                                <tr>
+                                    <td class="dia-badge">${s.dia}</td>
+                                    <td><strong>${s.inici || '-'}</strong> - ${s.fi || '-'}</td>
+                                    <td>${s.camp || '-'}</td>
+                                    <td>${s.vestidor || '-'}</td>
+                                    <td><button class="btn-remove" onclick="removeHorariGlobal('${t.id}', ${idx})">&#x00D7;</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            });
+            el.innerHTML = html || '<div class="empty-msg">Cap equip té horaris registrats.</div>';
+        }
+
+        window.switchView = function(type) {
+            document.getElementById('btn_view_day').classList.toggle('active', type === 'day');
+            document.getElementById('btn_view_team').classList.toggle('active', type === 'team');
+            document.getElementById('view_by_day').style.display = type === 'day' ? 'block' : 'none';
+            document.getElementById('view_by_team').style.display = type === 'team' ? 'block' : 'none';
+        }
+
+        function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+        load();
+    </script>
+    <style>
+        .day-section, .team-section { margin-bottom: 2.5rem; }
+        .day-section h3, .team-section h3 { color: var(--primary); border-bottom: 2px solid #fee2e2; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .view-toggle { display: flex; gap: 0.5rem; margin-bottom: 2rem; background: #f1f5f9; padding: 0.4rem; border-radius: 0.6rem; width: fit-content; }
+        .tab-btn { padding: 0.6rem 1.2rem; border-radius: 0.4rem; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; }
+        .tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+    
+</body>
+</html>
