@@ -282,28 +282,27 @@
         }
 
         function loadCaptacioSuggestions(){
-            console.log('[s13] loadCaptacioSuggestions called, IS_FILE=', IS_FILE);
             captacioSuggestions=[];
             try{
-                const raw=localStorage.getItem('captacio_futbol_base_local');
-                console.log('[s13] localStorage raw:', raw?'exists':'NO DATA');
-                if(!raw) return;
-                const data=JSON.parse(raw);
-                const players=data.captacio_futbol_base||[];
-                console.log('[s13] Total players in DB:', players.length);
+                let players=[];
+
+                if(Array.isArray(db.captacio_futbol_base) && db.captacio_futbol_base.length){
+                    players=db.captacio_futbol_base;
+                }else{
+                    const raw=localStorage.getItem('captacio_futbol_base_local');
+                    if(raw){
+                        const localData=JSON.parse(raw);
+                        players=localData.captacio_futbol_base||[];
+                    }
+                }
+
                 const targetYear=2014;
                 const targetGender='Masculí';
-                players.forEach(p=>{
-                    const yearMatch=Math.abs((p.any_naixement||0)-targetYear)<=1;
-                    const genderMatch=p.genere===targetGender;
-                    console.log('[s13] Player '+p.nom+': any='+p.any_naixement+' (match:'+yearMatch+'), gender='+p.genere+' (match:'+genderMatch+')');
-                });
                 captacioSuggestions=players.filter(p=>{
                     const yearMatch=Math.abs((p.any_naixement||0)-targetYear)<=1;
                     const genderMatch=p.genere===targetGender;
                     return yearMatch&&genderMatch;
                 });
-                console.log('[s13] Final filtered suggestions:', captacioSuggestions.length);
             }catch(e){
                 console.warn('Error carregant captació:',e);
             }
@@ -454,20 +453,12 @@
         };
 
         function renderCaptacioSuggestions(){
-            console.log('[s13] renderCaptacioSuggestions called');
             const container=document.getElementById('captacio_suggestions');
-            console.log('[s13] container:', container);
-            if(!container) {
-                console.log('[s13] ERROR: container not found!');
-                return;
-            }
-            console.log('[s13] captacioSuggestions:', captacioSuggestions);
+            if(!container) return;
             if(!captacioSuggestions||!captacioSuggestions.length){
-                console.log('[s13] No suggestions, showing empty message');
                 container.innerHTML='<div class="empty-msg">No hi ha jugadors en captació que coincideixin amb aquest equip.</div>';
                 return;
             }
-            console.log('[s13] Rendering', captacioSuggestions.length, 'suggestions');
             container.innerHTML=captacioSuggestions.map(p=>{
                 const posicions=Array.isArray(p.posicions)?p.posicions.join(', '):'';
                 const club=p.club?`<strong>Club:</strong> ${esc(p.club)}<br>`:'';
@@ -478,7 +469,6 @@
                 const yearBadge='<span class="year-badge" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fef3c7;color:#92400e;margin-left:0.5rem;">'+esc(p.any_naixement)+'</span>';
                 return '<div class="obs-item" style="background:#f0fdf4;border:1px solid #86efac;"><div class="obs-header"><div style="font-size:0.95rem;"><strong style="color:#059669;">'+esc(p.nom||'Sense nom')+'</strong>'+genderBadge+yearBadge+'</div></div><div style="font-size:0.82rem;color:#475569;line-height:1.6;">'+club+tel+poblacio+'<strong>Posicions:</strong> '+esc(posicions)+'<br>'+situacio+'</div></div>';
             }).join('');
-            console.log('[s13] HTML rendered, innerHTML length:', container.innerHTML.length);
         }
 
         window.updatePlayer=function(index,field,value){
