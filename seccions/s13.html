@@ -311,7 +311,12 @@
         async function load(){
             try{
                 if(!IS_FILE){
-                    const r=await fetch(API); db=await r.json();
+                    const r=await fetch(API);
+                    if(!r.ok){
+                        const errorText=await r.text();
+                        throw new Error(`GET ${r.status}: ${errorText}`);
+                    }
+                    db=await r.json();
                 }else{
                     db=loadFromStorage();
                 }
@@ -348,9 +353,13 @@
                 return;
             }
             try{
-                await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+                const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`POST ${r.status}: ${errorText}`);
+                }
                 if(!silent) console.log('Guardat automàtic correcte');
-            }catch(e){ console.error('Error en el guardat automàtic'); }
+            }catch(e){ console.error('Error en el guardat automàtic:', e.message || e); }
         }
 
         window.openFedLink=function(e){

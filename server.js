@@ -138,6 +138,7 @@ function supabaseRestRequest(method, endpointPath, body = null, preferHeader = n
 }
 
 const server = http.createServer((req, res) => {
+    const storageBackend = USE_SUPABASE ? 'supabase' : 'file';
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -153,11 +154,21 @@ const server = http.createServer((req, res) => {
         (async () => {
             try {
                 const data = await readDatabase();
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
                 res.end(JSON.stringify(data));
             } catch (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: "No s'ha pogut llegir la base de dades" }));
+                console.error('Error GET /api/players:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut llegir la base de dades",
+                    details: err && err.message ? err.message : String(err)
+                }));
             }
         })();
     } else if (req.url === '/api/players' && req.method === 'POST') {
@@ -166,17 +177,30 @@ const server = http.createServer((req, res) => {
                 const body = await readBody(req);
                 const parsed = body ? JSON.parse(body) : {};
                 await writeDatabase(parsed);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
                 res.end(JSON.stringify({ status: 'success' }));
             } catch (err) {
                 if (err instanceof SyntaxError) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
                     res.end(JSON.stringify({ error: 'JSON invàlid' }));
                     return;
                 }
 
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: "No s'ha pogut guardar la base de dades" }));
+                console.error('Error POST /api/players:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut guardar la base de dades",
+                    details: err && err.message ? err.message : String(err)
+                }));
             }
         })();
     } else {

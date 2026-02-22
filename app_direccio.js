@@ -10,9 +10,13 @@ const defaults = {
 async function loadData() {
     try {
         const response = await fetch(API_URL);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GET ${response.status}: ${errorText}`);
+        }
         globalData = await response.json();
     } catch (e) {
-        console.warn("Servidor no disponible");
+        console.warn("Error carregant dades:", e.message || e);
     }
 
     const ed = globalData.esportiva || {};
@@ -80,13 +84,17 @@ document.getElementById('btn-save-global').addEventListener('click', async () =>
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(globalData)
         });
-        if (response.ok) {
-            btn.innerText = '✅ CAMBIS GUARDATS';
-            btn.style.background = '#16a34a';
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`POST ${response.status}: ${errorText}`);
         }
+
+        btn.innerText = '✅ CAMBIS GUARDATS';
+        btn.style.background = '#16a34a';
     } catch (e) {
         btn.innerText = '❌ ERROR';
         btn.style.background = '#d91d1d';
+        console.error('Error guardant dades:', e.message || e);
     }
     setTimeout(() => {
         btn.innerText = 'GUARDAR CANVIS GENERALS';
