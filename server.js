@@ -4,10 +4,22 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+function cleanEnvVar(value) {
+    if (value === undefined || value === null) return '';
+    const trimmed = String(value).trim();
+    if (
+        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+        return trimmed.slice(1, -1).trim();
+    }
+    return trimmed;
+}
+
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = cleanEnvVar(process.env.SUPABASE_URL);
+const SUPABASE_SERVICE_ROLE_KEY = cleanEnvVar(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const IS_RENDER = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
 const HAS_SUPABASE_CONFIG = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const IS_PUBLISHABLE_KEY = String(SUPABASE_SERVICE_ROLE_KEY || '').startsWith('sb_publishable_');
