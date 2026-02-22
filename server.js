@@ -19,7 +19,7 @@ function cleanEnvVar(value) {
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const SUPABASE_URL = cleanEnvVar(process.env.SUPABASE_URL);
-const SUPABASE_SERVICE_ROLE_KEY = cleanEnvVar(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const SUPABASE_SERVICE_ROLE_KEY = cleanEnvVar(process.env.SUPABASE_SERVICE_ROLE_KEY).replace(/\s+/g, '');
 const IS_RENDER = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
 const HAS_SUPABASE_CONFIG = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const IS_PUBLISHABLE_KEY = String(SUPABASE_SERVICE_ROLE_KEY || '').startsWith('sb_publishable_');
