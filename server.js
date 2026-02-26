@@ -17,6 +17,30 @@ function cleanEnvVar(value) {
     return trimmed;
 }
 
+function normalizeSupabaseUrl(value) {
+    const cleaned = cleanEnvVar(value);
+    if (!cleaned) return '';
+
+    const withProtocol = /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned}`;
+
+    let parsed;
+    try {
+        parsed = new URL(withProtocol);
+    } catch (err) {
+        throw new Error(`SUPABASE_URL invàlida: ${withProtocol}`);
+    }
+
+    const normalizedPath = (parsed.pathname || '/')
+        .replace(/\/+$/, '')
+        .replace(/\/rest\/v1$/i, '');
+
+    parsed.pathname = normalizedPath || '/';
+    parsed.search = '';
+    parsed.hash = '';
+
+    return parsed.toString().replace(/\/$/, '');
+}
+
 function isMissingSupabaseTableError(err, tableName) {
     const msg = (err && err.message ? String(err.message) : '').toLowerCase();
     const table = String(tableName || '').toLowerCase();
@@ -31,7 +55,7 @@ function isMissingSupabaseColumnError(err, columnName) {
 
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-const SUPABASE_URL = cleanEnvVar(process.env.SUPABASE_URL);
+const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = cleanEnvVar(process.env.SUPABASE_SERVICE_ROLE_KEY).replace(/\s+/g, '');
 const IS_RENDER = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
 const HAS_SUPABASE_CONFIG = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
@@ -1446,13 +1470,16 @@ function supabaseRestRequest(method, endpointPath, body = null, preferHeader = n
             headers['Content-Length'] = Buffer.byteLength(bodyString);
         }
 
+        const basePath = (supabaseBaseUrl.pathname || '/').replace(/\/+$/, '');
+        const fullPath = `${basePath}${endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`}`;
+
         const req = https.request(
             {
                 protocol: supabaseBaseUrl.protocol,
                 hostname: supabaseBaseUrl.hostname,
                 port: supabaseBaseUrl.port || 443,
                 method,
-                path: endpointPath,
+                path: fullPath,
                 headers
             },
             res => {
