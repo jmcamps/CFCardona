@@ -81,6 +81,18 @@
         }
         .cf-nav-menu a:hover { background: #f1f5f9; color: #d91d1d; }
         .cf-nav-dropdown.open .cf-nav-menu { display: block; }
+        .cf-logout-btn {
+            margin-left: auto;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.08);
+            border-radius: 0.6rem;
+            font-weight: 800;
+            font-size: 0.78rem;
+            padding: 0.42rem 0.65rem;
+            cursor: pointer;
+        }
+        .cf-logout-btn:hover { background: rgba(255,255,255,0.14); }
 
         .cf-fb-menu { min-width: 640px; }
         .cf-fb-grid { display:grid; grid-template-columns: repeat(3, minmax(170px, 1fr)); gap: 0.6rem; }
@@ -211,6 +223,7 @@
             </div>
             ${seniorMenuHtml}
             ${futbolBaseMenuHtml}
+            <button type="button" class="cf-logout-btn" id="cf-logout-btn">Tancar sessió</button>
         </div>
     `;
 
@@ -251,4 +264,14 @@
             seniorDrop.classList.remove('open');
         }
     });
+
+    const logoutBtn = document.getElementById('cf-logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function () {
+            try {
+                await fetch(`${base}/api/auth/logout`, { method: 'POST', credentials: 'same-origin' });
+            } catch (_) {}
+            window.location.href = `${base}/login.html`;
+        });
+    }
 })();

@@ -41,6 +41,30 @@ function normalizeSupabaseServiceKey(value) {
         .trim();
 }
 
+function normalizeSupabaseAuthKey(value) {
+    const cleaned = cleanEnvVar(value);
+    if (!cleaned) return '';
+
+    const compact = cleaned.replace(/\s+/g, '');
+
+    const tokenMatch = compact.match(/(sb_(?:publishable|secret)_[A-Za-z0-9._-]+)/i);
+    if (tokenMatch && tokenMatch[1]) {
+        return tokenMatch[1];
+    }
+
+    const jwtMatch = compact.match(/(eyJ[A-Za-z0-9._-]+)/);
+    if (jwtMatch && jwtMatch[1]) {
+        return jwtMatch[1];
+    }
+
+    return compact
+        .replace(/^apikey[:=]/i, '')
+        .replace(/^key[:=]/i, '')
+        .replace(/^token[:=]/i, '')
+        .replace(/^bearer[:=]?/i, '')
+        .trim();
+}
+
 function normalizeSupabaseUrl(value) {
     const cleaned = cleanEnvVar(value);
     if (!cleaned) return '';
@@ -96,12 +120,17 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = normalizeSupabaseServiceKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const SUPABASE_AUTH_KEY = normalizeSupabaseAuthKey(
+    process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
+);
 const IS_RENDER = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
 const HAS_SUPABASE_CONFIG = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const IS_PUBLISHABLE_KEY = String(SUPABASE_SERVICE_ROLE_KEY || '').startsWith('sb_publishable_');
 const USE_SUPABASE = HAS_SUPABASE_CONFIG;
+const AUTH_REQUIRED = USE_SUPABASE;
 const SUPABASE_SECCIONS_TABLE = 'seccions_data';
 const supabaseBaseUrl = USE_SUPABASE ? new URL(SUPABASE_URL) : null;
+const sessionCache = new Map();
 
 if (IS_RENDER && !HAS_SUPABASE_CONFIG) {
     throw new Error('Render sense Supabase configurat: cal definir SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY');
@@ -109,6 +138,10 @@ if (IS_RENDER && !HAS_SUPABASE_CONFIG) {
 
 if (HAS_SUPABASE_CONFIG && IS_PUBLISHABLE_KEY) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY no pot ser una clau publishable (sb_publishable_*). Usa service_role o secret de servidor.');
+}
+
+if (AUTH_REQUIRED && !SUPABASE_AUTH_KEY) {
+    throw new Error('Auth activada però falta SUPABASE_ANON_KEY o SUPABASE_PUBLISHABLE_KEY');
 }
 
 function ensureLocalDataFile() {
@@ -134,6 +167,65 @@ function readBody(req) {
         req.on('end', () => resolve(body));
         req.on('error', reject);
     });
+}
+
+function parseCookies(req) {
+    const header = req && req.headers ? req.headers.cookie : '';
+    if (!header) return {};
+    return header.split(';').reduce((acc, pair) => {
+        const idx = pair.indexOf('=');
+        if (idx === -1) return acc;
+        const key = pair.slice(0, idx).trim();
+        const value = pair.slice(idx + 1).trim();
+        acc[key] = decodeURIComponent(value);
+        return acc;
+    }, {});
+}
+
+function getSessionTokenFromRequest(req) {
+    const cookies = parseCookies(req);
+    if (cookies.cf_session) return String(cookies.cf_session).trim();
+
+    const authHeader = req && req.headers ? req.headers.authorization : '';
+    if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+        return authHeader.replace(/^Bearer\s+/i, '').trim();
+    }
+    return '';
+}
+
+function isPublicPath(pathname) {
+    const path = String(pathname || '');
+    return path === '/login.html' || path === '/auth.js' || path === '/favicon.ico' ||
+        path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session';
+}
+
+function setSessionCookie(res, token, maxAgeSeconds = 3600) {
+    const maxAge = Math.max(60, Number(maxAgeSeconds) || 3600);
+    const secure = IS_RENDER ? '; Secure' : '';
+    res.setHeader(
+        'Set-Cookie',
+        `cf_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${maxAge}`
+    );
+}
+
+function clearSessionCookie(res) {
+    const secure = IS_RENDER ? '; Secure' : '';
+    res.setHeader('Set-Cookie', `cf_session=; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=0`);
+}
+
+async function verifySupabaseSession(accessToken) {
+    const token = String(accessToken || '').trim();
+    if (!token) return null;
+
+    const cached = sessionCache.get(token);
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.user;
+    }
+
+    const user = await supabaseAuthRequest('GET', '/auth/v1/user', null, token);
+    if (!user || !user.id) return null;
+    sessionCache.set(token, { user, expiresAt: Date.now() + 30 * 1000 });
+    return user;
 }
 
 async function readDatabase() {
@@ -1563,7 +1655,76 @@ function supabaseRestRequest(method, endpointPath, body = null, preferHeader = n
     });
 }
 
-const server = http.createServer((req, res) => {
+function supabaseAuthRequest(method, endpointPath, body = null, bearerToken = null) {
+    return new Promise((resolve, reject) => {
+        if (!supabaseBaseUrl) {
+            reject(new Error('Supabase no configurat'));
+            return;
+        }
+
+        if (!SUPABASE_AUTH_KEY) {
+            reject(new Error('SUPABASE_AUTH_KEY no configurada'));
+            return;
+        }
+
+        const bodyString = body ? JSON.stringify(body) : null;
+        const headers = {
+            apikey: SUPABASE_AUTH_KEY,
+            'Content-Type': 'application/json'
+        };
+
+        if (bearerToken) {
+            headers.Authorization = `Bearer ${bearerToken}`;
+        }
+
+        if (bodyString) {
+            headers['Content-Length'] = Buffer.byteLength(bodyString);
+        }
+
+        const basePath = (supabaseBaseUrl.pathname || '/').replace(/\/+$/, '');
+        const fullPath = `${basePath}${endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`}`;
+
+        const req = https.request(
+            {
+                protocol: supabaseBaseUrl.protocol,
+                hostname: supabaseBaseUrl.hostname,
+                port: supabaseBaseUrl.port || 443,
+                method,
+                path: fullPath,
+                headers
+            },
+            res => {
+                let responseData = '';
+                res.on('data', chunk => {
+                    responseData += chunk;
+                });
+                res.on('end', () => {
+                    const statusCode = res.statusCode || 500;
+                    if (statusCode >= 200 && statusCode < 300) {
+                        if (!responseData) {
+                            resolve(null);
+                            return;
+                        }
+                        try {
+                            resolve(JSON.parse(responseData));
+                        } catch (_) {
+                            resolve(null);
+                        }
+                        return;
+                    }
+
+                    reject(new Error(`Supabase Auth HTTP ${statusCode}: ${responseData}`));
+                });
+            }
+        );
+
+        req.on('error', reject);
+        if (bodyString) req.write(bodyString);
+        req.end();
+    });
+}
+
+const server = http.createServer(async (req, res) => {
     const requestUrl = new URL(req.url, 'http://localhost');
     const pathname = requestUrl.pathname;
     const scopeParam = requestUrl.searchParams.get('scope');
@@ -1577,6 +1738,107 @@ const server = http.createServer((req, res) => {
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
         res.end();
+        return;
+    }
+
+    try {
+        if (AUTH_REQUIRED && !isPublicPath(pathname)) {
+            const token = getSessionTokenFromRequest(req);
+            const user = token ? await verifySupabaseSession(token) : null;
+
+            if (!user) {
+                if (pathname.startsWith('/api/')) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Unauthorized' }));
+                } else {
+                    res.writeHead(302, { Location: '/login.html' });
+                    res.end();
+                }
+                return;
+            }
+
+            req.authUser = user;
+        }
+    } catch (authErr) {
+        console.error('Auth guard error:', authErr && authErr.message ? authErr.message : authErr);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Auth guard failure' }));
+        return;
+    }
+
+    if (pathname === '/api/auth/login' && req.method === 'POST') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const email = String(parsed.email || '').trim();
+                const password = String(parsed.password || '').trim();
+
+                if (!email || !password) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Email i password obligatoris' }));
+                    return;
+                }
+
+                const session = await supabaseAuthRequest(
+                    'POST',
+                    '/auth/v1/token?grant_type=password',
+                    { email, password }
+                );
+
+                const accessToken = session && session.access_token ? String(session.access_token) : '';
+                const expiresIn = session && session.expires_in ? Number(session.expires_in) : 3600;
+
+                if (!accessToken) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Credencials invàlides' }));
+                    return;
+                }
+
+                setSessionCookie(res, accessToken, expiresIn);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: true }));
+            } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Login fallit', details: msg }));
+            }
+        })();
+        return;
+    }
+
+    if (pathname === '/api/auth/logout' && req.method === 'POST') {
+        clearSessionCookie(res);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+    }
+
+    if (pathname === '/api/auth/session' && req.method === 'GET') {
+        (async () => {
+            const token = getSessionTokenFromRequest(req);
+            if (!token) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ authenticated: false }));
+                return;
+            }
+
+            try {
+                const user = await verifySupabaseSession(token);
+                if (!user) {
+                    clearSessionCookie(res);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ authenticated: false }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ authenticated: true, user: { id: user.id, email: user.email || '' } }));
+            } catch (_) {
+                clearSessionCookie(res);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ authenticated: false }));
+            }
+        })();
         return;
     }
 
