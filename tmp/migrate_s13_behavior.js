@@ -1,235 +1,40 @@
-﻿<!DOCTYPE html>
-<html lang="ca">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S14 | CF Cardona</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
-        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
-        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
-        header{max-width:960px;margin:0 auto 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
-        h1{color:var(--primary);font-weight:800;font-size:1.5rem;}
-        .breadcrumb{font-size:0.85rem;color:#64748b;margin-top:0.25rem;}
-        .breadcrumb a{color:var(--primary);text-decoration:none;font-weight:600;}
-        .breadcrumb a:hover{text-decoration:underline;}
-        .card{background:white;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
-        .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
-        label{display:block;font-weight:700;font-size:0.82rem;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
-        textarea{width:100%;min-height:120px;padding:0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;resize:vertical;line-height:1.6;}
-        textarea:focus{border-color:var(--primary);}
-        input[type=text],input[type=tel],input[type=date],input[type=time],input[type=url]{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;}
-        input:focus,select:focus{border-color:var(--primary);}
-        select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:white;}
-        .staff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;}
-        .staff-member{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;}
-        .role-title{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:0.75rem;}
-        .staff-fields{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
-        .horari-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;margin-top:1rem;}
-        .horari-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
-        .horari-form-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:0.6rem;align-items:end;}
-        .horari-table{width:100%;border-collapse:collapse;font-size:0.88rem;}
-        .horari-table thead tr{background:#fee2e2;color:var(--primary);}
-        .horari-table th{padding:0.6rem 1rem;text-align:left;font-weight:700;}
-        .horari-table td{padding:0.65rem 1rem;border-bottom:1px solid var(--border);}
-        .horari-table tr:last-child td{border-bottom:none;}
-        .dia-badge{font-weight:800;color:var(--primary);}
-        .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
-        .comp-link-box{background:#fff5f5;border:1px solid #fecaca;border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;}
-        .fed-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.6rem 1.2rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;width:fit-content;transition:all 0.2s;}
-        .fed-link:hover{background:#b91c1c;}
-        .partit-list{margin-bottom:1rem;}
-        .partit-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
-        .partit-info{flex:1;}
-        .partit-header{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.3rem;}
-        .partit-date{font-weight:800;color:var(--primary);}
-        .type-amisto{background:#dbeafe;color:#1d4ed8;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
-        .type-torneig{background:#fef9c3;color:#854d0e;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:1rem;}
-        .partit-rival{font-weight:700;}
-        .partit-lloc{font-size:0.82rem;color:#64748b;}
-        .partit-result{font-size:0.82rem;color:#475569;}
-        .add-form-box{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
-        .add-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
-        .form-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;}
-        .form-row-3{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;}
-        .plantilla-placeholder{text-align:center;padding:3rem 2rem;background:#f8fafc;border-radius:0.75rem;border:2px dashed var(--border);}
-        .plantilla-placeholder span{font-size:2.5rem;display:block;margin-bottom:1rem;}
-        .plantilla-placeholder p{color:#94a3b8;font-size:0.95rem;margin-bottom:0.5rem;}
-        .plantilla-table{width:100%;border-collapse:collapse;font-size:0.88rem;}
-        .plantilla-table thead tr{background:#fee2e2;color:var(--primary);}
-        .plantilla-table th{padding:0.6rem 0.75rem;text-align:left;font-weight:700;}
-        .plantilla-table td{padding:0.6rem 0.75rem;border-bottom:1px solid var(--border);vertical-align:middle;}
-        .plantilla-table td input[type=text],
-        .plantilla-table td input[type=number]{margin:0;}
-        .plantilla-table td input[type=checkbox]{width:auto;}
-        .plantilla-actions{width:40px;text-align:right;}
-        .obs-list{margin-bottom:1rem;}
-        .obs-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;}
-        .obs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
-        .obs-meta{font-size:0.82rem;color:#64748b;}
-        .obs-meta strong{color:var(--primary);}
-        .obs-text{font-size:0.9rem;line-height:1.6;white-space:pre-wrap;}
-        .add-obs-form{background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1.25rem;}
-        .form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:1rem;}
-        .obs-form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-bottom:0.75rem;align-items:end;}
-        .btn{padding:0.65rem 1.5rem;border-radius:0.5rem;font-weight:700;cursor:pointer;border:none;font-size:0.88rem;}
-        .btn-primary{background:var(--primary);color:white;}
-        .btn-primary:hover{background:#b91c1c;}
-        .btn-save-main{background:var(--primary);color:white;border:none;padding:0.75rem 2rem;border-radius:0.5rem;font-weight:700;cursor:pointer;font-size:0.95rem;}
-        .btn-remove{background:none;border:none;color:var(--primary);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;}
-        .empty-msg{color:#94a3b8;font-size:0.85rem;padding:0.5rem;}
-        .coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-        .link-card{text-align:center;padding:2rem;background:linear-gradient(135deg,#fff,#fff5f5);border-radius:0.75rem;border:2px dashed #fca5a5;}
-        .link-card p{color:#64748b;font-size:0.9rem;margin-bottom:1.2rem;}
-        .btn-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.75rem 1.5rem;border-radius:0.5rem;font-weight:700;font-size:0.9rem;transition:all 0.2s;}
-        .btn-link:hover{background:#b91c1c;transform:translateY(-2px);box-shadow:0 4px 12px rgba(217,29,29,0.2);}
-        .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
-        .alert-banner{max-width:960px;margin:0 auto 1.5rem;background:#fff1f2;border:1px solid #fecaca;color:#b91c1c;border-radius:0.75rem;padding:0.9rem 1.1rem;font-weight:800;display:none;align-items:center;gap:0.6rem;box-shadow:0 4px 10px rgba(185,28,28,0.12);}
-        .alert-banner span{font-size:1.1rem;}
-        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
-    </style>
-</head>
-<body>
-    <header>
-        <div>
-            <h1>&#x2B50; S14</h1>
-            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; <a href="../estructura.html">Estructura Esportiva</a> &rarr; <a href="futbol-base-masculi.html">Futbol Base Masculí</a> &rarr; <a href="f11.html">F11</a> &rarr; S14</div>
-        </div>
-    </header>
-    <div id="plantilla_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="plantilla_alert_text"></div></div>
-    <div id="staff_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="staff_alert_text"></div></div>
-        <div class="card">
-        <h2>&#x1F91D; Staff</h2>
-        <div style="overflow-x:auto;">
-            <table class="plantilla-table">
-                <thead>
-                    <tr>
-                        <th>Rol</th>
-                        <th>Nom i Cognoms</th>
-                        <th>Telèfon</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="dia-badge">Primer Entrenador</td>
-                        <td><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
-                    </tr>
-                    <tr>
-                        <td class="dia-badge">Segon Entrenador</td>
-                        <td><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
-                    </tr>
-                    <tr>
-                        <td class="dia-badge">Tercer Entrenador</td>
-                        <td><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="card">
-        <h2>&#x1F4CB; Plantilla de Jugadors</h2>
-        <div style="overflow-x:auto;">
-            <table class="plantilla-table">
-                <thead>
-                    <tr>
-                        <th>Jugador</th>
-                        <th>Any de naixement</th>
-                        <th style="text-align:center;">Revisió mèdica</th>
-                        <th class="plantilla-actions"></th>
-                    </tr>
-                </thead>
-                <tbody id="plantilla_tbody"></tbody>
-            </table>
-        </div>
-        <div style="margin-top:2rem;">
-            <h3 style="color:#059669;font-size:0.95rem;font-weight:800;margin-bottom:1rem;border-bottom:2px solid #86efac;padding-bottom:0.5rem;">&#x1F31F; Suggeriments de Captació (Coincidència d'Edat i Gènere)</h3>
-            <div id="captacio_suggestions"></div>
-        </div>
-        <div class="add-form-box" style="margin-top:1rem;">
-            <div class="add-form-title">Afegir Jugador</div>
-            <div class="form-row-3">
-                <div><label>Nom i Cognoms</label><input type="text" id="p_nom" placeholder="Nom..."></div>
-                <div><label>Any de naixement</label><input type="number" id="p_naixement" min="1990" max="2030" placeholder="Ex: 2014"></div>
-                <div><label>Revisió mèdica</label><input type="checkbox" id="p_revisio"></div>
-            </div>
-            <div style="display:flex;justify-content:flex-end;">
-                <button class="btn btn-primary" onclick="addPlayer()">AFEGIR JUGADOR</button>
-            </div>
-        </div>
-    </div>
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:2px solid #fee2e2; padding-bottom:0.75rem;">
-            <h2 style="margin-bottom:0; border-bottom:none; padding-bottom:0;">&#x1F5D3; Horari d&apos;Entrenaments</h2>
-            <a href="horari-entrenaments.html" class="fed-link" style="font-size:0.75rem; padding:0.4rem 0.8rem;">GESTIONAR HORARIS</a>
-        </div>
-        <div id="horari_list" class="empty-msg">Sense sessions registrades.</div>
-    </div>
-    <div class="card">
-        <h2>&#x1F3C6; Competició</h2>
-        <div class="comp-grid">
-            <div><label>Categoria / Grup</label><input type="text" id="comp_categoria" placeholder="Ex: Quarta Catalana Grup 17" onchange="saveAll(true)"></div>
-            <div><label>Temporada</label><input type="text" id="comp_temporada" placeholder="Ex: 2024-2025" onchange="saveAll(true)"></div>
-        </div>
-        <div class="comp-link-box">
-            <div><label>Enllaç Federació Catalana de Futbol</label><input type="url" id="comp_url" placeholder="https://www.fcf.cat/..." onchange="saveAll(true)"></div>
-            <div><a id="comp_link_btn" href="#" target="_blank" class="fed-link" onclick="openFedLink(event)">&#x1F517; Obrir classificació a la FCF</a></div>
-        </div>
-    </div>
-    <div class="card">
-        <h2>&#x1F4C5; Partits Amistosos i Tornejos</h2>
-        <div id="partits_list" class="partit-list"><div class="empty-msg">Sense partits registrats.</div></div>
-        <div class="add-form-box">
-            <div class="add-form-title">Afegir Partit / Torneig</div>
-            <div class="form-row-4">
-                <div><label>Data</label><input type="date" id="p_data"></div>
-                <div><label>Tipus</label><select id="p_tipus"><option value="Amistós">Amistós</option><option value="Torneig">Torneig</option></select></div>
-                <div><label>Rival</label><input type="text" id="p_rival" placeholder="Nom del rival..."></div>
-                <div><label>Lloc</label><select id="p_lloc"><option value="Casa">Casa</option><option value="Fora">Fora</option><option value="Neutral">Neutral</option></select></div>
-            </div>
-            <div class="form-row-3">
-                <div><label>Resultat (opcional)</label><input type="text" id="p_resultat" placeholder="Ex: 2-1"></div>
-                <div><label>Nom torneig (si escau)</label><input type="text" id="p_torneig" placeholder="Ex: Torneig Festa Major"></div>
-                <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" style="width:100%;" onclick="addPartit()">AFEGIR PARTIT</button></div>
-            </div>
-        </div>
-    </div>
-    <div class="card">
-        <h2>&#x1F4AC; Observacions i Comentaris</h2>
-        <div id="obs_list" class="obs-list"><div class="empty-msg">Sense observacions registrades.</div></div>
-        <div class="add-obs-form">
-            <div class="form-title">Nou Comentari</div>
-            <div class="obs-form-row">
-                <div><label>Autor</label><input type="text" id="obs_autor" placeholder="Qui fa el comentari..."></div>
-                <div><label>Data</label><input type="date" id="obs_data"></div>
-                <div><button class="btn btn-primary" onclick="addObs()">AFEGIR</button></div>
-            </div>
-            <div><label>Comentari</label><textarea id="obs_text" style="min-height:100px;" placeholder="Escriu el comentari..."></textarea></div>
-        </div>
-    </div>
-        <script>
+const fs = require('fs');
+const path = require('path');
+
+const base = 'c:/Work/CFCardona/seccions';
+const files = [
+  { file: 'minis.html', key: 'seccio_minis', year: 2021, minPlayers: 9, minLabel: 'F7' },
+  { file: 's7.html', key: 'seccio_s7', year: 2020, minPlayers: 9, minLabel: 'F7' },
+  { file: 's8.html', key: 'seccio_s8', year: 2019, minPlayers: 9, minLabel: 'F7' },
+  { file: 's9.html', key: 'seccio_s9', year: 2018, minPlayers: 9, minLabel: 'F7' },
+  { file: 's10.html', key: 'seccio_s10', year: 2017, minPlayers: 9, minLabel: 'F7' },
+  { file: 's11.html', key: 'seccio_s11', year: 2016, minPlayers: 9, minLabel: 'F7' },
+  { file: 's12.html', key: 'seccio_s12', year: 2015, minPlayers: 9, minLabel: 'F7' },
+  { file: 's14.html', key: 'seccio_s14', year: 2013, minPlayers: 15, minLabel: 'F11' },
+  { file: 's16.html', key: 'seccio_s16', year: 2011, minPlayers: 15, minLabel: 'F11' }
+];
+
+function buildScript({ key, year, minPlayers, minLabel }) {
+  return `    <script>
         const API='/api/players';
         const API_JUGADORS='/api/jugadors';
         const API_JUGADORS_SEGUIMENT='/api/jugadors-seguiment';
         const API_EQUIP_CONFIG='/api/equip-config';
         const API_HORARIOS='/api/horarios';
         const API_EQUIPS='/api/equips';
-        const KEY='seccio_s14';
-        const STORAGE_KEY=`${KEY}_local`;
+        const KEY='${key}';
+        const STORAGE_KEY=\`${'${KEY}_local'}\`;
         const IS_FILE=window.location.protocol==='file:';
-        const TARGET_YEAR=2013;
+        const TARGET_YEAR=${year};
         const TARGET_GENDER='Masculí';
-        const MIN_PLAYERS=15;
-        const MIN_LABEL='F11';
-        const PAGE_SLUG=((window.location.pathname||'').split('/').pop()||'').replace(/\.html$/i,'').trim().toLowerCase();
+        const MIN_PLAYERS=${minPlayers};
+        const MIN_LABEL='${minLabel}';
+        const PAGE_SLUG=((window.location.pathname||'').split('/').pop()||'').replace(/\\.html$/i,'').trim().toLowerCase();
         const TEAM_NAME=(function resolveTeamNameFromPage(){
             if(PAGE_SLUG==='minis') return 'Minis';
-            if(/^s\d+$/i.test(PAGE_SLUG)) return PAGE_SLUG.toUpperCase();
+            if(/^s\\d+$/i.test(PAGE_SLUG)) return PAGE_SLUG.toUpperCase();
             const fromKey=String(KEY||'').replace(/^seccio_/,'').replace(/-/g,' ').trim();
-            if(/^s\d+$/i.test(fromKey)) return fromKey.toUpperCase();
+            if(/^s\\d+$/i.test(fromKey)) return fromKey.toUpperCase();
             return fromKey.charAt(0).toUpperCase()+fromKey.slice(1);
         })();
 
@@ -239,10 +44,10 @@
 
         function normalizeDate(value){
             if(!value) return '';
-            if(/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-            if(/^\d{2}-\d{2}-\d{4}$/.test(value)){
+            if(/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return value;
+            if(/^\\d{2}-\\d{2}-\\d{4}$/.test(value)){
                 const parts=value.split('-');
-                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                return \`${'${parts[2]}-${parts[1]}-${parts[0]}'}\`;
             }
             return '';
         }
@@ -251,9 +56,9 @@
             if(value===null||value===undefined) return '';
             const raw=String(value).trim();
             if(!raw) return '';
-            if(/^\d{4}$/.test(raw)) return raw;
-            if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw.slice(0,4);
-            if(/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw.slice(-4);
+            if(/^\\d{4}$/.test(raw)) return raw;
+            if(/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return raw.slice(0,4);
+            if(/^\\d{2}-\\d{2}-\\d{4}$/.test(raw)) return raw.slice(-4);
             return '';
         }
 
@@ -265,22 +70,22 @@
         }
 
         function isNumericId(value){
-            return /^\d+$/.test(String(value||'').trim());
+            return /^\\d+$/.test(String(value||'').trim());
         }
 
         function normalizeName(value){
             return String(value||'')
                 .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g,'')
+                .replace(/[\\u0300-\\u036f]/g,'')
                 .toLowerCase()
                 .trim()
-                .replace(/\s+/g,' ');
+                .replace(/\\s+/g,' ');
         }
 
         function normalizeGender(value){
             return String(value||'')
                 .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g,'')
+                .replace(/[\\u0300-\\u036f]/g,'')
                 .toLowerCase()
                 .trim();
         }
@@ -294,7 +99,7 @@
                 const r=await fetch(API_EQUIPS);
                 if(!r.ok){
                     const errorText=await r.text();
-                    throw new Error(`GET equips ${r.status}: ${errorText}`);
+                    throw new Error(\`GET equips ${'${r.status}'}: ${'${errorText}'}\`);
                 }
                 const equips=await r.json();
                 if(!Array.isArray(equips)){
@@ -308,7 +113,7 @@
                 }
                 EQUIP_ID=match ? String(match.id ?? match.equip_id ?? '').trim() || null : null;
             }catch(e){
-                console.warn('No s\'ha pogut resoldre l\'equip:', e);
+                console.warn('No s\\'ha pogut resoldre l\\'equip:', e);
                 EQUIP_ID=null;
             }
         }
@@ -339,14 +144,24 @@
 
         async function loadCaptacioSuggestions(){
             captacioSuggestions=[];
-            if(IS_FILE) return;
             try{
-                const r=await fetch(API_JUGADORS_SEGUIMENT);
-                if(!r.ok){
-                    const errorText=await r.text();
-                    throw new Error(`GET jugadors-seguiment ${r.status}: ${errorText}`);
+                let players=[];
+                if(!IS_FILE){
+                    const r=await fetch(API_JUGADORS_SEGUIMENT);
+                    if(!r.ok){
+                        const errorText=await r.text();
+                        throw new Error(\`GET jugadors-seguiment ${'${r.status}'}: ${'${errorText}'}\`);
+                    }
+                    players=await r.json();
+                }else if(Array.isArray(db.captacio_futbol_base) && db.captacio_futbol_base.length){
+                    players=db.captacio_futbol_base;
+                }else{
+                    const raw=localStorage.getItem('captacio_futbol_base_local');
+                    if(raw){
+                        const localData=JSON.parse(raw);
+                        players=localData.captacio_futbol_base||[];
+                    }
                 }
-                const players=await r.json();
                 const targetGender=normalizeGender(TARGET_GENDER);
                 captacioSuggestions=(Array.isArray(players)?players:[]).filter(p=>{
                     const year=Number(normalizeBirthYear(p.any_naixement ?? p.naixement ?? ''));
@@ -367,7 +182,7 @@
                     const r=await fetch(API);
                     if(!r.ok){
                         const errorText=await r.text();
-                        throw new Error(`GET ${r.status}: ${errorText}`);
+                        throw new Error(\`GET ${'${r.status}'}: ${'${errorText}'}\`);
                     }
                     db=await r.json();
                 }else{
@@ -377,10 +192,10 @@
                 if(document.getElementById('descripcio')) document.getElementById('descripcio').value=d.descripcio||'';
 
                 if(!IS_FILE && EQUIP_ID){
-                    const rc=await fetch(`${API_EQUIP_CONFIG}?equipId=${encodeURIComponent(EQUIP_ID)}`);
+                    const rc=await fetch(\`${'${API_EQUIP_CONFIG}'}?equipId=${'${encodeURIComponent(EQUIP_ID)}'}\`);
                     if(!rc.ok){
                         const errorText=await rc.text();
-                        throw new Error(`GET equip-config ${rc.status}: ${errorText}`);
+                        throw new Error(\`GET equip-config ${'${rc.status}'}: ${'${errorText}'}\`);
                     }
                     const cfg=await rc.json();
                     SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=cfg[f]||'';});
@@ -401,7 +216,7 @@
                     const rh=await fetch(API_HORARIOS);
                     if(!rh.ok){
                         const errorText=await rh.text();
-                        throw new Error(`GET horarios ${rh.status}: ${errorText}`);
+                        throw new Error(\`GET horarios ${'${rh.status}'}: ${'${errorText}'}\`);
                     }
                     const allHoraris=await rh.json();
                     horaris=Array.isArray(allHoraris) ? allHoraris.filter(isHorariForEquip) : [];
@@ -412,10 +227,10 @@
                 }
 
                 if(!IS_FILE && EQUIP_ID){
-                    const rp=await fetch(`${API_JUGADORS}?equipId=${encodeURIComponent(EQUIP_ID)}`);
+                    const rp=await fetch(\`${'${API_JUGADORS}'}?equipId=${'${encodeURIComponent(EQUIP_ID)}'}\`);
                     if(!rp.ok){
                         const errorText=await rp.text();
-                        throw new Error(`GET jugadors ${rp.status}: ${errorText}`);
+                        throw new Error(\`GET jugadors ${'${rp.status}'}: ${'${errorText}'}\`);
                     }
                     const jugadors=await rp.json();
                     plantilla=Array.isArray(jugadors)?jugadors.map(j=>({
@@ -474,17 +289,17 @@
                         comp_temporada:(document.getElementById('comp_temporada')||{}).value||'',
                         comp_url:(document.getElementById('comp_url')||{}).value||''
                     };
-                    requests.push(fetch(`${API_EQUIP_CONFIG}?equipId=${encodeURIComponent(EQUIP_ID)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(equipPayload)}));
+                    requests.push(fetch(\`${'${API_EQUIP_CONFIG}'}?equipId=${'${encodeURIComponent(EQUIP_ID)}'}\`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(equipPayload)}));
                 }
 
                 const responses=await Promise.all(requests);
                 if(!responses[0].ok){
                     const errorText=await responses[0].text();
-                    throw new Error(`POST players ${responses[0].status}: ${errorText}`);
+                    throw new Error(\`POST players ${'${responses[0].status}'}: ${'${errorText}'}\`);
                 }
                 if(responses[1] && !responses[1].ok){
                     const errorText=await responses[1].text();
-                    throw new Error(`POST equip-config ${responses[1].status}: ${errorText}`);
+                    throw new Error(\`POST equip-config ${'${responses[1].status}'}: ${'${errorText}'}\`);
                 }
                 if(!silent) console.log('Guardat automàtic correcte');
             }catch(e){
@@ -554,7 +369,7 @@
             const staffAlertText=document.getElementById('staff_alert_text');
             if(alertBox && alertText){
                 if(plantilla.length < MIN_PLAYERS){
-                    alertText.textContent=`Equip amb ${plantilla.length} jugadors, el mínim recomanable son ${MIN_PLAYERS} jugadors per les plantilles de ${MIN_LABEL}!`;
+                    alertText.textContent=\`Equip amb ${'${plantilla.length}'} jugadors, el mínim recomanable son ${'${MIN_PLAYERS}'} jugadors per les plantilles de ${'${MIN_LABEL}'}!\`;
                     alertBox.style.display='flex';
                 }else{
                     alertBox.style.display='none';
@@ -567,7 +382,7 @@
                 if(!primerNom.trim()) missing.push('primer entrenador');
                 if(!segonNom.trim()) missing.push('segon entrenador');
                 if(missing.length){
-                    staffAlertText.textContent=`Falta ${missing.join(' i ' )} a l'equip!`;
+                    staffAlertText.textContent=\`Falta ${'${missing.join(\' i \' )}'} a l'equip!\`;
                     staffAlert.style.display='flex';
                 }else{
                     staffAlert.style.display='none';
@@ -581,9 +396,9 @@
                 const checked=p.revisio?'checked':'';
                 const birthYear=normalizeBirthYear(p.naixement||'');
                 return '<tr>'
-                    +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
-                    +'<td><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
-                    +'<td style="text-align:center;"><input type="checkbox" '+checked+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
+                    +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\\'nom\\',this.value)"></td>'
+                    +'<td><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\\'naixement\\',this.value)"></td>'
+                    +'<td style="text-align:center;"><input type="checkbox" '+checked+' onchange="updatePlayer('+i+',\\'revisio\\',this.checked)"></td>'
                     +'<td class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
             }).join('');
@@ -594,10 +409,10 @@
             const naixement=normalizeBirthYear(document.getElementById('p_naixement').value);
             const revisio=document.getElementById('p_revisio').checked;
             if(!nom){alert('Introdueix el nom del jugador.');return;}
-            if(!isValidBirthYear(naixement)){alert('Introdueix un any de naixement àlid (format YYYY).');return;}
+            if(!isValidBirthYear(naixement)){alert('Introdueix un any de naixement vàlid (format YYYY).');return;}
 
             if(IS_FILE){
-                plantilla.push({id:`local_${Date.now()}`,nom,naixement,revisio});
+                plantilla.push({id:\`local_${'${Date.now()}'}\`,nom,naixement,revisio});
                 document.getElementById('p_nom').value='';
                 document.getElementById('p_naixement').value='';
                 document.getElementById('p_revisio').checked=false;
@@ -607,7 +422,7 @@
             }
 
             if(!EQUIP_ID){
-                alert('No s\'ha pogut resoldre l\'equip d\'aquesta pàgina.');
+                alert('No s\\'ha pogut resoldre l\\'equip d\\'aquesta pàgina.');
                 return;
             }
 
@@ -615,7 +430,7 @@
                 const r=await fetch(API_JUGADORS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equip_id:EQUIP_ID,nom,any_naixement:naixement,revisio_medica:revisio})});
                 if(!r.ok){
                     const errorText=await r.text();
-                    throw new Error(`POST jugadors ${r.status}: ${errorText}`);
+                    throw new Error(\`POST jugadors ${'${r.status}'}: ${'${errorText}'}\`);
                 }
                 const payload=await r.json();
                 const created=payload&&payload.jugador?payload.jugador:null;
@@ -636,22 +451,22 @@
             const container=document.getElementById('captacio_suggestions');
             if(!container) return;
             if(!captacioSuggestions||!captacioSuggestions.length){
-                container.innerHTML='<div class="empty-msg">No hi ha jugadors en Captació que coincideixin amb aquest equip.</div>';
+                container.innerHTML='<div class="empty-msg">No hi ha jugadors en captació que coincideixin amb aquest equip.</div>';
                 return;
             }
             container.innerHTML=captacioSuggestions.map(p=>{
                 const posicions=Array.isArray(p.posicions)?p.posicions.join(', '):'';
-                const club=p.club?`<strong>Club:</strong> ${esc(p.club)}<br>`:'';
-                const tel=p.tel?`<strong>Tel:</strong> ${esc(p.tel)}<br>`:'';
-                const poblacio=p.poblacio?`<strong>Població:</strong> ${esc(p.poblacio)}<br>`:'';
-                const situacio=p.situacio?`<strong>Situació:</strong> ${esc(p.situacio)}`:'';
+                const club=p.club?\`<strong>Club:</strong> ${'${esc(p.club)}'}<br>\`:'';
+                const tel=p.tel?\`<strong>Tel:</strong> ${'${esc(p.tel)}'}<br>\`:'';
+                const poblacio=p.poblacio?\`<strong>Població:</strong> ${'${esc(p.poblacio)}'}<br>\`:'';
+                const situacio=p.situacio?\`<strong>Situació:</strong> ${'${esc(p.situacio)}'}\`:'';
                 const genderBadge=p.genere==='Masculí'?'<span class="gender-masculi" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#dbeafe;color:#1d4ed8;margin-left:0.5rem;">'+esc(p.genere)+'</span>':'<span class="gender-femeni" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fce7f3;color:#be185d;margin-left:0.5rem;">'+esc(p.genere)+'</span>';
                 const yearBadge='<span class="year-badge" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fef3c7;color:#92400e;margin-left:0.5rem;">'+esc(normalizeBirthYear(p.any_naixement||p.naixement||''))+'</span>';
                 return '<div class="obs-item" style="background:#f0fdf4;border:1px solid #86efac;"><div class="obs-header"><div style="font-size:0.95rem;"><strong style="color:#059669;">'+esc(p.nom||'Sense nom')+'</strong>'+genderBadge+yearBadge+'</div></div><div style="font-size:0.82rem;color:#475569;line-height:1.6;">'+club+tel+poblacio+'<strong>Posicions:</strong> '+esc(posicions)+'<br>'+situacio+'</div></div>';
             }).join('');
         }
 
-                window.updatePlayer=async function(index,field,value){
+        window.updatePlayer=function(index,field,value){
             if(!plantilla[index]) return;
             if(field==='revisio') plantilla[index].revisio=!!value;
             if(field==='nom') plantilla[index].nom=value;
@@ -674,16 +489,9 @@
             if(field==='naixement') body.any_naixement=player.naixement;
             if(field==='revisio') body.revisio_medica=player.revisio;
 
-            try{
-                const r=await fetch(API_JUGADORS,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-                if(!r.ok){
-                    const errorText=await r.text();
-                    throw new Error(errorText);
-                }
-            }catch(e){
-                alert('No s\'ha pogut actualitzar el jugador');
-                await load();
-            }
+            fetch(API_JUGADORS,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+                .then(async r=>{if(!r.ok){const errorText=await r.text();throw new Error(errorText);}})
+                .catch(()=>{console.warn('No s\\'ha pogut actualitzar el jugador');});
         };
 
         window.removePlayer=async function(index){
@@ -699,10 +507,10 @@
             }
 
             try{
-                const r=await fetch(`${API_JUGADORS}?id=${encodeURIComponent(player.id)}`,{method:'DELETE'});
+                const r=await fetch(\`${'${API_JUGADORS}'}?id=${'${encodeURIComponent(player.id)}'}\`,{method:'DELETE'});
                 if(!r.ok){
                     const errorText=await r.text();
-                    throw new Error(`DELETE jugadors ${r.status}: ${errorText}`);
+                    throw new Error(\`DELETE jugadors ${'${r.status}'}: ${'${errorText}'}\`);
                 }
                 plantilla.splice(index,1);
                 renderPlantilla();
@@ -740,9 +548,20 @@
         function fmtDate(d){if(!d)return'-';return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});}
         function esc(t){if(!t && t!==0)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
         load();
-    </script>
-</body>
-</html>
+    </script>`;
+}
 
+for (const cfg of files) {
+  const filePath = path.join(base, cfg.file);
+  let html = fs.readFileSync(filePath, 'utf8');
 
+  html = html.replace('.plantilla-table td input[type=date]{margin:0;}', '.plantilla-table td input[type=number]{margin:0;}');
+  html = html.replace('<th>Data de naixement</th>', '<th>Any de naixement</th>');
+  html = html.replace('<div><label>Data de naixement</label><input type="date" id="p_naixement"></div>', '<div><label>Any de naixement</label><input type="number" id="p_naixement" min="1990" max="2030" placeholder="Ex: 2014"></div>');
 
+  html = html.replace(/<script>[\s\S]*?<\/script>/, buildScript(cfg));
+
+  fs.writeFileSync(filePath, html, 'utf8');
+}
+
+console.log('Updated files:', files.map(f=>f.file).join(', '));

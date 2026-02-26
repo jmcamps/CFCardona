@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -151,7 +151,7 @@
         <h2>&#x1F50E; Scouting i Captaci&oacute;</h2>
         <div class="link-card">
             <p>Gesti&oacute; centralitzada del mercat, seguiment de jugadors externs i base de dades de contactes (Cartera del Club).</p>
-            <a href="scouting.html" class="btn-link">&#x1F50E; ACCEDIR A LA CARTERA DE JUGADORS &rarr;</a>
+            <a href="captacio-senior.html" class="btn-link">&#x1F50E; ACCEDIR A LA CARTERA DE JUGADORS &rarr;</a>
         </div>
     </div>
     <div class="card">
@@ -169,9 +169,10 @@
     </div>
     <script>
         const API='/api/players';
+        const API_OBS='/api/observacions';
         const KEY='seccio_comissio';
         let db={},observacions=[],horaris=[],partits=[];
-        const SF=undefined;
+        const SF=[];
         const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
         const TEAMS=[
             {id:'seccio_primer-equip', name:'Primer Equip'},
@@ -195,13 +196,17 @@
                 ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
                     const el=document.getElementById(f); if(el) el.value=d[f]||'';
                 });
-                horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
+                horaris=d.horaris||[]; partits=d.partits||[];
+
+                const ro=await fetch(`${API_OBS}?scope=${encodeURIComponent(KEY)}`);
+                observacions = ro.ok ? await ro.json() : [];
+                if(!Array.isArray(observacions)) observacions=[];
                 renderHorari(); renderPartits(); renderObs();
             }catch(e){ console.warn('Servidor no disponible'); }
         }
 
         async function saveAll(silent = false){
-            db[KEY]={horaris,partits,observacions};
+            db[KEY]={horaris,partits};
             if(document.getElementById('descripcio')) db[KEY].descripcio=document.getElementById('descripcio').value;
             SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
             ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
@@ -259,24 +264,42 @@
         if(document.getElementById('obs_data')) document.getElementById('obs_data').value=today;
         window.addObs=async function(){
             const text=document.getElementById('obs_text').value.trim(); if(!text)return;
-            observacions.unshift({autor:document.getElementById('obs_autor').value||'Anònim',
-                data:document.getElementById('obs_data').value,text});
+            const novaObs={
+                autor:document.getElementById('obs_autor').value||'Anònim',
+                data:document.getElementById('obs_data').value,
+                text
+            };
             document.getElementById('obs_text').value='';
             document.getElementById('obs_autor').value='';
             document.getElementById('obs_data').value=today;
-            renderObs();
-            await saveAll(true);
+
+            try{
+                const r=await fetch(`${API_OBS}?scope=${encodeURIComponent(KEY)}`,
+                    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(novaObs)});
+                if(!r.ok) throw new Error('No s\'ha pogut guardar');
+                const payload = await r.json();
+                const created = payload && payload.observacio ? payload.observacio : novaObs;
+                observacions.unshift(created);
+                renderObs();
+            }catch(e){
+                alert('Error al guardar observació');
+            }
         };
-        window.removeObs=async function(i){
+        window.removeObs=async function(id){
             if(!confirm('Segur que vols eliminar aquest comentari?')) return;
-            observacions.splice(i,1);
-            renderObs();
-            await saveAll(true);
+            try{
+                const r=await fetch(`${API_OBS}?scope=${encodeURIComponent(KEY)}&id=${encodeURIComponent(id)}`,{method:'DELETE'});
+                if(!r.ok) throw new Error('No s\'ha pogut eliminar');
+                observacions=observacions.filter(o=>String(o.id)!==String(id));
+                renderObs();
+            }catch(e){
+                alert('Error al eliminar observació');
+            }
         };
         function renderObs(){
             const el=document.getElementById('obs_list'); if(!el)return;
             if(!observacions.length){el.innerHTML='<div class="empty-msg">Sense observacions registrades.</div>';return;}
-            el.innerHTML=observacions.map((o,i)=>'<div class="obs-item"><div class="obs-header"><div class="obs-meta"><strong>'+esc(o.autor)+'</strong> &mdash; '+fmtDate(o.data)+'</div><button class="btn-remove" onclick="removeObs('+i+')">&#x00D7;</button></div><div class="obs-text">'+esc(o.text)+'</div></div>').join('');
+            el.innerHTML=observacions.map(o=>'<div class="obs-item"><div class="obs-header"><div class="obs-meta"><strong>'+esc(o.autor)+'</strong> &mdash; '+fmtDate(o.data)+'</div><button class="btn-remove" onclick="removeObs(\''+esc(String(o.id||''))+'\')">&#x00D7;</button></div><div class="obs-text">'+esc(o.text)+'</div></div>').join('');
         }
 
         function fmtDate(d){if(!d)return'-';return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -285,3 +308,4 @@
     </script>
 </body>
 </html>
+

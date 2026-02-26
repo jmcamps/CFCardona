@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -135,29 +135,34 @@
     <div id="plantilla_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="plantilla_alert_text"></div></div>
     <div id="staff_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="staff_alert_text"></div></div>
     <div class="card">
-        <h2>&#x1F91D; Staff T&egrave;cnic</h2>
-        <div class="staff-grid">
-            <div class="staff-member">
-                <div class="role-title">Primer Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_primer_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
-            <div class="staff-member">
-                <div class="role-title">Segon Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_segon_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
-            <div class="staff-member">
-                <div class="role-title">Tercer Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_tercer_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
+        <h2>&#x1F91D; Staff</h2>
+        <div style="overflow-x:auto;">
+            <table class="plantilla-table">
+                <thead>
+                    <tr>
+                        <th>Rol</th>
+                        <th>Nom i Cognoms</th>
+                        <th>Telèfon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="dia-badge">Primer Entrenador</td>
+                        <td><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td class="dia-badge">Segon Entrenador</td>
+                        <td><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td class="dia-badge">Tercer Entrenador</td>
+                        <td><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     <div class="card">
@@ -167,7 +172,7 @@
                 <thead>
                     <tr>
                         <th>Jugadora</th>
-                        <th>Data de naixement</th>
+                        <th>Any de naixement</th>
                         <th style="text-align:center;">Revisi&oacute; m&egrave;dica</th>
                         <th class="plantilla-actions"></th>
                     </tr>
@@ -183,7 +188,7 @@
             <div class="add-form-title">Afegir Jugadora</div>
             <div class="form-row-3">
                 <div><label>Nom i Cognoms</label><input type="text" id="p_nom" placeholder="Nom..."></div>
-                <div><label>Data de naixement</label><input type="date" id="p_naixement"></div>
+                <div><label>Any de naixement</label><input type="number" id="p_naixement" min="1990" max="2030" placeholder="Ex: 2009"></div>
                 <div><label>Revisi&oacute; m&egrave;dica</label><input type="checkbox" id="p_revisio"></div>
             </div>
             <div style="display:flex;justify-content:flex-end;">
@@ -242,12 +247,17 @@
     </div>
     <script>
         const API='/api/players';
+        const API_JUGADORS='/api/jugadors';
+        const API_JUGADORS_SEGUIMENT='/api/jugadors-seguiment';
+        const API_EQUIP_CONFIG='/api/equip-config';
+        const API_HORARIOS='/api/horarios';
+        const EQUIP_ID=17;
         const KEY='seccio_juvenil-femeni';
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
-        let db={},observacions=[],horaris=[],partits=[],plantilla=[],captacioSuggestions=[];
-        const SF=["s_primer_entrenador_nom","s_primer_entrenador_tel","s_segon_entrenador_nom","s_segon_entrenador_tel","s_tercer_entrenador_nom","s_tercer_entrenador_tel"];
-
+        const TARGET_MIN_YEAR=2007;
+        const TARGET_MAX_YEAR=2009;
+        const TARGET_GENDER='Femení';
         const MIN_PLAYERS=14;
         const MIN_LABEL='Juvenil Femení';
         const DEFAULT_PLANTILLA=[
@@ -272,6 +282,9 @@
             {nom:'RODRÍGUEZ FORTUNATO, ZAIRA', naixement:'09-10-2008', revisio:false}
         ];
 
+        let db={},observacions=[],horaris=[],partits=[],plantilla=[],captacioSuggestions=[];
+        const SF=["s_primer_entrenador_nom","s_primer_entrenador_tel","s_segon_entrenador_nom","s_segon_entrenador_tel","s_tercer_entrenador_nom","s_tercer_entrenador_tel"];
+
         function normalizeDate(value){
             if(!value) return '';
             if(/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -282,10 +295,45 @@
             return '';
         }
 
+        function normalizeGender(value){
+            return String(value||'')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'')
+                .toLowerCase()
+                .trim();
+        }
+
+        function normalizeBirthYear(value){
+            if(value===null||value===undefined) return '';
+            const raw=String(value).trim();
+            if(!raw) return '';
+            if(/^\d{4}$/.test(raw)) return raw;
+            if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw.slice(0,4);
+            if(/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw.slice(-4);
+            return '';
+        }
+
+        function isValidBirthYear(yearValue){
+            const yearText=normalizeBirthYear(yearValue);
+            if(!yearText) return false;
+            const year=Number(yearText);
+            return Number.isInteger(year) && year>=1900 && year<=2100;
+        }
+
+        function isNumericId(value){
+            return /^\d+$/.test(String(value||'').trim());
+        }
+
+        function isHorariForEquip(horari){
+            const rawId = horari && (horari.team_id ?? horari.equip_id ?? '');
+            const id = String(rawId || '').trim();
+            return id === String(EQUIP_ID);
+        }
+
         function seedPlantilla(){
             return DEFAULT_PLANTILLA.map(p=>({
                 nom:p.nom,
-                naixement:normalizeDate(p.naixement),
+                naixement:normalizeBirthYear(p.naixement),
                 revisio:!!p.revisio
             }));
         }
@@ -307,21 +355,24 @@
             }
         }
 
-        function loadCaptacioSuggestions(){
-            console.log('[juvenil-femeni] loadCaptacioSuggestions called, IS_FILE=', IS_FILE);
+        async function loadCaptacioSuggestions(){
             captacioSuggestions=[];
+            if(IS_FILE) return;
             try{
-                const raw=localStorage.getItem('captacio_futbol_base_local');
-                if(!raw) return;
-                const data=JSON.parse(raw);
-                const players=data.captacio_futbol_base||[];
-                const targetYear=2008;
-                const targetGender='Femení';
-                captacioSuggestions=players.filter(p=>{
-                    const yearMatch=Math.abs((p.any_naixement||0)-targetYear)<=1;
-                    const genderMatch=p.genere===targetGender;
-                    return yearMatch&&genderMatch;
+                const r=await fetch(API_JUGADORS_SEGUIMENT);
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`GET jugadors-seguiment ${r.status}: ${errorText}`);
+                }
+                const players=await r.json();
+                const targetGender=normalizeGender(TARGET_GENDER);
+                captacioSuggestions=(Array.isArray(players)?players:[]).filter(p=>{
+                    const year=Number(normalizeBirthYear(p.any_naixement ?? p.naixement ?? ''));
+                    const yearMatch=Number.isFinite(year) && year>=TARGET_MIN_YEAR && year<=TARGET_MAX_YEAR;
+                    const genderMatch=normalizeGender(p.genere)===targetGender;
+                    return yearMatch && genderMatch;
                 });
+                captacioSuggestions.sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||'')));
             }catch(e){
                 console.warn('Error carregant captació:',e);
             }
@@ -330,44 +381,131 @@
         async function load(){
             try{
                 if(!IS_FILE){
-                    const r=await fetch(API); db=await r.json();
+                    const r=await fetch(API);
+                    if(!r.ok){
+                        const errorText=await r.text();
+                        throw new Error(`GET ${r.status}: ${errorText}`);
+                    }
+                    db=await r.json();
                 }else{
                     db=loadFromStorage();
                 }
                 const d=db[KEY]||{};
-                SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
-                ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
-                    const el=document.getElementById(f); if(el) el.value=d[f]||'';
-                });
-                horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
-                if(Object.prototype.hasOwnProperty.call(d,'plantilla')){
+
+                if(!IS_FILE){
+                    const rc=await fetch(`${API_EQUIP_CONFIG}?equipId=${encodeURIComponent(EQUIP_ID)}`);
+                    if(!rc.ok){
+                        const errorText=await rc.text();
+                        throw new Error(`GET equip-config ${rc.status}: ${errorText}`);
+                    }
+                    const cfg=await rc.json();
+                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=cfg[f]||'';});
+                    ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
+                        const el=document.getElementById(f); if(el) el.value=cfg[f]||'';
+                    });
+                }else{
+                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
+                    ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
+                        const el=document.getElementById(f); if(el) el.value=d[f]||'';
+                    });
+                }
+
+                partits=d.partits||[];
+                observacions=d.observacions||[];
+
+                if(!IS_FILE){
+                    const rh=await fetch(API_HORARIOS);
+                    if(!rh.ok){
+                        const errorText=await rh.text();
+                        throw new Error(`GET horarios ${rh.status}: ${errorText}`);
+                    }
+                    const allHoraris=await rh.json();
+                    horaris=Array.isArray(allHoraris) ? allHoraris.filter(isHorariForEquip) : [];
+                }else if(IS_FILE){
+                    horaris=d.horaris||[];
+                }else{
+                    horaris=[];
+                }
+
+                if(!IS_FILE){
+                    const rp=await fetch(`${API_JUGADORS}?equipId=${encodeURIComponent(EQUIP_ID)}`);
+                    if(!rp.ok){
+                        const errorText=await rp.text();
+                        throw new Error(`GET jugadors ${rp.status}: ${errorText}`);
+                    }
+                    const jugadors=await rp.json();
+                    plantilla=Array.isArray(jugadors)?jugadors.map(j=>({
+                        id:j.id,
+                        nom:j.nom||'',
+                        naixement:normalizeBirthYear(j.any_naixement||j.naixement||''),
+                        revisio:!!j.revisio
+                    })):[];
+                }else if(IS_FILE && Object.prototype.hasOwnProperty.call(d,'plantilla')){
                     plantilla=Array.isArray(d.plantilla)?d.plantilla:[];
+                }else if(!IS_FILE){
+                    plantilla=[];
                 }else{
                     plantilla=seedPlantilla();
                 }
             }catch(e){
                 console.warn('Servidor no disponible');
-                if(!plantilla.length) plantilla=seedPlantilla();
+                if(IS_FILE){
+                    const d=db[KEY]||{};
+                    horaris=d.horaris||[];
+                    partits=d.partits||[];
+                    observacions=d.observacions||[];
+                    plantilla=Array.isArray(d.plantilla)?d.plantilla:seedPlantilla();
+                }
             }
             renderHorari(); renderPartits(); renderObs(); renderPlantilla();
-            loadCaptacioSuggestions(); renderCaptacioSuggestions();
+            await loadCaptacioSuggestions(); renderCaptacioSuggestions();
         }
 
         async function saveAll(silent = false){
             renderPlantilla();
-            db[KEY]={horaris,partits,observacions,plantilla};
-            SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
-            ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
-                const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
-            });
+            db[KEY]={horaris,partits,observacions};
+
             if(IS_FILE){
+                db[KEY].plantilla=plantilla;
+                SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
+                ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
+                    const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
+                });
                 saveToStorage();
                 return;
             }
+
             try{
-                await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+                const requests=[
+                    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)})
+                ];
+
+                const equipPayload={
+                    s_primer_entrenador_nom:(document.getElementById('s_primer_entrenador_nom')||{}).value||'',
+                    s_primer_entrenador_tel:(document.getElementById('s_primer_entrenador_tel')||{}).value||'',
+                    s_segon_entrenador_nom:(document.getElementById('s_segon_entrenador_nom')||{}).value||'',
+                    s_segon_entrenador_tel:(document.getElementById('s_segon_entrenador_tel')||{}).value||'',
+                    s_tercer_entrenador_nom:(document.getElementById('s_tercer_entrenador_nom')||{}).value||'',
+                    s_tercer_entrenador_tel:(document.getElementById('s_tercer_entrenador_tel')||{}).value||'',
+                    comp_categoria:(document.getElementById('comp_categoria')||{}).value||'',
+                    comp_temporada:(document.getElementById('comp_temporada')||{}).value||'',
+                    comp_url:(document.getElementById('comp_url')||{}).value||''
+                };
+                requests.push(fetch(`${API_EQUIP_CONFIG}?equipId=${encodeURIComponent(EQUIP_ID)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(equipPayload)}));
+
+                const responses=await Promise.all(requests);
+                if(!responses[0].ok){
+                    const errorText=await responses[0].text();
+                    throw new Error(`POST players ${responses[0].status}: ${errorText}`);
+                }
+                if(responses[1] && !responses[1].ok){
+                    const errorText=await responses[1].text();
+                    throw new Error(`POST equip-config ${responses[1].status}: ${errorText}`);
+                }
                 if(!silent) console.log('Guardat automàtic correcte');
-            }catch(e){ console.error('Error en el guardat automàtic'); }
+            }catch(e){
+                console.error('Error en el guardat automàtic:', e.message || e);
+            }
         }
 
         window.openFedLink=function(e){
@@ -446,10 +584,10 @@
             }
             body.innerHTML=plantilla.map((p,i)=>{
                 const checked=p.revisio?'checked':'';
-                const d=normalizeDate(p.naixement||'');
+                const d=normalizeBirthYear(p.naixement||'');
                 return '<tr>'
                     +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
-                    +'<td><input type="date" value="'+d+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
+                    +'<td><input type="number" min="1990" max="2030" value="'+d+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
                     +'<td style="text-align:center;"><input type="checkbox" '+checked+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
                     +'<td class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
@@ -458,15 +596,40 @@
 
         window.addPlayer=async function(){
             const nom=document.getElementById('p_nom').value.trim();
-            const naixement=document.getElementById('p_naixement').value;
+            const naixement=normalizeBirthYear(document.getElementById('p_naixement').value);
             const revisio=document.getElementById('p_revisio').checked;
             if(!nom){alert('Introdueix el nom de la jugadora.');return;}
-            plantilla.push({nom,naixement:normalizeDate(naixement),revisio});
+            if(!isValidBirthYear(naixement)){alert('Introdueix un any de naixement vàlid (format YYYY).');return;}
+
+            if(IS_FILE){
+                plantilla.push({id:`local_${Date.now()}`,nom,naixement,revisio});
+                document.getElementById('p_nom').value='';
+                document.getElementById('p_naixement').value='';
+                document.getElementById('p_revisio').checked=false;
+                renderPlantilla();
+                await saveAll(true);
+                return;
+            }
+
+            try{
+                const r=await fetch(API_JUGADORS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equip_id:EQUIP_ID,nom,any_naixement:naixement,revisio_medica:revisio})});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`POST jugadors ${r.status}: ${errorText}`);
+                }
+                const payload=await r.json();
+                const created=payload&&payload.jugador?payload.jugador:null;
+                if(created){
+                    plantilla.push({id:String(created.id),nom:created.nom||nom,naixement:normalizeBirthYear(created.any_naixement||created.naixement||naixement),revisio:!!created.revisio});
+                    plantilla.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+                }
+            }catch(e){
+                alert('Error al crear jugadora');
+            }
             document.getElementById('p_nom').value='';
             document.getElementById('p_naixement').value='';
             document.getElementById('p_revisio').checked=false;
             renderPlantilla();
-            await saveAll(true);
         };
 
         function renderCaptacioSuggestions(){
@@ -483,7 +646,7 @@
                 const poblacio=p.poblacio?`<strong>Població:</strong> ${esc(p.poblacio)}<br>`:'';
                 const situacio=p.situacio?`<strong>Situació:</strong> ${esc(p.situacio)}`:'';
                 const genderBadge=p.genere==='Masculí'?'<span class="gender-masculi" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#dbeafe;color:#1d4ed8;margin-left:0.5rem;">'+esc(p.genere)+'</span>':'<span class="gender-femeni" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fce7f3;color:#be185d;margin-left:0.5rem;">'+esc(p.genere)+'</span>';
-                const yearBadge='<span class="year-badge" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fef3c7;color:#92400e;margin-left:0.5rem;">'+esc(p.any_naixement)+'</span>';
+                const yearBadge='<span class="year-badge" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fef3c7;color:#92400e;margin-left:0.5rem;">'+esc(normalizeBirthYear(p.any_naixement||p.naixement||''))+'</span>';
                 return '<div class="obs-item" style="background:#f0fdf4;border:1px solid #86efac;"><div class="obs-header"><div style="font-size:0.95rem;"><strong style="color:#059669;">'+esc(p.nom||'Sense nom')+'</strong>'+genderBadge+yearBadge+'</div></div><div style="font-size:0.82rem;color:#475569;line-height:1.6;">'+club+tel+poblacio+'<strong>Posicions:</strong> '+esc(posicions)+'<br>'+situacio+'</div></div>';
             }).join('');
         }
@@ -492,15 +655,53 @@
             if(!plantilla[index]) return;
             if(field==='revisio') plantilla[index].revisio=!!value;
             if(field==='nom') plantilla[index].nom=value;
-            if(field==='naixement') plantilla[index].naixement=normalizeDate(value);
-            saveAll(true);
+            if(field==='naixement') plantilla[index].naixement=normalizeBirthYear(value);
+
+            if(field==='naixement' && !isValidBirthYear(plantilla[index].naixement)){
+                renderPlantilla();
+                return;
+            }
+
+            if(IS_FILE){
+                saveAll(true);
+                return;
+            }
+
+            const player=plantilla[index];
+            if(!isNumericId(player.id)) return;
+            const body={id:player.id};
+            if(field==='nom') body.nom=player.nom;
+            if(field==='naixement') body.any_naixement=player.naixement;
+            if(field==='revisio') body.revisio_medica=player.revisio;
+
+            fetch(API_JUGADORS,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+                .then(async r=>{if(!r.ok){const errorText=await r.text();throw new Error(errorText);}})
+                .catch(()=>{console.warn('No s\'ha pogut actualitzar la jugadora');});
         };
 
         window.removePlayer=async function(index){
             if(!confirm('Segur que vols eliminar aquesta jugadora?')) return;
-            plantilla.splice(index,1);
-            renderPlantilla();
-            await saveAll(true);
+            if(!plantilla[index]) return;
+            const player=plantilla[index];
+
+            if(IS_FILE || !isNumericId(player.id)){
+                plantilla.splice(index,1);
+                renderPlantilla();
+                if(IS_FILE) await saveAll(true);
+                return;
+            }
+
+            try{
+                const r=await fetch(`${API_JUGADORS}?id=${encodeURIComponent(player.id)}`,{method:'DELETE'});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`DELETE jugadors ${r.status}: ${errorText}`);
+                }
+                plantilla.splice(index,1);
+                renderPlantilla();
+            }catch(e){
+                alert('Error al eliminar jugadora');
+            }
         };
 
         const today=new Date().toISOString().split('T')[0];
@@ -528,7 +729,7 @@
         }
 
         function fmtDate(d){if(!d)return'-';return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});}
-        function esc(t){if(!t && t!==0)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}}
+        function esc(t){if(!t && t!==0)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
         load();
     </script>
 </body>

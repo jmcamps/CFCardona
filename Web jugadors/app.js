@@ -39,6 +39,7 @@ let currentSubstitutes = [];
 let globalDatabase = {}; // Cache de la BBDD del servidor
 
 const API_URL = '/api/players';
+const API_JUGADORS = '/api/jugadors';
 const IS_FILE = window.location.protocol === 'file:';
 
 const sidebarContent = document.getElementById('sidebar-content');
@@ -83,6 +84,45 @@ async function init() {
             console.warn("Servidor de BBDD no disponible. Intentant localStorage...");
             loadFromLocalStorage();
         }
+    }
+
+    await selectPlayerFromUrl();
+}
+
+async function selectPlayerFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const playerId = urlParams.get('playerId');
+    const playerName = urlParams.get('player');
+
+    if (playerId && !IS_FILE) {
+        try {
+            const response = await fetch(API_JUGADORS);
+            if (response.ok) {
+                const jugadors = await response.json();
+                const selected = Array.isArray(jugadors)
+                    ? jugadors.find(j => String(j.id) === String(playerId))
+                    : null;
+                if (selected && selected.nom) {
+                    const item = document.querySelector(`.player-item[data-id="${selected.nom}"]`);
+                    if (item) {
+                        selectPlayer(selected.nom);
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('No s\'ha pogut resoldre el jugador per ID:', e);
+        }
+    }
+
+    if (playerName) {
+        const decodedPlayerName = decodeURIComponent(playerName);
+        const item = document.querySelector(`.player-item[data-id="${decodedPlayerName}"]`);
+        if (item) {
+            selectPlayer(decodedPlayerName);
+            return;
+        }
+        console.warn(`Jugador "${decodedPlayerName}" no trobat.`);
     }
 }
 

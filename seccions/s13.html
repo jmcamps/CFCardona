@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -61,7 +61,7 @@
         .plantilla-table th{padding:0.6rem 0.75rem;text-align:left;font-weight:700;}
         .plantilla-table td{padding:0.6rem 0.75rem;border-bottom:1px solid var(--border);vertical-align:middle;}
         .plantilla-table td input[type=text],
-        .plantilla-table td input[type=date]{margin:0;}
+        .plantilla-table td input[type=number]{margin:0;}
         .plantilla-table td input[type=checkbox]{width:auto;}
         .plantilla-actions{width:40px;text-align:right;}
         .obs-list{margin-bottom:1rem;}
@@ -100,29 +100,34 @@
     <div id="plantilla_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="plantilla_alert_text"></div></div>
     <div id="staff_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="staff_alert_text"></div></div>
     <div class="card">
-        <h2>&#x1F91D; Staff T&egrave;cnic</h2>
-        <div class="staff-grid">
-            <div class="staff-member">
-                <div class="role-title">Primer Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_primer_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
-            <div class="staff-member">
-                <div class="role-title">Segon Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_segon_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
-            <div class="staff-member">
-                <div class="role-title">Tercer Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_tercer_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
+        <h2>&#x1F91D; Staff</h2>
+        <div style="overflow-x:auto;">
+            <table class="plantilla-table">
+                <thead>
+                    <tr>
+                        <th>Rol</th>
+                        <th>Nom i Cognoms</th>
+                        <th>Telèfon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="dia-badge">Primer Entrenador</td>
+                        <td><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td class="dia-badge">Segon Entrenador</td>
+                        <td><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td class="dia-badge">Tercer Entrenador</td>
+                        <td><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     <div class="card">
@@ -132,8 +137,8 @@
                 <thead>
                     <tr>
                         <th>Jugador</th>
-                        <th>Data de naixement</th>
-                        <th style="text-align:center;">Revisi&oacute; m&egrave;dica</th>
+                        <th>Any de naixement</th>
+                        <th style="text-align:center;">Revisió mèdica</th>
                         <th class="plantilla-actions"></th>
                     </tr>
                 </thead>
@@ -148,8 +153,8 @@
             <div class="add-form-title">Afegir Jugador</div>
             <div class="form-row-3">
                 <div><label>Nom i Cognoms</label><input type="text" id="p_nom" placeholder="Nom..."></div>
-                <div><label>Data de naixement</label><input type="date" id="p_naixement"></div>
-                <div><label>Revisi&oacute; m&egrave;dica</label><input type="checkbox" id="p_revisio"></div>
+                <div><label>Any de naixement</label><input type="number" id="p_naixement" min="1990" max="2030" placeholder="Ex: 2014"></div>
+                <div><label>Revisió mèdica</label><input type="checkbox" id="p_revisio"></div>
             </div>
             <div style="display:flex;justify-content:flex-end;">
                 <button class="btn btn-primary" onclick="addPlayer()">AFEGIR JUGADOR</button>
@@ -164,14 +169,14 @@
         <div id="horari_list" class="empty-msg">Sense sessions registrades.</div>
     </div>
     <div class="card">
-        <h2>&#x1F3C6; Competici&oacute;</h2>
+        <h2>&#x1F3C6; Competició</h2>
         <div class="comp-grid">
             <div><label>Categoria / Grup</label><input type="text" id="comp_categoria" placeholder="Ex: Quarta Catalana Grup 17" onchange="saveAll(true)"></div>
             <div><label>Temporada</label><input type="text" id="comp_temporada" placeholder="Ex: 2024-2025" onchange="saveAll(true)"></div>
         </div>
         <div class="comp-link-box">
-            <div><label>Enlla&ccedil; Federaci&oacute; Catalana de Futbol</label><input type="url" id="comp_url" placeholder="https://www.fcf.cat/..." onchange="saveAll(true)"></div>
-            <div><a id="comp_link_btn" href="#" target="_blank" class="fed-link" onclick="openFedLink(event)">&#x1F517; Obrir classificaci&oacute; a la FCF</a></div>
+            <div><label>Enllaç Federació Catalana de Futbol</label><input type="url" id="comp_url" placeholder="https://www.fcf.cat/..." onchange="saveAll(true)"></div>
+            <div><a id="comp_link_btn" href="#" target="_blank" class="fed-link" onclick="openFedLink(event)">&#x1F517; Obrir classificació a la FCF</a></div>
         </div>
     </div>
     <div class="card">
@@ -207,6 +212,13 @@
     </div>
     <script>
         const API='/api/players';
+        const API_JUGADORS='/api/jugadors';
+        const API_JUGADORS_SEGUIMENT='/api/jugadors-seguiment';
+        const API_EQUIP_CONFIG='/api/equip-config';
+        const API_HORARIOS='/api/horarios';
+        const EQUIP_ID=10;
+        const S13_TARGET_YEAR=2014;
+        const S13_TARGET_GENDER='Masculí';
         const KEY='seccio_s13';
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
@@ -230,21 +242,7 @@
 
         const MIN_PLAYERS=15;
         const MIN_LABEL='F11';
-        const DEFAULT_PLANTILLA=[
-            {nom:'AL AABBAOUI JAMILI, MAHMOUD', naixement:'04-12-2014', revisio:false},
-            {nom:'ARNAU CASAHUGA, EUDALD', naixement:'13-09-2014', revisio:false},
-            {nom:'PALAU BELMONTE, ROC', naixement:'17-07-2014', revisio:false},
-            {nom:'CAMPS GALERA, PAU', naixement:'13-05-2014', revisio:false},
-            {nom:'COROMINAS ROLDAN, POL', naixement:'07-09-2014', revisio:false},
-            {nom:'FLORES SALA, MARC', naixement:'16-05-2014', revisio:false},
-            {nom:'JODAR ALTIMIRAS, MARCEL', naixement:'29-11-2014', revisio:false},
-            {nom:'LARA CALLE, MARTI', naixement:'29-04-2014', revisio:false},
-            {nom:'MARTIN SOTO, IKER', naixement:'08-09-2014', revisio:false},
-            {nom:'MARTINEZ FERRER, ALBERT', naixement:'27-10-2014', revisio:false},
-            {nom:'RIU SALA, GABRIEL', naixement:'07-04-2014', revisio:false},
-            {nom:'SEGURA COTS, QUIM', naixement:'13-12-2014', revisio:false},
-            {nom:'SERRA BADIA, ISAAC', naixement:'18-04-2014', revisio:false}
-        ];
+        const DEFAULT_PLANTILLA=[];
 
         function normalizeDate(value){
             if(!value) return '';
@@ -256,10 +254,43 @@
             return '';
         }
 
+        function normalizeBirthYear(value){
+            if(value===null||value===undefined) return '';
+            const raw=String(value).trim();
+            if(!raw) return '';
+            if(/^\d{4}$/.test(raw)) return raw;
+            if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw.slice(0,4);
+            if(/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw.slice(-4);
+            return '';
+        }
+
+        function toBirthDateFromYear(yearValue){
+            const year=normalizeBirthYear(yearValue);
+            if(!year) return '';
+            return `${year}-01-01`;
+        }
+
+        function isValidBirthYear(yearValue){
+            const yearText=normalizeBirthYear(yearValue);
+            if(!yearText) return false;
+            const year=Number(yearText);
+            return Number.isInteger(year) && year>=1900 && year<=2100;
+        }
+
+        function isHorariForEquip(horari){
+            const rawId = horari && (horari.team_id ?? horari.equip_id ?? '');
+            const id = String(rawId || '').trim();
+            return id === String(EQUIP_ID);
+        }
+
+        function isNumericId(value){
+            return /^\d+$/.test(String(value||'').trim());
+        }
+
         function seedPlantilla(){
             return DEFAULT_PLANTILLA.map(p=>({
                 nom:p.nom,
-                naixement:normalizeDate(p.naixement),
+                naixement:normalizeBirthYear(p.naixement),
                 revisio:!!p.revisio
             }));
         }
@@ -281,12 +312,27 @@
             }
         }
 
-        function loadCaptacioSuggestions(){
+        function normalizeGender(value){
+            return String(value||'')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'')
+                .toLowerCase()
+                .trim();
+        }
+
+        async function loadCaptacioSuggestions(){
             captacioSuggestions=[];
             try{
                 let players=[];
 
-                if(Array.isArray(db.captacio_futbol_base) && db.captacio_futbol_base.length){
+                if(!IS_FILE){
+                    const r=await fetch(API_JUGADORS_SEGUIMENT);
+                    if(!r.ok){
+                        const errorText=await r.text();
+                        throw new Error(`GET jugadors-seguiment ${r.status}: ${errorText}`);
+                    }
+                    players=await r.json();
+                }else if(Array.isArray(db.captacio_futbol_base) && db.captacio_futbol_base.length){
                     players=db.captacio_futbol_base;
                 }else{
                     const raw=localStorage.getItem('captacio_futbol_base_local');
@@ -296,13 +342,15 @@
                     }
                 }
 
-                const targetYear=2014;
-                const targetGender='Masculí';
+                const targetYear=S13_TARGET_YEAR;
+                const targetGender=normalizeGender(S13_TARGET_GENDER);
                 captacioSuggestions=players.filter(p=>{
-                    const yearMatch=Math.abs((p.any_naixement||0)-targetYear)<=1;
-                    const genderMatch=p.genere===targetGender;
+                    const year=Number(p.any_naixement);
+                    const yearMatch=Number.isFinite(year) && year===targetYear;
+                    const genderMatch=normalizeGender(p.genere)===targetGender;
                     return yearMatch&&genderMatch;
                 });
+                captacioSuggestions.sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||'')));
             }catch(e){
                 console.warn('Error carregant captació:',e);
             }
@@ -322,12 +370,55 @@
                 }
                 const d=db[KEY]||{};
                 if(document.getElementById('descripcio')) document.getElementById('descripcio').value=d.descripcio||'';
-                SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
-                ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
-                    const el=document.getElementById(f); if(el) el.value=d[f]||'';
-                });
-                horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
-                if(Object.prototype.hasOwnProperty.call(d,'plantilla')){
+
+                if(!IS_FILE){
+                    const rc=await fetch(`${API_EQUIP_CONFIG}?equipId=${EQUIP_ID}`);
+                    if(!rc.ok){
+                        const errorText=await rc.text();
+                        throw new Error(`GET equip-config ${rc.status}: ${errorText}`);
+                    }
+                    const cfg=await rc.json();
+                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=cfg[f]||'';});
+                    ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
+                        const el=document.getElementById(f); if(el) el.value=cfg[f]||'';
+                    });
+                }else{
+                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
+                    ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
+                        const el=document.getElementById(f); if(el) el.value=d[f]||'';
+                    });
+                }
+
+                partits=d.partits||[]; observacions=d.observacions||[];
+                if(!IS_FILE){
+                    const rh=await fetch(API_HORARIOS);
+                    if(!rh.ok){
+                        const errorText=await rh.text();
+                        throw new Error(`GET horarios ${rh.status}: ${errorText}`);
+                    }
+                    const allHoraris=await rh.json();
+                    horaris=Array.isArray(allHoraris)
+                        ? allHoraris.filter(isHorariForEquip)
+                        : [];
+                }else{
+                    horaris=d.horaris||[];
+                }
+                if(!IS_FILE){
+                    const rp=await fetch(`${API_JUGADORS}?equipId=${EQUIP_ID}`);
+                    if(!rp.ok){
+                        const errorText=await rp.text();
+                        throw new Error(`GET jugadors ${rp.status}: ${errorText}`);
+                    }
+                    const jugadors=await rp.json();
+                    plantilla=Array.isArray(jugadors)?jugadors.map(j=>(
+                        {
+                            id:j.id,
+                            nom:j.nom||'',
+                            naixement:normalizeBirthYear(j.any_naixement||j.naixement||''),
+                            revisio:!!j.revisio
+                        }
+                    )):[];
+                }else if(Object.prototype.hasOwnProperty.call(d,'plantilla')){
                     plantilla=Array.isArray(d.plantilla)?d.plantilla:[];
                 }else{
                     plantilla=seedPlantilla();
@@ -337,26 +428,48 @@
                 if(!plantilla.length) plantilla=seedPlantilla();
             }
             renderHorari(); renderPartits(); renderObs(); renderPlantilla();
-            loadCaptacioSuggestions(); renderCaptacioSuggestions();
+            await loadCaptacioSuggestions(); renderCaptacioSuggestions();
         }
 
         async function saveAll(silent = false){
             renderPlantilla();
-            db[KEY]={horaris,partits,observacions,plantilla};
+            db[KEY]={horaris,partits,observacions};
             if(document.getElementById('descripcio')) db[KEY].descripcio=document.getElementById('descripcio').value;
-            SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
-            ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
-                const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
-            });
+            if(IS_FILE){
+                SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
+                ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
+                    const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
+                });
+            }
             if(IS_FILE){
                 saveToStorage();
                 return;
             }
             try{
-                const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
-                if(!r.ok){
-                    const errorText=await r.text();
-                    throw new Error(`POST ${r.status}: ${errorText}`);
+                const equipPayload={
+                    s_primer_entrenador_nom:(document.getElementById('s_primer_entrenador_nom')||{}).value||'',
+                    s_primer_entrenador_tel:(document.getElementById('s_primer_entrenador_tel')||{}).value||'',
+                    s_segon_entrenador_nom:(document.getElementById('s_segon_entrenador_nom')||{}).value||'',
+                    s_segon_entrenador_tel:(document.getElementById('s_segon_entrenador_tel')||{}).value||'',
+                    s_tercer_entrenador_nom:(document.getElementById('s_tercer_entrenador_nom')||{}).value||'',
+                    s_tercer_entrenador_tel:(document.getElementById('s_tercer_entrenador_tel')||{}).value||'',
+                    comp_categoria:(document.getElementById('comp_categoria')||{}).value||'',
+                    comp_temporada:(document.getElementById('comp_temporada')||{}).value||'',
+                    comp_url:(document.getElementById('comp_url')||{}).value||''
+                };
+
+                const [rPlayers, rEquip] = await Promise.all([
+                    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)}),
+                    fetch(`${API_EQUIP_CONFIG}?equipId=${EQUIP_ID}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(equipPayload)})
+                ]);
+
+                if(!rPlayers.ok){
+                    const errorText=await rPlayers.text();
+                    throw new Error(`POST players ${rPlayers.status}: ${errorText}`);
+                }
+                if(!rEquip.ok){
+                    const errorText=await rEquip.text();
+                    throw new Error(`POST equip-config ${rEquip.status}: ${errorText}`);
                 }
                 if(!silent) console.log('Guardat automàtic correcte');
             }catch(e){ console.error('Error en el guardat automàtic:', e.message || e); }
@@ -371,8 +484,19 @@
         function renderHorari(){
             const el=document.getElementById('horari_list'); if(!el)return;
             if(!horaris.length){el.innerHTML='<div class="empty-msg">Sense sessions registrades.</div>';return;}
+
+            const ordreDies=['Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte','Diumenge'];
+            const sessions=[...horaris].sort((a,b)=>{
+                const diaA=ordreDies.indexOf(a.dia||'');
+                const diaB=ordreDies.indexOf(b.dia||'');
+                const idxA=diaA===-1?99:diaA;
+                const idxB=diaB===-1?99:diaB;
+                if(idxA!==idxB) return idxA-idxB;
+                return String(a.inici||'').localeCompare(String(b.inici||''));
+            });
+
             el.innerHTML='<table class="horari-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
-                +horaris.map((h,i)=>'<tr><td class="dia-badge">'+h.dia+'</td><td>'+(h.inici||'-')+'</td><td>'+(h.fi||'-')+'</td><td>'+(esc(h.vestidor)||'-')+'</td><td>'+(esc(h.camp)||'-')+'</td></tr>').join('')
+                +sessions.map((h,i)=>'<tr><td class="dia-badge">'+h.dia+'</td><td>'+(h.inici||'-')+'</td><td>'+(h.fi||'-')+'</td><td>'+(esc(h.vestidor)||'-')+'</td><td>'+(esc(h.camp)||'-')+'</td></tr>').join('')
                 +'</tbody></table>';
         }
 
@@ -438,10 +562,10 @@
             }
             body.innerHTML=plantilla.map((p,i)=>{
                 const checked=p.revisio?'checked':'';
-                const d=normalizeDate(p.naixement||'');
+                const birthYear=normalizeBirthYear(p.naixement||'');
                 return '<tr>'
                     +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
-                    +'<td><input type="date" value="'+d+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
+                    +'<td><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
                     +'<td style="text-align:center;"><input type="checkbox" '+checked+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
                     +'<td class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
@@ -450,15 +574,40 @@
 
         window.addPlayer=async function(){
             const nom=document.getElementById('p_nom').value.trim();
-            const naixement=document.getElementById('p_naixement').value;
+            const naixement=normalizeBirthYear(document.getElementById('p_naixement').value);
             const revisio=document.getElementById('p_revisio').checked;
             if(!nom){alert('Introdueix el nom del jugador.');return;}
-            plantilla.push({nom,naixement:normalizeDate(naixement),revisio});
-            document.getElementById('p_nom').value='';
-            document.getElementById('p_naixement').value='';
-            document.getElementById('p_revisio').checked=false;
-            renderPlantilla();
-            await saveAll(true);
+            if(!isValidBirthYear(naixement)){alert('Introdueix un any de naixement vàlid (format YYYY).');return;}
+
+            if(IS_FILE){
+                plantilla.push({id:`local_${Date.now()}`,nom,naixement,revisio});
+                document.getElementById('p_nom').value='';
+                document.getElementById('p_naixement').value='';
+                document.getElementById('p_revisio').checked=false;
+                renderPlantilla();
+                await saveAll(true);
+                return;
+            }
+
+            try{
+                const r=await fetch(API_JUGADORS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equip_id:EQUIP_ID,nom,any_naixement:naixement,revisio_medica:revisio})});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`POST jugadors ${r.status}: ${errorText}`);
+                }
+                const payload=await r.json();
+                const created=payload&&payload.jugador?payload.jugador:null;
+                if(created){
+                    plantilla.push({id:String(created.id),nom:created.nom||nom,naixement:normalizeBirthYear(created.any_naixement||created.naixement||naixement),revisio:!!created.revisio});
+                    plantilla.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+                }
+                document.getElementById('p_nom').value='';
+                document.getElementById('p_naixement').value='';
+                document.getElementById('p_revisio').checked=false;
+                renderPlantilla();
+            }catch(e){
+                alert('Error al crear jugador');
+            }
         };
 
         function renderCaptacioSuggestions(){
@@ -480,19 +629,72 @@
             }).join('');
         }
 
-        window.updatePlayer=function(index,field,value){
+        window.updatePlayer=async function(index,field,value){
             if(!plantilla[index]) return;
             if(field==='revisio') plantilla[index].revisio=!!value;
             if(field==='nom') plantilla[index].nom=value;
-            if(field==='naixement') plantilla[index].naixement=normalizeDate(value);
-            saveAll(true);
+            if(field==='naixement') plantilla[index].naixement=normalizeBirthYear(value);
+
+            if(field==='naixement' && !isValidBirthYear(plantilla[index].naixement)){
+                renderPlantilla();
+                return;
+            }
+
+            if(IS_FILE){
+                saveAll(true);
+                return;
+            }
+
+            const player=plantilla[index];
+            if(!isNumericId(player.id)){
+                return;
+            }
+            const body={id:player.id};
+            if(field==='nom') body.nom=player.nom;
+            if(field==='naixement') body.any_naixement=player.naixement;
+            if(field==='revisio') body.revisio_medica=player.revisio;
+
+            try{
+                const r=await fetch(API_JUGADORS,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(errorText);
+                }
+            }catch(e){
+                alert('No s\'ha pogut actualitzar el jugador');
+                await load();
+            }
         };
 
         window.removePlayer=async function(index){
             if(!confirm('Segur que vols eliminar aquest jugador?')) return;
-            plantilla.splice(index,1);
-            renderPlantilla();
-            await saveAll(true);
+            if(!plantilla[index]) return;
+            const player=plantilla[index];
+
+            if(!isNumericId(player.id)){
+                plantilla.splice(index,1);
+                renderPlantilla();
+                return;
+            }
+
+            if(IS_FILE){
+                plantilla.splice(index,1);
+                renderPlantilla();
+                await saveAll(true);
+                return;
+            }
+
+            try{
+                const r=await fetch(`${API_JUGADORS}?id=${encodeURIComponent(player.id)}`,{method:'DELETE'});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`DELETE jugadors ${r.status}: ${errorText}`);
+                }
+                plantilla.splice(index,1);
+                renderPlantilla();
+            }catch(e){
+                alert('Error al eliminar jugador');
+            }
         };
 
         const today=new Date().toISOString().split('T')[0];
@@ -525,3 +727,5 @@
     </script>
 </body>
 </html>
+
+

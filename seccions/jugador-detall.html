@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detall Jugador | CF Cardona</title>
+    <link rel="stylesheet" href="jugador-detall.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <main class="main-area" style="width:100%;">
+        <div class="top-bar">
+            <div>
+                <div class="player-name-header" id="header-name">📋 Fitxa Jugador</div>
+                <div class="breadcrumb" id="breadcrumb">
+                    <a href="../index.html">Inici</a> &rarr;
+                    <a href="../estructura.html">Estructura Esportiva</a> &rarr;
+                    <a href="senior.html">Senior</a> &rarr;
+                    <a href="primer-equip.html" id="breadcrumb-team-link">Primer Equip</a> &rarr;
+                    Detall jugador
+                </div>
+            </div>
+            <div class="actions">
+                <a href="primer-equip.html" class="btn-back" id="btn-back-team">TORNAR A PRIMER EQUIP</a>
+                <button class="btn-save" id="btn-save">GUARDAR FITXA</button>
+            </div>
+        </div>
+
+        <div class="editor-container" id="editor-container">
+            <div class="empty-state" id="empty-state" style="display:none;">
+                <h3>Jugador no disponible</h3>
+                <p>No s'ha trobat cap jugador per l'identificador indicat.</p>
+            </div>
+
+            <form id="player-form">
+                <div class="form-grid">
+                    <div class="card full-width">
+                        <div class="card-h3">📄 Dades Bàsiques</div>
+                        <div class="input-group" style="margin-bottom: 1.5rem;">
+                            <label>Nom del Jugador</label>
+                            <input type="text" id="nom_display" style="background:#f8fafc; color:var(--primary); font-weight:800; border-color:#fee2e2; font-size:1.1rem;">
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                            <div class="input-group">
+                                <label>Edat</label>
+                                <input type="text" id="edat" placeholder="Ex: 24">
+                            </div>
+                            <div class="input-group">
+                                <label>Població de residència</label>
+                                <input type="text" id="poblacio" placeholder="Ex: Cardona">
+                            </div>
+                            <div class="input-group">
+                                <label>Rol actual a l’equip</label>
+                                <select id="rol_actual"><option value="">Selecciona...</option></select>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                            <div class="input-group">
+                                <label>Any de naixement</label>
+                                <input type="text" id="any_naixement" placeholder="Ex: 2001">
+                            </div>
+                            <div class="input-group">
+                                <label>Revisió mèdica</label>
+                                <select id="revisio_medica">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 1rem;">
+                            <label>Posicions (múltiple)</label>
+                            <div id="posicions_grid" class="positions-grid"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-h3">💰 Condicions Econòmiques</div>
+                        <div class="input-group"><label>Fitxa mensual (€)</label><input type="text" id="fitxa_mensual" placeholder="0 €"></div>
+                        <div class="input-group"><label>Primes per partit</label><input type="text" id="primes_partit" placeholder="Ex: 50€/guanyat"></div>
+                        <div class="input-group"><label>Prima permanència</label><input type="text" id="prima_permanencia" placeholder="Ex: 200 €"></div>
+                        <div class="input-group"><label>Altres incentius</label><input type="text" id="altres_incentius" placeholder="..."></div>
+                    </div>
+
+                    <div class="card full-width">
+                        <div class="card-h3">🔄 Planificació Temporada Vinent</div>
+                        <div class="grid-2-col" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="input-group">
+                                <label>Rol previst</label>
+                                <select id="rol_previst"><option value="">Selecciona...</option></select>
+                            </div>
+                            <div class="input-group"><label>Situació actual converses</label><input type="text" id="conv_situacio" placeholder="Pendent / Apalabrat / Renovat..."></div>
+                        </div>
+                        <div class="input-group">
+                            <label>Resum de converses (Historial)</label>
+                            <div id="conv_list" class="conversations-list"></div>
+                            <div class="add-conv-form" style="display:grid; grid-template-columns: 140px 1fr auto; gap: 0.5rem; margin-top: 1rem;">
+                                <input type="date" id="new_conv_date" class="input-date">
+                                <input type="text" id="new_conv_text" placeholder="Resum de la conversa...">
+                                <button type="button" class="btn-add" onclick="addConversation()">AFEGIR</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card full-width">
+                        <div class="card-h3">📊 Valoració Esportiva</div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="input-group"><label>Punts forts</label><textarea id="val_forts"></textarea></div>
+                            <div class="input-group"><label>Aspectes a millorar</label><textarea id="val_millorar"></textarea></div>
+                            <div class="input-group">
+                                <label>Risc lesional</label>
+                                <select id="val_lesions">
+                                    <option value="">Selecciona...</option>
+                                    <option value="Baix">Baix</option>
+                                    <option value="Mitjà">Mitjà</option>
+                                    <option value="Alt">Alt</option>
+                                </select>
+                            </div>
+                            <div class="input-group"><label>Compromís vestidor</label><input type="text" id="val_compromis" placeholder="1-10"></div>
+                        </div>
+                    </div>
+
+                    <div class="card full-width">
+                        <div class="card-h3">📝 Observacions i Comentaris</div>
+                        <div id="obs_list" class="obs-list"><div class="empty-msg">Sense observacions registrades.</div></div>
+                        <div class="add-obs-form">
+                            <div class="form-title">Nou Comentari</div>
+                            <div class="obs-form-row">
+                                <div class="input-group" style="margin-bottom:0;">
+                                    <label>Autor</label>
+                                    <input type="text" id="obs_autor" placeholder="Qui fa el comentari...">
+                                </div>
+                                <div class="input-group" style="margin-bottom:0;">
+                                    <label>Data</label>
+                                    <input type="date" id="obs_data">
+                                </div>
+                                <div style="display:flex;align-items:flex-end;">
+                                    <button type="button" class="btn-add" onclick="addObs()">AFEGIR</button>
+                                </div>
+                            </div>
+                            <div class="input-group" style="margin-bottom:0;">
+                                <label>Comentari</label>
+                                <textarea id="obs_text" style="min-height:100px;" placeholder="Escriu el comentari..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card full-width">
+                        <div class="card-h3" style="color:#059669; border-bottom-color:#86efac;">🌟 Suggeriments de Captació</div>
+                        <div id="captacio_suggestions" class="suggestions-list">
+                            <div class="empty-msg">Sense suggeriments disponibles.</div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="jugador-detall.js"></script>
+</body>
+</html>

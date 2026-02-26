@@ -1,0 +1,16 @@
+drop table if exists jugador_posicio cascade;
+drop table if exists jugador_en_seguiment_posicio cascade;
+drop table if exists comunicacions cascade;
+drop table if exists comentari cascade;
+drop table if exists amistos cascade;
+drop table if exists horari_entrenaments cascade;
+drop table if exists staff cascade;
+drop table if exists jugador cascade;
+drop table if exists jugador_en_seguiment cascade;
+drop table if exists condicions_economiques cascade;
+drop table if exists direccio_candidat cascade;
+drop table if exists direccio_esportiva cascade;
+drop table if exists equip cascade;
+drop table if exists posicio cascade;
+drop table if exists rol cascade;
+drop table if exists temporada cascade;

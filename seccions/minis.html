@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -61,7 +61,7 @@
         .plantilla-table th{padding:0.6rem 0.75rem;text-align:left;font-weight:700;}
         .plantilla-table td{padding:0.6rem 0.75rem;border-bottom:1px solid var(--border);vertical-align:middle;}
         .plantilla-table td input[type=text],
-        .plantilla-table td input[type=date]{margin:0;}
+        .plantilla-table td input[type=number]{margin:0;}
         .plantilla-table td input[type=checkbox]{width:auto;}
         .plantilla-actions{width:40px;text-align:right;}
         .obs-list{margin-bottom:1rem;}
@@ -134,30 +134,35 @@
     </header>
     <div id="plantilla_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="plantilla_alert_text"></div></div>
     <div id="staff_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="staff_alert_text"></div></div>
-    <div class="card">
-        <h2>&#x1F91D; Staff T&egrave;cnic</h2>
-        <div class="staff-grid">
-            <div class="staff-member">
-                <div class="role-title">Primer Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_primer_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
-            <div class="staff-member">
-                <div class="role-title">Segon Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_segon_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
-            <div class="staff-member">
-                <div class="role-title">Tercer Entrenador</div>
-                <div class="staff-fields">
-                    <div><label>Nom i Cognoms</label><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></div>
-                    <div><label>Tel&egrave;fon</label><input type="tel" id="s_tercer_entrenador_tel" placeholder="Tel&egrave;fon..." onchange="saveAll(true)"></div>
-                </div>
-            </div>
+        <div class="card">
+        <h2>&#x1F91D; Staff</h2>
+        <div style="overflow-x:auto;">
+            <table class="plantilla-table">
+                <thead>
+                    <tr>
+                        <th>Rol</th>
+                        <th>Nom i Cognoms</th>
+                        <th>Telèfon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="dia-badge">Primer Entrenador</td>
+                        <td><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td class="dia-badge">Segon Entrenador</td>
+                        <td><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td class="dia-badge">Tercer Entrenador</td>
+                        <td><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     <div class="card">
@@ -167,8 +172,8 @@
                 <thead>
                     <tr>
                         <th>Jugador</th>
-                        <th>Data de naixement</th>
-                        <th style="text-align:center;">Revisi&oacute; m&egrave;dica</th>
+                        <th>Any de naixement</th>
+                        <th style="text-align:center;">Revisió mèdica</th>
                         <th class="plantilla-actions"></th>
                     </tr>
                 </thead>
@@ -183,8 +188,8 @@
             <div class="add-form-title">Afegir Jugador</div>
             <div class="form-row-3">
                 <div><label>Nom i Cognoms</label><input type="text" id="p_nom" placeholder="Nom..."></div>
-                <div><label>Data de naixement</label><input type="date" id="p_naixement"></div>
-                <div><label>Revisi&oacute; m&egrave;dica</label><input type="checkbox" id="p_revisio"></div>
+                <div><label>Any de naixement</label><input type="number" id="p_naixement" min="1990" max="2030" placeholder="Ex: 2014"></div>
+                <div><label>Revisió mèdica</label><input type="checkbox" id="p_revisio"></div>
             </div>
             <div style="display:flex;justify-content:flex-end;">
                 <button class="btn btn-primary" onclick="addPlayer()">AFEGIR JUGADOR</button>
@@ -240,32 +245,32 @@
             <div><label>Comentari</label><textarea id="obs_text" style="min-height:100px;" placeholder="Escriu el comentari..."></textarea></div>
         </div>
     </div>
-    <script>
+        <script>
         const API='/api/players';
+        const API_JUGADORS='/api/jugadors';
+        const API_JUGADORS_SEGUIMENT='/api/jugadors-seguiment';
+        const API_EQUIP_CONFIG='/api/equip-config';
+        const API_HORARIOS='/api/horarios';
+        const API_EQUIPS='/api/equips';
         const KEY='seccio_minis';
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
+        const TARGET_YEAR=2021;
+        const TARGET_GENDER='Masculí';
+        const MIN_PLAYERS=9;
+        const MIN_LABEL='F7';
+        const PAGE_SLUG=((window.location.pathname||'').split('/').pop()||'').replace(/\.html$/i,'').trim().toLowerCase();
+        const TEAM_NAME=(function resolveTeamNameFromPage(){
+            if(PAGE_SLUG==='minis') return 'Minis';
+            if(/^s\d+$/i.test(PAGE_SLUG)) return PAGE_SLUG.toUpperCase();
+            const fromKey=String(KEY||'').replace(/^seccio_/,'').replace(/-/g,' ').trim();
+            if(/^s\d+$/i.test(fromKey)) return fromKey.toUpperCase();
+            return fromKey.charAt(0).toUpperCase()+fromKey.slice(1);
+        })();
+
+        let EQUIP_ID=null;
         let db={},observacions=[],horaris=[],partits=[],plantilla=[],captacioSuggestions=[];
         const SF=["s_primer_entrenador_nom","s_primer_entrenador_tel","s_segon_entrenador_nom","s_segon_entrenador_tel","s_tercer_entrenador_nom","s_tercer_entrenador_tel"];
-        const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
-        const TEAMS=[
-            {id:'seccio_primer-equip', name:'Primer Equip'},
-            {id:'seccio_filial', name:'Filial'},
-            {id:'seccio_minis', name:'Minis'}, {id:'seccio_s7', name:'S7'},
-            {id:'seccio_s8', name:'S8'}, {id:'seccio_s9', name:'S9'},
-            {id:'seccio_s10', name:'S10'}, {id:'seccio_s11', name:'S11'},
-            {id:'seccio_s12', name:'S12'}, {id:'seccio_s16', name:'S16 (Cadet)'},
-            {id:'seccio_juvenil-masculi', name:'Juvenil Masculí'},
-            {id:'seccio_alevi-femeni', name:'Aleví Femení'},
-            {id:'seccio_cadet-femeni', name:'Cadet Femení'},
-            {id:'seccio_juvenil-femeni', name:'Juvenil Femení'}
-        ];
-
-        const DEFAULT_PLANTILLA=[
-            {nom:'BADIA RAMIREZ, ARAN', naixement:'11-05-2021', revisio:false},
-            {nom:'BALLESTEROS MAS, MARC', naixement:'24-03-2021', revisio:false},
-            {nom:'CABALLOL ROIG, MARC', naixement:'04-08-2021', revisio:false}
-        ];
 
         function normalizeDate(value){
             if(!value) return '';
@@ -277,12 +282,77 @@
             return '';
         }
 
-        function seedPlantilla(){
-            return DEFAULT_PLANTILLA.map(p=>({
-                nom:p.nom,
-                naixement:normalizeDate(p.naixement),
-                revisio:!!p.revisio
-            }));
+        function normalizeBirthYear(value){
+            if(value===null||value===undefined) return '';
+            const raw=String(value).trim();
+            if(!raw) return '';
+            if(/^\d{4}$/.test(raw)) return raw;
+            if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw.slice(0,4);
+            if(/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw.slice(-4);
+            return '';
+        }
+
+        function isValidBirthYear(yearValue){
+            const yearText=normalizeBirthYear(yearValue);
+            if(!yearText) return false;
+            const year=Number(yearText);
+            return Number.isInteger(year) && year>=1900 && year<=2100;
+        }
+
+        function isNumericId(value){
+            return /^\d+$/.test(String(value||'').trim());
+        }
+
+        function normalizeName(value){
+            return String(value||'')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'')
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g,' ');
+        }
+
+        function normalizeGender(value){
+            return String(value||'')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'')
+                .toLowerCase()
+                .trim();
+        }
+
+        async function resolveEquipId(){
+            if(IS_FILE){
+                EQUIP_ID=null;
+                return;
+            }
+            try{
+                const r=await fetch(API_EQUIPS);
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`GET equips ${r.status}: ${errorText}`);
+                }
+                const equips=await r.json();
+                if(!Array.isArray(equips)){
+                    EQUIP_ID=null;
+                    return;
+                }
+                const expected=normalizeName(TEAM_NAME);
+                let match=equips.find(e=>normalizeName(e.name||e.nom||'')===expected);
+                if(!match){
+                    match=equips.find(e=>normalizeName(e.name||e.nom||'').includes(expected) || expected.includes(normalizeName(e.name||e.nom||'')));
+                }
+                EQUIP_ID=match ? String(match.id ?? match.equip_id ?? '').trim() || null : null;
+            }catch(e){
+                console.warn('No s\'ha pogut resoldre l\'equip:', e);
+                EQUIP_ID=null;
+            }
+        }
+
+        function isHorariForEquip(horari){
+            if(!EQUIP_ID) return false;
+            const rawId = horari && (horari.team_id ?? horari.equip_id ?? '');
+            const id = String(rawId || '').trim();
+            return id === String(EQUIP_ID);
         }
 
         function loadFromStorage(){
@@ -302,82 +372,159 @@
             }
         }
 
-        function loadCaptacioSuggestions(){
-            console.log('[minis] loadCaptacioSuggestions called, IS_FILE=', IS_FILE);
+        async function loadCaptacioSuggestions(){
             captacioSuggestions=[];
+            if(IS_FILE) return;
             try{
-                const raw=localStorage.getItem('captacio_futbol_base_local');
-                if(!raw){
-                    console.log('No hi ha data de captacio_futbol_base_local');
-                    return;
+                const r=await fetch(API_JUGADORS_SEGUIMENT);
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`GET jugadors-seguiment ${r.status}: ${errorText}`);
                 }
-                const data=JSON.parse(raw);
-                const players=data.captacio_futbol_base||[];
-                console.log('Captacio players loaded:', players);
-                const targetYear=2021;
-                const targetGender='Masculí';
-                captacioSuggestions=players.filter(p=>{
-                    const yearMatch=Math.abs((p.any_naixement||0)-targetYear)<=1;
-                    const genderMatch=p.genere===targetGender;
-                    console.log('Filter check:', p.nom, 'year:', p.any_naixement, 'gender:', p.genere, 'match:', yearMatch&&genderMatch);
-                    return yearMatch&&genderMatch;
+                const players=await r.json();
+                const targetGender=normalizeGender(TARGET_GENDER);
+                captacioSuggestions=(Array.isArray(players)?players:[]).filter(p=>{
+                    const year=Number(normalizeBirthYear(p.any_naixement ?? p.naixement ?? ''));
+                    const yearMatch=Number.isFinite(year) && year===TARGET_YEAR;
+                    const genderMatch=normalizeGender(p.genere)===targetGender;
+                    return yearMatch && genderMatch;
                 });
-                console.log('Captacio suggestions filtered:', captacioSuggestions);
+                captacioSuggestions.sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||'')));
             }catch(e){
-                console.warn('Error carregant captació:',e);
+                console.warn('Error carregant captaci?:',e);
             }
         }
 
         async function load(){
             try{
+                await resolveEquipId();
                 if(!IS_FILE){
-                    const r=await fetch(API); db=await r.json();
+                    const r=await fetch(API);
+                    if(!r.ok){
+                        const errorText=await r.text();
+                        throw new Error(`GET ${r.status}: ${errorText}`);
+                    }
+                    db=await r.json();
                 }else{
                     db=loadFromStorage();
                 }
                 const d=db[KEY]||{};
                 if(document.getElementById('descripcio')) document.getElementById('descripcio').value=d.descripcio||'';
-                SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
-                ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
-                    const el=document.getElementById(f); if(el) el.value=d[f]||'';
-                });
-                horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
-                if(Object.prototype.hasOwnProperty.call(d,'plantilla')){
+
+                if(!IS_FILE && EQUIP_ID){
+                    const rc=await fetch(`${API_EQUIP_CONFIG}?equipId=${encodeURIComponent(EQUIP_ID)}`);
+                    if(!rc.ok){
+                        const errorText=await rc.text();
+                        throw new Error(`GET equip-config ${rc.status}: ${errorText}`);
+                    }
+                    const cfg=await rc.json();
+                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=cfg[f]||'';});
+                    ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
+                        const el=document.getElementById(f); if(el) el.value=cfg[f]||'';
+                    });
+                }else{
+                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
+                    ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
+                        const el=document.getElementById(f); if(el) el.value=d[f]||'';
+                    });
+                }
+
+                partits=d.partits||[];
+                observacions=d.observacions||[];
+
+                if(!IS_FILE && EQUIP_ID){
+                    const rh=await fetch(API_HORARIOS);
+                    if(!rh.ok){
+                        const errorText=await rh.text();
+                        throw new Error(`GET horarios ${rh.status}: ${errorText}`);
+                    }
+                    const allHoraris=await rh.json();
+                    horaris=Array.isArray(allHoraris) ? allHoraris.filter(isHorariForEquip) : [];
+                }else if(IS_FILE){
+                    horaris=d.horaris||[];
+                }else{
+                    horaris=[];
+                }
+
+                if(!IS_FILE && EQUIP_ID){
+                    const rp=await fetch(`${API_JUGADORS}?equipId=${encodeURIComponent(EQUIP_ID)}`);
+                    if(!rp.ok){
+                        const errorText=await rp.text();
+                        throw new Error(`GET jugadors ${rp.status}: ${errorText}`);
+                    }
+                    const jugadors=await rp.json();
+                    plantilla=Array.isArray(jugadors)?jugadors.map(j=>({
+                        id:j.id,
+                        nom:j.nom||'',
+                        naixement:normalizeBirthYear(j.any_naixement||j.naixement||''),
+                        revisio:!!j.revisio
+                    })):[];
+                }else if(IS_FILE && Object.prototype.hasOwnProperty.call(d,'plantilla')){
                     plantilla=Array.isArray(d.plantilla)?d.plantilla:[];
                 }else{
-                    plantilla=seedPlantilla();
+                    plantilla=[];
                 }
             }catch(e){
                 console.warn('Servidor no disponible');
                 if(IS_FILE){
-                    db=loadFromStorage();
                     const d=db[KEY]||{};
-                    horaris=d.horaris||[]; partits=d.partits||[]; observacions=d.observacions||[];
-                    plantilla=d.plantilla||seedPlantilla();
+                    horaris=d.horaris||[];
+                    partits=d.partits||[];
+                    observacions=d.observacions||[];
+                    plantilla=Array.isArray(d.plantilla)?d.plantilla:[];
                 }
-                if(!plantilla.length) plantilla=seedPlantilla();
             }
             renderHorari(); renderPartits(); renderObs(); renderPlantilla();
-            loadCaptacioSuggestions(); renderCaptacioSuggestions();
+            await loadCaptacioSuggestions(); renderCaptacioSuggestions();
         }
 
         async function saveAll(silent = false){
             renderPlantilla();
-            db[KEY]={horaris,partits,observacions,plantilla};
+            db[KEY]={horaris,partits,observacions};
             if(document.getElementById('descripcio')) db[KEY].descripcio=document.getElementById('descripcio').value;
-            SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
-            ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
-                const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
-            });
+
             if(IS_FILE){
+                SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
+                ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
+                    const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
+                });
                 saveToStorage();
-                if(!silent) console.log('Guardat automàtic correcte');
                 return;
             }
+
             try{
-                await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+                const requests=[
+                    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)})
+                ];
+
+                if(EQUIP_ID){
+                    const equipPayload={
+                        s_primer_entrenador_nom:(document.getElementById('s_primer_entrenador_nom')||{}).value||'',
+                        s_primer_entrenador_tel:(document.getElementById('s_primer_entrenador_tel')||{}).value||'',
+                        s_segon_entrenador_nom:(document.getElementById('s_segon_entrenador_nom')||{}).value||'',
+                        s_segon_entrenador_tel:(document.getElementById('s_segon_entrenador_tel')||{}).value||'',
+                        s_tercer_entrenador_nom:(document.getElementById('s_tercer_entrenador_nom')||{}).value||'',
+                        s_tercer_entrenador_tel:(document.getElementById('s_tercer_entrenador_tel')||{}).value||'',
+                        comp_categoria:(document.getElementById('comp_categoria')||{}).value||'',
+                        comp_temporada:(document.getElementById('comp_temporada')||{}).value||'',
+                        comp_url:(document.getElementById('comp_url')||{}).value||''
+                    };
+                    requests.push(fetch(`${API_EQUIP_CONFIG}?equipId=${encodeURIComponent(EQUIP_ID)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(equipPayload)}));
+                }
+
+                const responses=await Promise.all(requests);
+                if(!responses[0].ok){
+                    const errorText=await responses[0].text();
+                    throw new Error(`POST players ${responses[0].status}: ${errorText}`);
+                }
+                if(responses[1] && !responses[1].ok){
+                    const errorText=await responses[1].text();
+                    throw new Error(`POST equip-config ${responses[1].status}: ${errorText}`);
+                }
                 if(!silent) console.log('Guardat automàtic correcte');
-            }catch(e){ console.error('Error en el guardat automàtic'); }
+            }catch(e){
+                console.error('Error en el guardat automàtic:', e.message || e);
+            }
         }
 
         window.openFedLink=function(e){
@@ -389,8 +536,17 @@
         function renderHorari(){
             const el=document.getElementById('horari_list'); if(!el)return;
             if(!horaris.length){el.innerHTML='<div class="empty-msg">Sense sessions registrades.</div>';return;}
+            const ordreDies=['Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte','Diumenge'];
+            const sessions=[...horaris].sort((a,b)=>{
+                const diaA=ordreDies.indexOf(a.dia||'');
+                const diaB=ordreDies.indexOf(b.dia||'');
+                const idxA=diaA===-1?99:diaA;
+                const idxB=diaB===-1?99:diaB;
+                if(idxA!==idxB) return idxA-idxB;
+                return String(a.inici||'').localeCompare(String(b.inici||''));
+            });
             el.innerHTML='<table class="horari-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
-                +horaris.map((h,i)=>'<tr><td class="dia-badge">'+h.dia+'</td><td>'+(h.inici||'-')+'</td><td>'+(h.fi||'-')+'</td><td>'+(esc(h.vestidor)||'-')+'</td><td>'+(esc(h.camp)||'-')+'</td></tr>').join('')
+                +sessions.map(h=>'<tr><td class="dia-badge">'+h.dia+'</td><td>'+(h.inici||'-')+'</td><td>'+(h.fi||'-')+'</td><td>'+(esc(h.vestidor)||'-')+'</td><td>'+(esc(h.camp)||'-')+'</td></tr>').join('')
                 +'</tbody></table>';
         }
 
@@ -405,12 +561,14 @@
             renderPartits();
             await saveAll(true);
         };
+
         window.removePartit=async function(i){
             if(!confirm('Segur que vols eliminar aquest partit?')) return;
             partits.splice(i,1);
             renderPartits();
             await saveAll(true);
         };
+
         function renderPartits(){
             const el=document.getElementById('partits_list'); if(!el)return;
             if(!partits.length){el.innerHTML='<div class="empty-msg">Sense partits registrats.</div>';return;}
@@ -430,8 +588,8 @@
             const staffAlert=document.getElementById('staff_alert');
             const staffAlertText=document.getElementById('staff_alert_text');
             if(alertBox && alertText){
-                if(plantilla.length < 9){
-                    alertText.textContent=`Equip amb ${plantilla.length} jugadors, el mínim recomanable son 9 jugadors per les plantilles de F7!`;
+                if(plantilla.length < MIN_PLAYERS){
+                    alertText.textContent=`Equip amb ${plantilla.length} jugadors, el mínim recomanable son ${MIN_PLAYERS} jugadors per les plantilles de ${MIN_LABEL}!`;
                     alertBox.style.display='flex';
                 }else{
                     alertBox.style.display='none';
@@ -444,7 +602,7 @@
                 if(!primerNom.trim()) missing.push('primer entrenador');
                 if(!segonNom.trim()) missing.push('segon entrenador');
                 if(missing.length){
-                    staffAlertText.textContent=`Falta ${missing.join(' i ')} a l'equip!`;
+                    staffAlertText.textContent=`Falta ${missing.join(' i ' )} a l'equip!`;
                     staffAlert.style.display='flex';
                 }else{
                     staffAlert.style.display='none';
@@ -456,10 +614,10 @@
             }
             body.innerHTML=plantilla.map((p,i)=>{
                 const checked=p.revisio?'checked':'';
-                const d=normalizeDate(p.naixement||'');
+                const birthYear=normalizeBirthYear(p.naixement||'');
                 return '<tr>'
                     +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
-                    +'<td><input type="date" value="'+d+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
+                    +'<td><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
                     +'<td style="text-align:center;"><input type="checkbox" '+checked+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
                     +'<td class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
@@ -468,46 +626,124 @@
 
         window.addPlayer=async function(){
             const nom=document.getElementById('p_nom').value.trim();
-            const naixement=document.getElementById('p_naixement').value;
+            const naixement=normalizeBirthYear(document.getElementById('p_naixement').value);
             const revisio=document.getElementById('p_revisio').checked;
             if(!nom){alert('Introdueix el nom del jugador.');return;}
-            plantilla.push({nom,naixement:normalizeDate(naixement),revisio});
-            document.getElementById('p_nom').value='';
-            document.getElementById('p_naixement').value='';
-            document.getElementById('p_revisio').checked=false;
-            renderPlantilla();
-            await saveAll(true);
+            if(!isValidBirthYear(naixement)){alert('Introdueix un any de naixement vàlid (format YYYY).');return;}
+
+            if(IS_FILE){
+                plantilla.push({id:`local_${Date.now()}`,nom,naixement,revisio});
+                document.getElementById('p_nom').value='';
+                document.getElementById('p_naixement').value='';
+                document.getElementById('p_revisio').checked=false;
+                renderPlantilla();
+                await saveAll(true);
+                return;
+            }
+
+            if(!EQUIP_ID){
+                alert('No s\'ha pogut resoldre l\'equip d\'aquesta pàgina.');
+                return;
+            }
+
+            try{
+                const r=await fetch(API_JUGADORS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equip_id:EQUIP_ID,nom,any_naixement:naixement,revisio_medica:revisio})});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`POST jugadors ${r.status}: ${errorText}`);
+                }
+                const payload=await r.json();
+                const created=payload&&payload.jugador?payload.jugador:null;
+                if(created){
+                    plantilla.push({id:String(created.id),nom:created.nom||nom,naixement:normalizeBirthYear(created.any_naixement||created.naixement||naixement),revisio:!!created.revisio});
+                    plantilla.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+                }
+                document.getElementById('p_nom').value='';
+                document.getElementById('p_naixement').value='';
+                document.getElementById('p_revisio').checked=false;
+                renderPlantilla();
+            }catch(e){
+                alert('Error al crear jugador');
+            }
         };
 
         function renderCaptacioSuggestions(){
             const container=document.getElementById('captacio_suggestions');
             if(!container) return;
             if(!captacioSuggestions||!captacioSuggestions.length){
-                container.innerHTML='<div class="empty-msg">No hi ha jugadors en captació que coincideixin amb aquest equip.</div>';
+                container.innerHTML='<div class="empty-msg">No hi ha jugadors en Captació que coincideixin amb aquest equip.</div>';
                 return;
             }
             container.innerHTML=captacioSuggestions.map(p=>{
                 const posicions=Array.isArray(p.posicions)?p.posicions.join(', '):'';
                 const club=p.club?`<strong>Club:</strong> ${esc(p.club)}<br>`:'';
                 const tel=p.tel?`<strong>Tel:</strong> ${esc(p.tel)}<br>`:'';
-                const poblacio=p.poblacio?`<strong>Població:</strong> ${esc(p.poblacio)}<br>`:'';
-                const situacio=p.situacio?`<strong>Situació:</strong> ${esc(p.situacio)}`:'';  
+                const poblacio=p.poblacio?`<strong>població:</strong> ${esc(p.poblacio)}<br>`:'';
+                const situacio=p.situacio?`<strong>situació:</strong> ${esc(p.situacio)}`:'';
                 const genderBadge=p.genere==='Masculí'?'<span class="gender-masculi" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#dbeafe;color:#1d4ed8;margin-left:0.5rem;">'+esc(p.genere)+'</span>':'<span class="gender-femeni" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fce7f3;color:#be185d;margin-left:0.5rem;">'+esc(p.genere)+'</span>';
-                const yearBadge='<span class="year-badge" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fef3c7;color:#92400e;margin-left:0.5rem;">'+esc(p.any_naixement)+'</span>';
+                const yearBadge='<span class="year-badge" style="font-size:0.7rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:1rem;background:#fef3c7;color:#92400e;margin-left:0.5rem;">'+esc(normalizeBirthYear(p.any_naixement||p.naixement||''))+'</span>';
                 return '<div class="obs-item" style="background:#f0fdf4;border:1px solid #86efac;"><div class="obs-header"><div style="font-size:0.95rem;"><strong style="color:#059669;">'+esc(p.nom||'Sense nom')+'</strong>'+genderBadge+yearBadge+'</div></div><div style="font-size:0.82rem;color:#475569;line-height:1.6;">'+club+tel+poblacio+'<strong>Posicions:</strong> '+esc(posicions)+'<br>'+situacio+'</div></div>';
-        window.updatePlayer=function(index,field,value){
+            }).join('');
+        }
+
+                window.updatePlayer=async function(index,field,value){
             if(!plantilla[index]) return;
             if(field==='revisio') plantilla[index].revisio=!!value;
             if(field==='nom') plantilla[index].nom=value;
-            if(field==='naixement') plantilla[index].naixement=normalizeDate(value);
-            saveAll(true);
+            if(field==='naixement') plantilla[index].naixement=normalizeBirthYear(value);
+
+            if(field==='naixement' && !isValidBirthYear(plantilla[index].naixement)){
+                renderPlantilla();
+                return;
+            }
+
+            if(IS_FILE){
+                saveAll(true);
+                return;
+            }
+
+            const player=plantilla[index];
+            if(!isNumericId(player.id)) return;
+            const body={id:player.id};
+            if(field==='nom') body.nom=player.nom;
+            if(field==='naixement') body.any_naixement=player.naixement;
+            if(field==='revisio') body.revisio_medica=player.revisio;
+
+            try{
+                const r=await fetch(API_JUGADORS,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(errorText);
+                }
+            }catch(e){
+                alert('No s\'ha pogut actualitzar el jugador');
+                await load();
+            }
         };
 
         window.removePlayer=async function(index){
             if(!confirm('Segur que vols eliminar aquest jugador?')) return;
-            plantilla.splice(index,1);
-            renderPlantilla();
-            await saveAll(true);
+            if(!plantilla[index]) return;
+            const player=plantilla[index];
+
+            if(IS_FILE || !isNumericId(player.id)){
+                plantilla.splice(index,1);
+                renderPlantilla();
+                if(IS_FILE) await saveAll(true);
+                return;
+            }
+
+            try{
+                const r=await fetch(`${API_JUGADORS}?id=${encodeURIComponent(player.id)}`,{method:'DELETE'});
+                if(!r.ok){
+                    const errorText=await r.text();
+                    throw new Error(`DELETE jugadors ${r.status}: ${errorText}`);
+                }
+                plantilla.splice(index,1);
+                renderPlantilla();
+            }catch(e){
+                alert('Error al eliminar jugador');
+            }
         };
 
         const today=new Date().toISOString().split('T')[0];
@@ -522,12 +758,14 @@
             renderObs();
             await saveAll(true);
         };
+
         window.removeObs=async function(i){
             if(!confirm('Segur que vols eliminar aquest comentari?')) return;
             observacions.splice(i,1);
             renderObs();
             await saveAll(true);
         };
+
         function renderObs(){
             const el=document.getElementById('obs_list'); if(!el)return;
             if(!observacions.length){el.innerHTML='<div class="empty-msg">Sense observacions registrades.</div>';return;}
@@ -540,3 +778,7 @@
     </script>
 </body>
 </html>
+
+
+
+

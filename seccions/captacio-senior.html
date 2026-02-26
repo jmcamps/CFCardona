@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captació Futbol Base | CF Cardona</title>
+    <title>Captació Senior | CF Cardona</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
@@ -74,8 +74,8 @@
 <body>
     <header>
         <div>
-            <h1>&#x1F31F; Captació Futbol Base</h1>
-            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; <a href="../estructura.html">Estructura Esportiva</a> &rarr; <a href="futbol-base.html">Futbol Base</a> &rarr; Captació</div>
+            <h1>&#x1F31F; Captació Senior</h1>
+            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; <a href="../estructura.html">Estructura Esportiva</a> &rarr; <a href="senior.html">Senior</a> &rarr; Captació</div>
         </div>
     </header>
     <div class="scouting-container">
@@ -145,13 +145,53 @@
     </template>
     
     <script>
-        const SEGMENT='base';
+        const SEGMENT='senior';
         const API_SEGUIMENT=`/api/jugadors-seguiment?segment=${SEGMENT}`;
-        const ALL_POSITIONS = ['Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu', 'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'];
+        const API_POSICIONS='/api/posicions';
+        const DEFAULT_POSITIONS = ['Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu', 'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'];
+        let ALL_POSITIONS = [...DEFAULT_POSITIONS];
         let players=[], selectedId=null;
+
+        function normalizePositionName(value){
+            return String(value || '').trim();
+        }
+
+        function normalizePositionList(list){
+            return [...new Set((Array.isArray(list) ? list : [])
+                .map(item => {
+                    if (item && typeof item === 'object') return normalizePositionName(item.nom || item.name || item.value);
+                    return normalizePositionName(item);
+                })
+                .filter(Boolean))];
+        }
+
+        async function loadPositions(){
+            try {
+                const r = await fetch(API_POSICIONS);
+                if(!r.ok){
+                    const errorText = await r.text();
+                    throw new Error(`GET posicions ${r.status}: ${errorText}`);
+                }
+                const payload = await r.json();
+                const normalized = normalizePositionList(payload);
+                if(normalized.length){
+                    ALL_POSITIONS = normalized;
+                }
+            } catch (e) {
+                ALL_POSITIONS = [...DEFAULT_POSITIONS];
+            }
+        }
+
+        function renderPositionGrid(name, selected = []){
+            const selectedSet = new Set(normalizePositionList(selected));
+            return ALL_POSITIONS.map(pos => `
+                <label class="pos-item"><input type="checkbox" name="${name}" value="${esc(pos)}" ${selectedSet.has(pos)?'checked':''}> ${esc(pos)}</label>
+            `).join('');
+        }
 
         async function load(){
             try {
+                await loadPositions();
                 const r=await fetch(API_SEGUIMENT);
                 if(!r.ok){
                     const errorText=await r.text();
@@ -230,7 +270,7 @@
                             <div class="pos-grid">
                                 ${ALL_POSITIONS.map(pos=>`
                                     <label class="pos-item">
-                                        <input type="checkbox" value="${pos}" ${(p.posicions||[]).includes(pos)?'checked':''} onchange="togglePosition('${pos}', this.checked)"> ${pos}
+                                        <input type="checkbox" value="${esc(pos)}" ${(p.posicions||[]).includes(pos)?'checked':''} onchange="togglePosition(this.value, this.checked)"> ${esc(pos)}
                                     </label>
                                 `).join('')}
                             </div>
@@ -326,6 +366,10 @@
             const mainView = document.getElementById('scouting_main_view');
             const tpl = document.getElementById('tpl_add_form');
             mainView.innerHTML = tpl.innerHTML;
+            const addPosContainer = mainView.querySelector('.pos-grid');
+            if(addPosContainer){
+                addPosContainer.innerHTML = renderPositionGrid('sc_pos', []);
+            }
             selectedId = null;
             renderList();
         }
@@ -352,7 +396,7 @@
             const tel = document.getElementById('sc_tel').value.trim();
             const poblacio = document.getElementById('sc_poblacio').value.trim();
             const situacio = document.getElementById('sc_situacio').value.trim();
-            const posicions = Array.from(document.querySelectorAll('input[name="sc_pos"]:checked')).map(cb=>cb.value);
+            const posicions = normalizePositionList(Array.from(document.querySelectorAll('input[name="sc_pos"]:checked')).map(cb=>cb.value));
 
             try{
                 const r = await fetch(API_SEGUIMENT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nom, club, tel, poblacio, any_naixement, genere, posicions, situacio, contactes:[]})});
@@ -394,6 +438,7 @@
         }
 
         async function updateField(field, value){
+            if(selectedId === null || !players[selectedId]) return;
             players[selectedId][field] = value;
             const player = players[selectedId];
             if(player && player.id){
@@ -411,6 +456,7 @@
         }
 
         async function togglePosition(pos, checked){
+            if(selectedId === null || !players[selectedId]) return;
             if(!players[selectedId].posicions) players[selectedId].posicions = [];
             if(checked){
                 if(!players[selectedId].posicions.includes(pos)){
@@ -419,6 +465,7 @@
             } else {
                 players[selectedId].posicions = players[selectedId].posicions.filter(p=>p!==pos);
             }
+            players[selectedId].posicions = normalizePositionList(players[selectedId].posicions);
             const player = players[selectedId];
             if(player && player.id){
                 try{

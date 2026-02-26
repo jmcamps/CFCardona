@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -148,17 +148,43 @@
         <div id="view_by_team" style="display:none;"></div>
     </div>
     <script>
-        const API='/api/players';
-        const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
-        const TEAMS = [{"id":"seccio_primer-equip","name":"Primer Equip"},{"id":"seccio_filial","name":"Filial"},{"id":"seccio_minis","name":"Minis"},{"id":"seccio_s7","name":"S7"},{"id":"seccio_s8","name":"S8"},{"id":"seccio_s9","name":"S9"},{"id":"seccio_s10","name":"S10"},{"id":"seccio_s11","name":"S11"},{"id":"seccio_s12","name":"S12"},{"id":"seccio_s16","name":"S16 (Cadet)"},{"id":"seccio_juvenil-masculi","name":"Juvenil Masculí"},{"id":"seccio_alevi-femeni","name":"Aleví Femení"},{"id":"seccio_cadet-femeni","name":"Cadet Femení"},{"id":"seccio_juvenil-femeni","name":"Juvenil Femení"}];
-        let db = {};
+        const API_HORARIOS = '/api/horarios';
+        const API_EQUIPS = '/api/equips';
+        const DIES = ['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
+        let TEAMS = [];
+        let horarios = [];
 
         async function load() {
             try {
-                const r = await fetch(API);
-                db = await r.json();
-                renderAll();
-            } catch(e) { console.warn('Servidor no disponible'); }
+                const te = await fetch(API_EQUIPS);
+                if (te.ok) {
+                    TEAMS = await te.json();
+                    if (!Array.isArray(TEAMS)) TEAMS = [];
+                    TEAMS = TEAMS.map(t => ({ id: String(t.id), name: t.name }));
+                } else {
+                    TEAMS = [];
+                }
+            } catch(e) {
+                console.warn('Error carregant equips:', e);
+                TEAMS = [];
+            }
+
+            try {
+                const r = await fetch(API_HORARIOS);
+                horarios = await r.json();
+                if (!Array.isArray(horarios)) horarios = [];
+                horarios = horarios.map(h => ({ ...h, id: h.id ? String(h.id) : '', team_id: String(h.team_id) }));
+            } catch(e) {
+                console.warn('Error carregant horaris:', e);
+                horarios = [];
+            }
+
+            if (TEAMS.length === 0 && horarios.length > 0) {
+                const uniqueTeamIds = [...new Set(horarios.map(h => String(h.team_id)).filter(Boolean))];
+                TEAMS = uniqueTeamIds.map(id => ({ id, name: `Equip ${id}` }));
+            }
+
+            renderAll();
         }
 
         function renderAll() {
@@ -171,8 +197,15 @@
             const sel = document.getElementById('h_team');
             if(!sel) return;
             const current = sel.value;
+            const sortedTeams = [...TEAMS].sort((a, b) => {
+                const idA = Number(String(a.id || '').trim());
+                const idB = Number(String(b.id || '').trim());
+                const bothNumeric = Number.isFinite(idA) && Number.isFinite(idB);
+                if (bothNumeric) return idA - idB;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
             sel.innerHTML = '<option value="">Selecciona Equip...</option>' + 
-                TEAMS.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                sortedTeams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
             if(current) sel.value = current;
         }
 
@@ -193,19 +226,14 @@
             let collision = false;
             let collisionMsg = '';
             
-            TEAMS.forEach(t => {
-                const teamData = db[t.id] || {};
-                const horaris = teamData.horaris || [];
-                
-                horaris.forEach(h => {
-                    if (h.dia === dia && h.camp === h_camp) {
-                        // Check time overlap: (StartA < EndB) and (EndA > StartB)
-                        if (h_inici < h.fi && h_fi > h.inici) {
-                            collision = true;
-                            collisionMsg = `Col·lisió detectada: L'equip ${t.name} ja ocupa ${h_camp} de ${h.inici} a ${h.fi}.`;
-                        }
+            horarios.forEach(h => {
+                if (h.dia === dia && h.camp === h_camp) {
+                    if (h_inici < h.fi && h_fi > h.inici) {
+                        const team = TEAMS.find(t => t.id === h.team_id);
+                        collision = true;
+                        collisionMsg = `Col·lisió detectada: L'equip ${team ? team.name : h.team_id} ja ocupa ${h_camp} de ${h.inici} a ${h.fi}.`;
                     }
-                });
+                }
             });
 
             if (collision) {
@@ -213,10 +241,9 @@
                 return;
             }
             
-            if(!db[teamId]) db[teamId] = {};
-            if(!db[teamId].horaris) db[teamId].horaris = [];
-            
-            db[teamId].horaris.push({
+            horarios.push({
+                id: (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                team_id: String(teamId),
                 dia,
                 inici: h_inici,
                 fi: h_fi,
@@ -224,27 +251,27 @@
                 camp: h_camp
             });
             
-            db[teamId].horaris.sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
+            horarios.sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
             
             try {
-                await fetch(API, {
+                await fetch(API_HORARIOS, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(db)
+                    body: JSON.stringify(horarios)
                 });
                 renderAll();
                 ['h_inici','h_fi','h_vestidor','h_camp'].forEach(id => document.getElementById(id).value = '');
             } catch(e) { alert('Error al guardar'); }
         };
 
-        window.removeHorariGlobal = async function(teamId, index) {
+        window.removeHorariGlobal = async function(horariId) {
             if(!confirm('Segur que vols eliminar aquesta franja?')) return;
-            db[teamId].horaris.splice(index, 1);
+            horarios = horarios.filter(h => String(h.id) !== String(horariId));
             try {
-                await fetch(API, {
+                await fetch(API_HORARIOS, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(db)
+                    body: JSON.stringify(horarios)
                 });
                 renderAll();
             } catch(e) { alert('Error al eliminar'); }
@@ -255,27 +282,24 @@
             if(!el) return;
             let html = '';
             DIES.forEach(dia => {
-                let sessions = [];
-                TEAMS.forEach(t => {
-                    const h = (db[t.id] || {}).horaris || [];
-                    h.forEach((s, idx) => {
-                        if(s.dia === dia) sessions.push({...s, teamName: t.name, teamId: t.id, originalIndex: idx});
-                    });
+                let sessions = horarios.filter(h => h.dia === dia).sort((a,b) => (a.inici || '').localeCompare(b.inici || ''));
+                const enriched = sessions.map((s) => {
+                    const team = TEAMS.find(t => String(t.id) === String(s.team_id));
+                    return {...s, teamName: team ? team.name : s.team_id};
                 });
-                sessions.sort((a,b) => (a.inici || '').localeCompare(b.inici || ''));
                 
                 html += `<div class="day-section">
                     <h3 class="dia-badge" style="display:inline-block; margin-bottom:1rem; font-size:1.2rem;">${dia}</h3>
                     <table class="horari-table">
                         <thead><tr><th>Hora</th><th>Equip</th><th>Camp</th><th>Vestidor</th><th style="width:50px"></th></tr></thead>
                         <tbody>
-                            ${sessions.length ? sessions.map(s => `
+                            ${enriched.length ? enriched.map((s) => `
                                 <tr>
                                     <td><strong>${s.inici || '-'}</strong> - ${s.fi || '-'}</td>
                                     <td>${s.teamName}</td>
                                     <td>${s.camp || '-'}</td>
                                     <td>${s.vestidor || '-'}</td>
-                                    <td><button class="btn-remove" onclick="removeHorariGlobal('${s.teamId}', ${s.originalIndex})">&#x00D7;</button></td>
+                                    <td><button class="btn-remove" onclick="removeHorariGlobal('${s.id}')">&#x00D7;</button></td>
                                 </tr>
                             `).join('') : '<tr><td colspan="5" class="empty-msg">Sense entrenaments</td></tr>'}
                         </tbody>
@@ -290,20 +314,20 @@
             if(!el) return;
             let html = '';
             TEAMS.forEach(t => {
-                const h = (db[t.id] || {}).horaris || [];
+                const h = horarios.filter(h => String(h.team_id) === String(t.id)).sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
                 if(h.length === 0) return;
                 html += `<div class="team-section">
                     <h3>${t.name}</h3>
                     <table class="horari-table">
                         <thead><tr><th>Dia</th><th>Hora</th><th>Camp</th><th>Vestidor</th><th style="width:50px"></th></tr></thead>
                         <tbody>
-                            ${h.map((s, idx) => `
+                            ${h.map((s) => `
                                 <tr>
                                     <td class="dia-badge">${s.dia}</td>
                                     <td><strong>${s.inici || '-'}</strong> - ${s.fi || '-'}</td>
                                     <td>${s.camp || '-'}</td>
                                     <td>${s.vestidor || '-'}</td>
-                                    <td><button class="btn-remove" onclick="removeHorariGlobal('${t.id}', ${idx})">&#x00D7;</button></td>
+                                    <td><button class="btn-remove" onclick="removeHorariGlobal('${s.id}')">&#x00D7;</button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -333,3 +357,4 @@
     
 </body>
 </html>
+
