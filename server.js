@@ -41,6 +41,21 @@ function normalizeSupabaseUrl(value) {
     return parsed.toString().replace(/\/$/, '');
 }
 
+function describeApiKey(key) {
+    const raw = String(key || '').trim();
+    if (!raw) return 'missing';
+    const type = raw.startsWith('sb_publishable_')
+        ? 'publishable'
+        : raw.startsWith('sb_secret_')
+            ? 'secret'
+            : raw.startsWith('eyJ')
+                ? 'jwt'
+                : 'unknown';
+    const start = raw.slice(0, Math.min(12, raw.length));
+    const end = raw.slice(-6);
+    return `${type}:${start}...${end} (len=${raw.length})`;
+}
+
 function isMissingSupabaseTableError(err, tableName) {
     const msg = (err && err.message ? String(err.message) : '').toLowerCase();
     const table = String(tableName || '').toLowerCase();
@@ -1502,6 +1517,15 @@ function supabaseRestRequest(method, endpointPath, body = null, preferHeader = n
                         return;
                     }
 
+                    if (statusCode === 401) {
+                        console.error(
+                            '[Supabase 401] host=%s path=%s key=%s',
+                            supabaseBaseUrl.hostname,
+                            endpointPath,
+                            describeApiKey(SUPABASE_SERVICE_ROLE_KEY)
+                        );
+                    }
+
                     reject(new Error(`Supabase HTTP ${statusCode}: ${responseData}`));
                 });
             }
@@ -2099,6 +2123,11 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, async () => {
     console.log(`BBDD del CF Cardona activa al port ${PORT}`);
     if (USE_SUPABASE) {
+        console.log(
+            '[Supabase config] host=%s key=%s',
+            supabaseBaseUrl.hostname,
+            describeApiKey(SUPABASE_SERVICE_ROLE_KEY)
+        );
         console.log(`Persistència activa a Supabase (${SUPABASE_SECCIONS_TABLE} + observacions + horarios_entrenaments)`);
         try {
             await ensureHorariosTable();
