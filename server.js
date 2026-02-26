@@ -17,6 +17,30 @@ function cleanEnvVar(value) {
     return trimmed;
 }
 
+function normalizeSupabaseServiceKey(value) {
+    const cleaned = cleanEnvVar(value);
+    if (!cleaned) return '';
+
+    const compact = cleaned.replace(/\s+/g, '');
+
+    const tokenMatch = compact.match(/(sb_(?:secret|publishable)_[A-Za-z0-9._-]+)/i);
+    if (tokenMatch && tokenMatch[1]) {
+        return tokenMatch[1];
+    }
+
+    const jwtMatch = compact.match(/(eyJ[A-Za-z0-9._-]+)/);
+    if (jwtMatch && jwtMatch[1]) {
+        return jwtMatch[1];
+    }
+
+    return compact
+        .replace(/^apikey[:=]/i, '')
+        .replace(/^key[:=]/i, '')
+        .replace(/^token[:=]/i, '')
+        .replace(/^bearer[:=]?/i, '')
+        .trim();
+}
+
 function normalizeSupabaseUrl(value) {
     const cleaned = cleanEnvVar(value);
     if (!cleaned) return '';
@@ -71,7 +95,7 @@ function isMissingSupabaseColumnError(err, columnName) {
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL);
-const SUPABASE_SERVICE_ROLE_KEY = cleanEnvVar(process.env.SUPABASE_SERVICE_ROLE_KEY).replace(/\s+/g, '');
+const SUPABASE_SERVICE_ROLE_KEY = normalizeSupabaseServiceKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const IS_RENDER = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID);
 const HAS_SUPABASE_CONFIG = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const IS_PUBLISHABLE_KEY = String(SUPABASE_SERVICE_ROLE_KEY || '').startsWith('sb_publishable_');
