@@ -37,33 +37,6 @@
     };
 
     const pathname = window.location.pathname.toLowerCase();
-    const futbolBaseMarkers = [
-        '/seccions/futbol-base',
-        '/seccions/f7', '/seccions/f11',
-        '/seccions/minis', '/seccions/s7', '/seccions/s8', '/seccions/s9', '/seccions/s10', '/seccions/s11', '/seccions/s12', '/seccions/s13', '/seccions/s14', '/seccions/s16',
-        '/seccions/juvenil-masculi', '/seccions/juvenil-femeni', '/seccions/alevi-femeni', '/seccions/infantil-femeni', '/seccions/cadet-femeni',
-        '/seccions/captacio-futbol-base'
-    ];
-    const isFutbolBaseContext = futbolBaseMarkers.some(marker => pathname.includes(marker));
-    let hasFutbolBasePinned = false;
-    try {
-        hasFutbolBasePinned = localStorage.getItem('cf_menu_futbol_base') === '1';
-    } catch (_) {}
-    const showFutbolBaseMainMenu = isFutbolBaseContext || hasFutbolBasePinned;
-
-    const seniorMarkers = [
-        '/seccions/senior',
-        '/seccions/primer-equip',
-        '/seccions/filial',
-        '/seccions/captacio-senior'
-    ];
-    const isSeniorContext = seniorMarkers.some(marker => pathname.includes(marker));
-    let hasSeniorPinned = false;
-    try {
-        hasSeniorPinned = localStorage.getItem('cf_menu_senior') === '1';
-    } catch (_) {}
-    const showSeniorMainMenu = isSeniorContext || hasSeniorPinned;
-
     const style = document.createElement('style');
     style.textContent = `
         .cf-topnav-wrap { max-width: 1200px; margin: 0 auto 1.25rem; position: sticky; top: 0.75rem; z-index: 40; }
@@ -138,7 +111,7 @@
 
     const isActive = (needle) => pathname.includes(needle);
 
-    const futbolBaseMenuHtml = showFutbolBaseMainMenu ? `
+    const futbolBaseMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-fb-dropdown">
             <button class="cf-nav-drop-btn" type="button" id="cf-nav-fb-btn">Estructura Futbol Base ▾</button>
             <div class="cf-nav-menu cf-fb-menu" id="cf-nav-fb-menu">
@@ -175,9 +148,9 @@
                 </div>
             </div>
         </div>
-    ` : '';
+    `;
 
-    const seniorMenuHtml = showSeniorMainMenu ? `
+    const seniorMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-senior-dropdown">
             <button class="cf-nav-drop-btn" type="button" id="cf-nav-senior-btn">Estructura Senior ▾</button>
             <div class="cf-nav-menu cf-fb-menu" id="cf-nav-senior-menu">
@@ -195,7 +168,7 @@
                 </div>
             </div>
         </div>
-    ` : '';
+    `;
 
     nav.innerHTML = `
         <a class="cf-brand" href="${links.home}">
@@ -259,25 +232,11 @@
         });
     }
 
-    const futbolBaseEntry = document.getElementById('cf-futbolbase-entry');
-    if (futbolBaseEntry) {
-        futbolBaseEntry.addEventListener('click', function () {
-            try { localStorage.setItem('cf_menu_futbol_base', '1'); } catch (_) {}
-        });
-    }
-
     const seniorDrop = document.getElementById('cf-nav-senior-dropdown');
     const seniorBtn = document.getElementById('cf-nav-senior-btn');
     if (seniorDrop && seniorBtn) {
         seniorBtn.addEventListener('click', function () {
             seniorDrop.classList.toggle('open');
-        });
-    }
-
-    const seniorEntry = document.getElementById('cf-senior-entry');
-    if (seniorEntry) {
-        seniorEntry.addEventListener('click', function () {
-            try { localStorage.setItem('cf_menu_senior', '1'); } catch (_) {}
         });
     }
 
