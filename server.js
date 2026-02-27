@@ -1619,6 +1619,8 @@ async function writeHorarios(horarios) {
     if (!USE_SUPABASE) return;
 
     try {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
         if (!Array.isArray(horarios)) {
             throw new Error('Payload d\'horaris invàlid');
         }
@@ -1629,22 +1631,30 @@ async function writeHorarios(horarios) {
         }
 
         const normalized = horarios.map(item => {
+            const rawId = String(item.id || '').trim();
+            const teamId = String(item.team_id || '').trim();
+            const campValue = String(item.camp || '').trim();
+            const vestidorValue = item.vestidor ? String(item.vestidor).trim() : '';
             const row = {
-                id: String(item.id || randomUUID()),
-                team_id: String(item.team_id || '').trim(),
+                id: uuidRegex.test(rawId) ? rawId : randomUUID(),
+                team_id: teamId,
                 dia: String(item.dia || '').trim(),
                 inici: String(item.inici || '').trim(),
                 fi: String(item.fi || '').trim(),
-                vestidor: item.vestidor ? String(item.vestidor).trim() : null,
-                camp: String(item.camp || '').trim()
+                vestidor: teamId ? (vestidorValue || null) : null,
+                camp: teamId ? campValue : ''
             };
 
-            if (!row.team_id || !row.dia || !row.inici || !row.fi || !row.camp) {
-                throw new Error('Falten camps obligatoris a un horari');
+            if (!row.dia || !row.inici || !row.fi) {
+                return null;
             }
 
             return row;
-        });
+        }).filter(Boolean);
+
+        if (normalized.length === 0) {
+            throw new Error('No hi ha horaris vàlids per guardar');
+        }
 
         await supabaseRestRequest(
             'POST',

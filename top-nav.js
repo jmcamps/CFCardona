@@ -106,12 +106,30 @@
         .cf-nav-feature-sub:hover { border-color: #fecaca; background: #fff5f5; }
         .cf-nav-feature-sub-title { display:block; font-size: 0.8rem; font-weight: 800; color:#0f172a; margin-bottom: 0.15rem; }
         .cf-nav-feature-sub-desc { display:block; font-size: 0.72rem; color:#64748b; line-height: 1.35; }
+        .cf-page-title-wrap {
+            max-width: 960px;
+            margin: 0 auto 1.1rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.9rem;
+            padding: 1rem 1.15rem;
+            box-shadow: 0 4px 10px rgba(2,6,23,0.06);
+        }
+        .cf-page-title {
+            color: #d91d1d;
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            margin: 0;
+        }
 
         @media (max-width: 720px) {
             .cf-topnav { align-items: flex-start; flex-direction: column; }
             .cf-nav-menu { left: 0; right: auto; min-width: 280px; max-width: calc(100vw - 2rem); }
             .cf-nav-feature-grid { grid-template-columns: 1fr; }
             .cf-fb-grid { grid-template-columns: 1fr; }
+            .cf-page-title { font-size: 1.15rem; }
         }
     `;
 
@@ -262,6 +280,35 @@
     wrap.appendChild(nav);
     document.head.appendChild(style);
     document.body.prepend(wrap);
+
+    const filename = pathname.split('/').pop() || '';
+    const teamPageTitles = {
+        'primer-equip.html': 'Primer Equip',
+        'filial.html': 'Filial',
+        'minis.html': 'Minis',
+        's7.html': 'S7',
+        's8.html': 'S8',
+        's9.html': 'S9',
+        's10.html': 'S10',
+        's11.html': 'S11',
+        's12.html': 'S12',
+        's13.html': 'S13',
+        's14.html': 'S14',
+        's16.html': 'S16',
+        'juvenil-masculi.html': 'Juvenil Masculí',
+        'alevi-femeni.html': 'Aleví Femení',
+        'infantil-femeni.html': 'Infantil Femení',
+        'cadet-femeni.html': 'Cadet Femení',
+        'juvenil-femeni.html': 'Juvenil Femení'
+    };
+
+    const teamTitle = teamPageTitles[filename];
+    if (teamTitle) {
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'cf-page-title-wrap';
+        titleWrap.innerHTML = `<h1 class="cf-page-title">${teamTitle}</h1>`;
+        wrap.insertAdjacentElement('afterend', titleWrap);
+    }
 
     const drop = document.getElementById('cf-nav-dropdown');
     const btn = document.getElementById('cf-nav-drop-btn');
