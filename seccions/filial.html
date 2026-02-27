@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filial | CF Cardona</title>
-    <script src="../top-nav.js" defer></script>
+    <script src="../assets/js/top-nav.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
@@ -121,7 +121,7 @@
         </div>
     </div>
     <div class="card">
-        <h2>&#x1F4CB; Plantilla de Jugadors</h2>
+        <h2 id="plantilla_title">&#x1F4CB; Plantilla de Jugadors (0)</h2>
         <div style="overflow-x:auto;">
             <table class="plantilla-table">
                 <thead>
@@ -205,6 +205,8 @@
         function renderPlantilla() {
             const tbody = document.getElementById('player-list-tbody');
             if (!tbody) return;
+            const plantillaTitle = document.getElementById('plantilla_title');
+            if (plantillaTitle) plantillaTitle.innerHTML = '&#x1F4CB; Plantilla de Jugadors (' + (Array.isArray(plantilla) ? plantilla.length : 0) + ')';
 
             if (!plantilla || plantilla.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">No hi ha jugadors registrats per a aquest equip.</td></tr>';
@@ -454,3 +456,4 @@
     </script>
 </body>
 </html>
+

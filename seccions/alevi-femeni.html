@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aleví Femení | CF Cardona</title>
-    <script src="../top-nav.js" defer></script>
+    <script src="../assets/js/top-nav.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
@@ -153,7 +153,7 @@
         </div>
     </div>
     <div class="card">
-        <h2>&#x1F4CB; Plantilla de Jugadores</h2>
+        <h2 id="plantilla_title">&#x1F4CB; Plantilla de Jugadores (0)</h2>
         <div style="overflow-x:auto;">
             <table class="plantilla-table">
                 <thead>
@@ -161,6 +161,9 @@
                         <th>Jugadora</th>
                         <th>Any de naixement</th>
                         <th style="text-align:center;">Revisi&oacute; m&egrave;dica</th>
+                        <th style="text-align:center;">Inscripció</th>
+                        <th style="text-align:center;">Pagament FCF</th>
+                        <th style="text-align:center;">Vinculat al club</th>
                         <th class="plantilla-actions"></th>
                     </tr>
                 </thead>
@@ -168,15 +171,21 @@
             </table>
         </div>
         <div style="margin-top:2rem;">
-            <h3 style="color:#059669;font-size:0.95rem;font-weight:800;margin-bottom:1rem;border-bottom:2px solid #86efac;padding-bottom:0.5rem;">&#x1F31F; Suggeriments de Captació (Coincidència d'Edat i Gènere)</h3>
+            <h3 id="captacio_title" style="color:#059669;font-size:0.95rem;font-weight:800;margin-bottom:1rem;border-bottom:2px solid #86efac;padding-bottom:0.5rem;">&#x1F31F; Suggeriments de Captació (Coincidència d'Edat i Gènere) (0)</h3>
             <div id="captacio_suggestions"></div>
         </div>
         <div class="add-form-box" style="margin-top:1rem;">
             <div class="add-form-title">Afegir Jugadora</div>
-            <div class="form-row-3">
+            <div class="form-row-4">
                 <div><label>Nom i Cognoms</label><input type="text" id="p_nom" placeholder="Nom..."></div>
                 <div><label>Any de naixement</label><input type="number" id="p_naixement" min="1990" max="2030" placeholder="Ex: 2014"></div>
-                <div><label>Revisi&oacute; m&egrave;dica</label><input type="checkbox" id="p_revisio"></div>
+                <div><label>Revisió mèdica</label><input type="checkbox" id="p_revisio"></div>
+                <div><label>Inscripció</label><input type="checkbox" id="p_inscripcio"></div>
+            </div>
+            <div class="form-row-3" style="margin-bottom:0;">
+                <div><label>Pagament FCF</label><input type="checkbox" id="p_pagament_fcf"></div>
+                <div><label>Vinculat al club</label><input type="checkbox" id="p_vinculat_club"></div>
+                <div></div>
             </div>
             <div style="display:flex;justify-content:flex-end;">
                 <button class="btn btn-primary" onclick="addPlayer()">AFEGIR JUGADORA</button>
@@ -242,8 +251,8 @@
         const KEY='seccio_alevi-femeni';
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
-        const TARGET_MIN_YEAR=2014;
-        const TARGET_MAX_YEAR=2015;
+        const TARGET_MIN_YEAR=2015;
+        const TARGET_MAX_YEAR=2016;
         const TARGET_GENDER='Femení';
         const MIN_PLAYERS=9;
         const MIN_LABEL='Femení';
@@ -297,6 +306,16 @@
 
         function isNumericId(value){
             return /^\d+$/.test(String(value||'').trim());
+        }
+
+        function toBool(value){
+            if(typeof value==='boolean') return value;
+            if(typeof value==='number') return value!==0;
+            const text=String(value??'').trim().toLowerCase();
+            if(!text) return false;
+            if(['true','t','1','yes','si','sí'].includes(text)) return true;
+            if(['false','f','0','no'].includes(text)) return false;
+            return !!value;
         }
 
         function isHorariForEquip(horari){
@@ -413,7 +432,10 @@
                         id:j.id,
                         nom:j.nom||'',
                         naixement:normalizeBirthYear(j.any_naixement||j.naixement||''),
-                        revisio:!!j.revisio
+                        revisio:toBool(j.revisio),
+                        inscripcio:toBool(j.inscripcio_feta ?? j.inscripcio),
+                        pagament_fcf:toBool(j.pagament_fcf_fet ?? j.pagament_fcf),
+                        vinculat_club:toBool(j.vinculat_club)
                     })):[];
                 }else if(IS_FILE && Object.prototype.hasOwnProperty.call(d,'plantilla')){
                     plantilla=Array.isArray(d.plantilla)?d.plantilla:[];
@@ -528,6 +550,11 @@
         function renderPlantilla(){
             const body=document.getElementById('plantilla_tbody');
             if(!body) return;
+            const plantillaTitle=document.getElementById('plantilla_title');
+            if(plantillaTitle){
+                if(!plantillaTitle.dataset.baseTitle) plantillaTitle.dataset.baseTitle=plantillaTitle.innerHTML.replace(/\s*\(\d+\)\s*$/,'');
+                plantillaTitle.innerHTML=plantillaTitle.dataset.baseTitle+' ('+plantilla.length+')';
+            }
             const alertBox=document.getElementById('plantilla_alert');
             const alertText=document.getElementById('plantilla_alert_text');
             const staffAlert=document.getElementById('staff_alert');
@@ -554,16 +581,22 @@
                 }
             }
             if(!plantilla.length){
-                body.innerHTML='<tr><td colspan="4" class="empty-msg">Sense jugadores registrades.</td></tr>';
+                body.innerHTML='<tr><td colspan="7" class="empty-msg">Sense jugadores registrades.</td></tr>';
                 return;
             }
             body.innerHTML=plantilla.map((p,i)=>{
-                const checked=p.revisio?'checked':'';
+                const checkedRevisio=p.revisio?'checked':'';
+                const checkedInscripcio=p.inscripcio?'checked':'';
+                const checkedPagamentFcf=p.pagament_fcf?'checked':'';
+                const checkedVinculatClub=p.vinculat_club?'checked':'';
                 const birthYear=normalizeBirthYear(p.naixement||'');
                 return '<tr>'
                     +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
                     +'<td><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
-                    +'<td style="text-align:center;"><input type="checkbox" '+checked+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
+                    +'<td style="text-align:center;"><input type="checkbox" '+checkedRevisio+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
+                    +'<td style="text-align:center;"><input type="checkbox" '+checkedInscripcio+' onchange="updatePlayer('+i+',\'inscripcio\',this.checked)"></td>'
+                    +'<td style="text-align:center;"><input type="checkbox" '+checkedPagamentFcf+' onchange="updatePlayer('+i+',\'pagament_fcf\',this.checked)"></td>'
+                    +'<td style="text-align:center;"><input type="checkbox" '+checkedVinculatClub+' onchange="updatePlayer('+i+',\'vinculat_club\',this.checked)"></td>'
                     +'<td class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
             }).join('');
@@ -573,21 +606,27 @@
             const nom=document.getElementById('p_nom').value.trim();
             const naixement=normalizeBirthYear(document.getElementById('p_naixement').value);
             const revisio=document.getElementById('p_revisio').checked;
+            const inscripcio=document.getElementById('p_inscripcio').checked;
+            const pagamentFcf=document.getElementById('p_pagament_fcf').checked;
+            const vinculatClub=document.getElementById('p_vinculat_club').checked;
             if(!nom){alert('Introdueix el nom de la jugadora.');return;}
             if(!isValidBirthYear(naixement)){alert('Introdueix un any de naixement vàlid (format YYYY).');return;}
 
             if(IS_FILE){
-                plantilla.push({id:`local_${Date.now()}`,nom,naixement,revisio});
+                plantilla.push({id:`local_${Date.now()}`,nom,naixement,revisio,inscripcio,pagament_fcf:pagamentFcf,vinculat_club:vinculatClub});
                 document.getElementById('p_nom').value='';
                 document.getElementById('p_naixement').value='';
                 document.getElementById('p_revisio').checked=false;
+                document.getElementById('p_inscripcio').checked=false;
+                document.getElementById('p_pagament_fcf').checked=false;
+                document.getElementById('p_vinculat_club').checked=false;
                 renderPlantilla();
                 await saveAll(true);
                 return;
             }
 
             try{
-                const r=await fetch(API_JUGADORS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equip_id:EQUIP_ID,nom,any_naixement:naixement,revisio_medica:revisio})});
+                const r=await fetch(API_JUGADORS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equip_id:EQUIP_ID,nom,any_naixement:naixement,revisio_medica:revisio,inscripcio_feta:inscripcio,pagament_fcf_fet:pagamentFcf,vinculat_club:vinculatClub})});
                 if(!r.ok){
                     const errorText=await r.text();
                     throw new Error(`POST jugadors ${r.status}: ${errorText}`);
@@ -595,7 +634,7 @@
                 const payload=await r.json();
                 const created=payload&&payload.jugador?payload.jugador:null;
                 if(created){
-                    plantilla.push({id:String(created.id),nom:created.nom||nom,naixement:normalizeBirthYear(created.any_naixement||created.naixement||naixement),revisio:!!created.revisio});
+                    plantilla.push({id:String(created.id),nom:created.nom||nom,naixement:normalizeBirthYear(created.any_naixement||created.naixement||naixement),revisio:toBool(created.revisio),inscripcio:toBool(created.inscripcio_feta ?? inscripcio),pagament_fcf:toBool(created.pagament_fcf_fet ?? pagamentFcf),vinculat_club:toBool(created.vinculat_club ?? vinculatClub)});
                     plantilla.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
                 }
             }catch(e){
@@ -604,11 +643,19 @@
             document.getElementById('p_nom').value='';
             document.getElementById('p_naixement').value='';
             document.getElementById('p_revisio').checked=false;
-            renderPlantilla();
+                document.getElementById('p_inscripcio').checked=false;
+                document.getElementById('p_pagament_fcf').checked=false;
+                document.getElementById('p_vinculat_club').checked=false;
+                renderPlantilla();
         };
 
         function renderCaptacioSuggestions(){
             const container=document.getElementById('captacio_suggestions');
+            const captacioTitle=document.getElementById('captacio_title');
+            if(captacioTitle){
+                if(!captacioTitle.dataset.baseTitle) captacioTitle.dataset.baseTitle=captacioTitle.innerHTML.replace(/\s*\(\d+\)\s*$/,'');
+                captacioTitle.innerHTML=captacioTitle.dataset.baseTitle+' ('+(captacioSuggestions?captacioSuggestions.length:0)+')';
+            }
             if(!container) return;
             if(!captacioSuggestions||!captacioSuggestions.length){
                 container.innerHTML='<div class="empty-msg">No hi ha jugadores en captació que coincideixin amb aquest equip.</div>';
@@ -629,6 +676,9 @@
         window.updatePlayer=function(index,field,value){
             if(!plantilla[index]) return;
             if(field==='revisio') plantilla[index].revisio=!!value;
+            if(field==='inscripcio') plantilla[index].inscripcio=!!value;
+            if(field==='pagament_fcf') plantilla[index].pagament_fcf=!!value;
+            if(field==='vinculat_club') plantilla[index].vinculat_club=!!value;
             if(field==='nom') plantilla[index].nom=value;
             if(field==='naixement') plantilla[index].naixement=normalizeBirthYear(value);
 
@@ -648,6 +698,9 @@
             if(field==='nom') body.nom=player.nom;
             if(field==='naixement') body.any_naixement=player.naixement;
             if(field==='revisio') body.revisio_medica=player.revisio;
+            if(field==='inscripcio') body.inscripcio_feta=player.inscripcio;
+            if(field==='pagament_fcf') body.pagament_fcf_fet=player.pagament_fcf;
+            if(field==='vinculat_club') body.vinculat_club=player.vinculat_club;
 
             fetch(API_JUGADORS,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
                 .then(async r=>{if(!r.ok){const errorText=await r.text();throw new Error(errorText);}})
@@ -709,3 +762,4 @@
     </script>
 </body>
 </html>
+

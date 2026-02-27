@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detall Jugador | CF Cardona</title>
-    <script src="../top-nav.js" defer></script>
-    <link rel="stylesheet" href="jugador-detall.css">
+    <script src="../assets/js/top-nav.js" defer></script>
+    <link rel="stylesheet" href="../assets/css/jugador-detall.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -14,10 +14,10 @@
     <main class="main-area" style="width:100%;">
         <div class="top-bar">
             <div>
-                <div class="player-name-header" id="header-name">📋 Fitxa Jugador</div>
+                <div class="player-name-header" id="header-name">📝 Fitxa Jugador</div>
                 <div class="breadcrumb" id="breadcrumb">
                     <a href="../index.html">Inici</a> &rarr;
-                    <a href="../estructura.html">Estructura Esportiva</a> &rarr;
+                    <a href="../index.html">Estructura Esportiva</a> &rarr;
                     <a href="senior.html">Senior</a> &rarr;
                     <a href="primer-equip.html" id="breadcrumb-team-link">Primer Equip</a> &rarr;
                     Detall jugador
@@ -38,7 +38,7 @@
             <form id="player-form">
                 <div class="form-grid">
                     <div class="card full-width">
-                        <div class="card-h3">📄 Dades Bàsiques</div>
+                        <div class="card-h3">📞 Dades Bàsiques</div>
                         <div class="input-group" style="margin-bottom: 1.5rem;">
                             <label>Nom del Jugador</label>
                             <input type="text" id="nom_display" style="background:#f8fafc; color:var(--primary); font-weight:800; border-color:#fee2e2; font-size:1.1rem;">
@@ -77,15 +77,15 @@
                     </div>
 
                     <div class="card">
-                        <div class="card-h3">💰 Condicions Econòmiques</div>
-                        <div class="input-group"><label>Fitxa mensual (€)</label><input type="text" id="fitxa_mensual" placeholder="0 €"></div>
+                        <div class="card-h3">💶 Condicions Econòmiques</div>
+                        <div class="input-group"><label>Fitxa mensual (€)</label><input type="text" id="fitxa_mensual" placeholder="0 ’></div>
                         <div class="input-group"><label>Primes per partit</label><input type="text" id="primes_partit" placeholder="Ex: 50€/guanyat"></div>
-                        <div class="input-group"><label>Prima permanència</label><input type="text" id="prima_permanencia" placeholder="Ex: 200 €"></div>
+                        <div class="input-group"><label>Prima permanència</label><input type="text" id="prima_permanencia" placeholder="Ex: 200 ’></div>
                         <div class="input-group"><label>Altres incentius</label><input type="text" id="altres_incentius" placeholder="..."></div>
                     </div>
 
                     <div class="card full-width">
-                        <div class="card-h3">🔄 Planificació Temporada Vinent</div>
+                        <div class="card-h3">📋 Planificació Temporada Vinent</div>
                         <div class="grid-2-col" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="input-group">
                                 <label>Rol previst</label>
@@ -158,6 +158,6 @@
         </div>
     </main>
 
-    <script src="jugador-detall.js"></script>
+    <script src="../assets/js/jugador-detall.js"></script>
 </body>
 </html>

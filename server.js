@@ -117,7 +117,6 @@ function isMissingSupabaseColumnError(err, columnName) {
 }
 
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = normalizeSupabaseServiceKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const SUPABASE_AUTH_KEY = normalizeSupabaseAuthKey(
@@ -140,8 +139,8 @@ const ROLES = {
     VIEWER: 'viewer'
 };
 
-if (IS_RENDER && !HAS_SUPABASE_CONFIG) {
-    throw new Error('Render sense Supabase configurat: cal definir SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY');
+if (!HAS_SUPABASE_CONFIG) {
+    throw new Error('Cal definir SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY (mode fitxer eliminat)');
 }
 
 if (HAS_SUPABASE_CONFIG && IS_PUBLISHABLE_KEY) {
@@ -150,20 +149,6 @@ if (HAS_SUPABASE_CONFIG && IS_PUBLISHABLE_KEY) {
 
 if (AUTH_REQUIRED && !SUPABASE_AUTH_KEY) {
     throw new Error('Auth activada però falta SUPABASE_ANON_KEY o SUPABASE_PUBLISHABLE_KEY');
-}
-
-function ensureLocalDataFile() {
-    const dataDir = path.dirname(DATA_FILE);
-    if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-    }
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, '{}', 'utf8');
-    }
-}
-
-if (!USE_SUPABASE) {
-    ensureLocalDataFile();
 }
 
 function readBody(req) {
@@ -203,8 +188,8 @@ function getSessionTokenFromRequest(req) {
 
 function isPublicPath(pathname) {
     const path = String(pathname || '');
-    return path === '/login.html' || path === '/auth.js' || path === '/favicon.ico' ||
-    path === '/set-password.html' || path === '/set-password.js' ||
+    return path === '/login.html' || path === '/assets/js/auth.js' || path === '/favicon.ico' ||
+    path === '/set-password.html' || path === '/assets/js/set-password.js' ||
     path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session' || path === '/api/auth/exchange';
 }
 
@@ -311,9 +296,7 @@ function isSeniorPath(pathname) {
     const p = String(pathname || '').toLowerCase();
     return p.startsWith('/seccions/senior') ||
         p.startsWith('/seccions/primer-equip') ||
-        p.startsWith('/seccions/filial') ||
-        p.startsWith('/web jugadors/') ||
-        p.startsWith('/web filial/');
+    p.startsWith('/seccions/filial');
 }
 
 function isFutbolBasePath(pathname) {
@@ -429,8 +412,7 @@ async function readDatabase() {
         return payload;
     }
 
-    const raw = await fs.promises.readFile(DATA_FILE, 'utf8');
-    return raw ? JSON.parse(raw) : {};
+    throw new Error('Mode local desactivat: cal Supabase');
 }
 
 async function writeDatabase(payload) {
@@ -471,7 +453,7 @@ async function writeDatabase(payload) {
         return;
     }
 
-    await fs.promises.writeFile(DATA_FILE, JSON.stringify(payload), 'utf8');
+    throw new Error('Mode local desactivat: cal Supabase');
 }
 
 function getObservacioScopesFromPayload(payload) {
@@ -576,7 +558,7 @@ async function readJugadorsByEquip(equipId) {
     if (USE_SUPABASE) {
         const rows = await supabaseRestRequest(
             'GET',
-            `/rest/v1/jugador?equip_id=eq.${id}&select=id,nom,any_naixement,data_naixement,revisio_medica&order=nom.asc`
+            `/rest/v1/jugador?equip_id=eq.${id}&select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club&order=nom.asc`
         );
         return Array.isArray(rows)
             ? rows.map(row => ({
@@ -584,7 +566,10 @@ async function readJugadorsByEquip(equipId) {
                 nom: row.nom || '',
                 any_naixement: Number.isFinite(Number(row.any_naixement)) ? Number(row.any_naixement) : null,
                 naixement: row.data_naixement || '',
-                revisio: !!row.revisio_medica
+                revisio: normalizeBoolean(row.revisio_medica),
+                inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
+                pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
+                vinculat_club: normalizeBoolean(row.vinculat_club)
             }))
             : [];
     }
@@ -597,7 +582,10 @@ async function readJugadorsByEquip(equipId) {
         nom: p.nom || '',
         any_naixement: Number.isFinite(Number(p.any_naixement)) ? Number(p.any_naixement) : null,
         naixement: p.naixement || '',
-        revisio: !!p.revisio
+        revisio: normalizeBoolean(p.revisio),
+        inscripcio_feta: normalizeBoolean(p.inscripcio_feta ?? p.inscripcio),
+        pagament_fcf_fet: normalizeBoolean(p.pagament_fcf_fet ?? p.pagament_fcf),
+        vinculat_club: normalizeBoolean(p.vinculat_club)
     }));
 }
 
@@ -664,7 +652,10 @@ async function readJugadorById(jugadorId) {
             equip_id: Number.isFinite(Number(row.equip_id)) ? Number(row.equip_id) : null,
             any_naixement: Number.isFinite(Number(row.any_naixement)) ? Number(row.any_naixement) : null,
             naixement: row.data_naixement || '',
-            revisio: !!row.revisio_medica,
+            revisio: normalizeBoolean(row.revisio_medica),
+            inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
+            pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
+            vinculat_club: normalizeBoolean(row.vinculat_club),
             edat: fromRowOrDetall('edat', ''),
             poblacio: fromRowOrDetall('poblacio', fromRowOrDetall('residencia', '')),
             rol_actual_id: rolActualId,
@@ -699,7 +690,10 @@ async function readJugadorById(jugadorId) {
         equip_id: null,
         any_naixement: Number.isFinite(Number(found.any_naixement)) ? Number(found.any_naixement) : null,
         naixement: found.naixement || '',
-        revisio: !!found.revisio,
+        revisio: normalizeBoolean(found.revisio),
+        inscripcio_feta: normalizeBoolean(found.inscripcio_feta ?? found.inscripcio),
+        pagament_fcf_fet: normalizeBoolean(found.pagament_fcf_fet ?? found.pagament_fcf),
+        vinculat_club: normalizeBoolean(found.vinculat_club),
         edat: found.edat || '',
         poblacio: found.poblacio || '',
         rol_actual_id: found.rol_actual_id || null,
@@ -744,6 +738,16 @@ function parseAnyNaixement(rawValue) {
         return null;
     }
     return year;
+}
+
+function normalizeBoolean(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    const text = String(value ?? '').trim().toLowerCase();
+    if (!text) return false;
+    if (['true', 't', '1', 'yes', 'si', 'sí'].includes(text)) return true;
+    if (['false', 'f', '0', 'no'].includes(text)) return false;
+    return !!value;
 }
 
 async function ensureRolIdByName(rolName) {
@@ -1405,7 +1409,10 @@ async function createJugador(payload) {
     const nom = String(payload?.nom || '').trim();
     const anyNaixement = parseAnyNaixement(payload?.any_naixement ?? payload?.data_naixement);
     const dataNaixement = anyNaixement ? `${String(anyNaixement)}-01-01` : null;
-    const revisioMedica = !!payload?.revisio_medica;
+    const revisioMedica = normalizeBoolean(payload?.revisio_medica);
+    const inscripcioFeta = normalizeBoolean(payload?.inscripcio_feta);
+    const pagamentFcfFet = normalizeBoolean(payload?.pagament_fcf_fet);
+    const vinculatClub = normalizeBoolean(payload?.vinculat_club);
 
     if (!Number.isInteger(equipId) || equipId <= 0) {
         throw new Error('equip_id invàlid');
@@ -1417,13 +1424,16 @@ async function createJugador(payload) {
     if (USE_SUPABASE) {
         const rows = await supabaseRestRequest(
             'POST',
-            '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica',
+            '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club',
             [{
                 equip_id: equipId,
                 nom,
                 any_naixement: anyNaixement,
                 data_naixement: dataNaixement,
-                revisio_medica: revisioMedica
+                revisio_medica: revisioMedica,
+                inscripcio_feta: inscripcioFeta,
+                pagament_fcf_fet: pagamentFcfFet,
+                vinculat_club: vinculatClub
             }],
             'return=representation'
         );
@@ -1436,7 +1446,10 @@ async function createJugador(payload) {
             nom,
             any_naixement: Number.isFinite(Number(row?.any_naixement)) ? Number(row.any_naixement) : anyNaixement,
             naixement: row?.data_naixement || dataNaixement || '',
-            revisio: row ? !!row.revisio_medica : revisioMedica
+            revisio: row ? normalizeBoolean(row.revisio_medica) : revisioMedica,
+            inscripcio_feta: row ? normalizeBoolean(row.inscripcio_feta) : inscripcioFeta,
+            pagament_fcf_fet: row ? normalizeBoolean(row.pagament_fcf_fet) : pagamentFcfFet,
+            vinculat_club: row ? normalizeBoolean(row.vinculat_club) : vinculatClub
         };
     }
 
@@ -1448,7 +1461,10 @@ async function createJugador(payload) {
         nom,
         any_naixement: anyNaixement,
         naixement: dataNaixement || '',
-        revisio: revisioMedica
+        revisio: revisioMedica,
+        inscripcio: inscripcioFeta,
+        pagament_fcf: pagamentFcfFet,
+        vinculat_club: vinculatClub
     };
     data.seccio_s13.plantilla.push(player);
     await writeDatabase(data);
@@ -1472,7 +1488,10 @@ async function updateJugador(payload) {
         patch.any_naixement = anyNaixement;
         patch.data_naixement = anyNaixement ? `${String(anyNaixement)}-01-01` : null;
     }
-    if (payload.revisio_medica !== undefined) patch.revisio_medica = !!payload.revisio_medica;
+    if (payload.revisio_medica !== undefined) patch.revisio_medica = normalizeBoolean(payload.revisio_medica);
+    if (payload.inscripcio_feta !== undefined) patch.inscripcio_feta = normalizeBoolean(payload.inscripcio_feta);
+    if (payload.pagament_fcf_fet !== undefined) patch.pagament_fcf_fet = normalizeBoolean(payload.pagament_fcf_fet);
+    if (payload.vinculat_club !== undefined) patch.vinculat_club = normalizeBoolean(payload.vinculat_club);
 
         const detailFields = [
         'edat', 'poblacio', 'fitxa_mensual', 'primes_partit', 'prima_permanencia',
@@ -1577,7 +1596,16 @@ async function updateJugador(payload) {
     if (patch.nom !== undefined) plantilla[index].nom = patch.nom;
     if (patch.any_naixement !== undefined) plantilla[index].any_naixement = patch.any_naixement;
     if (patch.data_naixement !== undefined) plantilla[index].naixement = patch.data_naixement || '';
-    if (patch.revisio_medica !== undefined) plantilla[index].revisio = !!patch.revisio_medica;
+    if (patch.revisio_medica !== undefined) plantilla[index].revisio = normalizeBoolean(patch.revisio_medica);
+    if (patch.inscripcio_feta !== undefined) {
+        plantilla[index].inscripcio = normalizeBoolean(patch.inscripcio_feta);
+        plantilla[index].inscripcio_feta = normalizeBoolean(patch.inscripcio_feta);
+    }
+    if (patch.pagament_fcf_fet !== undefined) {
+        plantilla[index].pagament_fcf = normalizeBoolean(patch.pagament_fcf_fet);
+        plantilla[index].pagament_fcf_fet = normalizeBoolean(patch.pagament_fcf_fet);
+    }
+    if (patch.vinculat_club !== undefined) plantilla[index].vinculat_club = normalizeBoolean(patch.vinculat_club);
     if (payload.rol_actual_id !== undefined) plantilla[index].rol_actual_id = payload.rol_actual_id;
     if (payload.rol_previst_id !== undefined) plantilla[index].rol_previst_id = payload.rol_previst_id;
     if (payload.rol_actual !== undefined) plantilla[index].rol_actual = payload.rol_actual;
@@ -2682,10 +2710,10 @@ const server = http.createServer(async (req, res) => {
             // Detecta tipus MIME
             const ext = path.extname(filePath);
             const mimeTypes = {
-                '.html': 'text/html',
-                '.css': 'text/css',
-                '.js': 'application/javascript',
-                '.json': 'application/json',
+                '.html': 'text/html; charset=utf-8',
+                '.css': 'text/css; charset=utf-8',
+                '.js': 'application/javascript; charset=utf-8',
+                '.json': 'application/json; charset=utf-8',
                 '.png': 'image/png',
                 '.jpg': 'image/jpeg',
                 '.jpeg': 'image/jpeg',
@@ -2715,7 +2743,5 @@ server.listen(PORT, async () => {
         } catch (err) {
             console.warn('Warning during table initialization:', err.message);
         }
-    } else {
-        console.log(`Dades persistents a fitxer local: ${DATA_FILE}`);
     }
 });

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infografia Horaris Setmanals | CF Cardona</title>
+    <script src="../assets/js/top-nav.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+        body{background:var(--bg);min-height:100vh;padding:2rem;}
+        .wrap{max-width:960px;margin:0 auto;}
+
+        .head{background:#fff;border:1px solid var(--border);border-radius:1rem;padding:1.2rem;box-shadow:0 8px 22px rgba(2,6,23,0.08);margin-bottom:1rem;}
+        .head-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;}
+        .head h1{font-size:1.4rem;font-weight:900;color:#b91c1c;}
+        .head p{margin-top:0.3rem;color:#64748b;font-size:0.9rem;}
+        .actions{display:flex;gap:0.5rem;flex-wrap:wrap;}
+        .btn{display:inline-flex;align-items:center;justify-content:center;padding:0.58rem 0.86rem;border-radius:0.55rem;border:1px solid var(--border);background:#fff;color:#0f172a;font-weight:800;font-size:0.79rem;text-decoration:none;cursor:pointer;}
+        .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+        .btn:disabled{opacity:0.65;cursor:not-allowed;}
+        .refresh-status{display:inline-flex;align-items:center;font-size:0.78rem;font-weight:800;color:#64748b;padding:0.1rem 0.2rem;min-width:96px;}
+        .refresh-status.ok{color:#15803d;}
+        .refresh-status.err{color:#b91c1c;}
+
+        .day-tabs{display:flex;gap:0.45rem;flex-wrap:wrap;margin-top:1rem;}
+        .day-tab{padding:0.5rem 0.8rem;border:1px solid #fecaca;border-radius:999px;background:#fff;font-size:0.8rem;font-weight:900;color:#7f1d1d;cursor:pointer;}
+        .day-tab.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+        .content{background:#fff;border:1px solid var(--border);border-radius:1rem;padding:1rem;box-shadow:0 8px 22px rgba(2,6,23,0.08);}
+        .day-title{font-size:1.1rem;font-weight:900;color:#b91c1c;margin-bottom:0.2rem;}
+        .day-sub{font-size:0.8rem;color:#64748b;font-weight:700;margin-bottom:1rem;}
+
+        .slot{border:1px solid var(--border);border-radius:0.85rem;padding:0.85rem;background:#fff;margin-bottom:0.9rem;}
+        .slot-head{display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.7rem;}
+        .slot-time{font-size:0.9rem;font-weight:900;color:#0f172a;}
+        .slot-tag{font-size:0.72rem;font-weight:800;color:#991b1b;background:#fff1f2;border:1px solid #fecaca;border-radius:999px;padding:0.2rem 0.55rem;}
+        .slot-layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:0.75rem;align-items:start;}
+        .fields{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;}
+
+        .vestidors-box{border:1px solid #fecaca;background:#fff5f5;border-radius:0.55rem;padding:0.65rem 0.7rem;}
+        .vestidors-box h4{font-size:0.82rem;color:#991b1b;font-weight:900;margin-bottom:0.45rem;}
+        .vestidors-list{list-style:none;padding:0;margin:0;display:grid;gap:0.25rem;}
+        .vestidors-list li{font-size:0.78rem;color:#7f1d1d;font-weight:800;line-height:1.2;}
+        .vestidors-empty{font-size:0.76rem;color:#9f1239;font-weight:700;}
+
+        .field-card{border:1px solid #fbcfe8;border-radius:0;overflow:hidden;background:#fff1f2;}
+
+        .field{
+            position:relative;
+            min-height:150px;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.45), rgba(255,255,255,0.14) 45%, rgba(255,255,255,0.08) 100%),
+                linear-gradient(135deg, #ffe4e6 0%, #fecdd3 45%, #fda4af 100%);
+        }
+        .field::before{
+            content:'';
+            position:absolute;
+            inset:10px;
+            border:1px solid rgba(255,255,255,0.82);
+            border-radius:0;
+            pointer-events:none;
+        }
+
+        .field .mark{
+            position:absolute;
+            pointer-events:none;
+            border-color:rgba(255,255,255,0.82);
+            border-style:solid;
+            border-width:1px;
+        }
+        .field .midline{left:50%;top:10px;bottom:10px;width:1px;border:none;background:rgba(255,255,255,0.82);transform:translateX(-0.5px);}
+        .field .center-circle{left:50%;top:50%;width:28px;height:28px;border-radius:999px;transform:translate(-50%,-50%);}
+        .field .center-dot{left:50%;top:50%;width:4px;height:4px;border-radius:999px;background:rgba(255,255,255,0.82);border:none;transform:translate(-50%,-50%);}
+
+        .field .big-left{left:10px;top:50%;width:44px;height:86px;border-right:none;transform:translateY(-50%);}
+        .field .big-right{right:10px;top:50%;width:44px;height:86px;border-left:none;transform:translateY(-50%);}
+        .field .small-left{left:10px;top:50%;width:18px;height:40px;border-right:none;transform:translateY(-50%);}
+        .field .small-right{right:10px;top:50%;width:18px;height:40px;border-left:none;transform:translateY(-50%);}
+
+        .field .spot-left{left:40px;top:50%;width:4px;height:4px;border-radius:999px;border:none;background:rgba(255,255,255,0.82);transform:translate(-50%,-50%);}
+        .field .spot-right{right:40px;top:50%;width:4px;height:4px;border-radius:999px;border:none;background:rgba(255,255,255,0.82);transform:translate(50%,-50%);}
+
+        .field .arc-left{left:44px;top:50%;width:28px;height:28px;border-radius:999px;border-left:none;transform:translateY(-50%);}
+        .field .arc-right{right:44px;top:50%;width:28px;height:28px;border-radius:999px;border-right:none;transform:translateY(-50%);}
+
+        .field .corner{width:12px;height:12px;border-radius:999px;}
+        .field .corner.tl{left:10px;top:10px;border-right:none;border-bottom:none;}
+        .field .corner.tr{right:10px;top:10px;border-left:none;border-bottom:none;}
+        .field .corner.bl{left:10px;bottom:10px;border-right:none;border-top:none;}
+        .field .corner.br{right:10px;bottom:10px;border-left:none;border-top:none;}
+
+        .field .split-v{left:50%;top:10px;bottom:10px;width:0;transform:translateX(-0.5px);}
+        .field .split-h{left:10px;right:10px;top:50%;height:0;transform:translateY(-0.5px);}
+
+        .zones{position:relative;display:grid;height:150px;}
+        .zones.quad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
+        .zones.duo{grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
+        .zone{display:flex;align-items:center;justify-content:center;padding:0.45rem;text-align:center;position:relative;z-index:2;}
+        .team-line{display:flex;align-items:center;justify-content:center;gap:0.55rem;max-width:98%;width:100%;}
+        .team-pill{background:transparent;color:#b91c1c;border:none;border-radius:0;padding:0;font-size:1.05rem;font-weight:900;line-height:1.15;min-width:0;max-width:95%;text-shadow:0 1px 2px rgba(255,255,255,0.65);}
+        .team-pill.empty{color:rgba(185,28,28,0.42);font-weight:800;font-size:0.82rem;}
+
+        .pending-list{display:flex;flex-wrap:wrap;gap:0.45rem;}
+        .pending-item{font-size:0.75rem;font-weight:800;color:#065f46;background:#ecfdf5;border:1px solid #86efac;border-radius:999px;padding:0.25rem 0.55rem;}
+
+        .empty{padding:2rem 1rem;text-align:center;color:#94a3b8;font-weight:800;}
+
+        @media(max-width:900px){
+            body{padding:1rem;}
+            .slot-layout{grid-template-columns:1fr;}
+            .fields{grid-template-columns:1fr;}
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <section class="head">
+            <div class="head-top">
+                <div>
+                    <h1>Infografia setmanal d'entrenaments</h1>
+                    <p>Per franges: camp en 4 zones (Espais 1-4) o en 2 zones (F11), amb l'equip sobre cada secció.</p>
+                </div>
+                <div class="actions">
+                    <a class="btn" href="horari-entrenaments.html">Gestionar horaris</a>
+                    <button class="btn primary" id="refreshBtn" type="button">Actualitzar dades</button>
+                    <span id="refreshStatus" class="refresh-status"></span>
+                </div>
+            </div>
+            <div id="dayTabs" class="day-tabs"></div>
+        </section>
+
+        <section class="content">
+            <div id="dayBig" class="day-title">Dilluns</div>
+            <div id="daySub" class="day-sub">Franges planificades del dia</div>
+            <div id="board"></div>
+        </section>
+    </div>
+
+    <script>
+        const API_HORARIOS = '/api/horarios';
+        const API_EQUIPS = '/api/equips';
+        const DIES = ['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
+        const CAMP_STD = ['Espai 1','Espai 2','Espai 3','Espai 4'];
+        const CAMP_F11 = ['Espai 1/2 (F11)','Espai 3/4 (F11)'];
+
+        let teams = [];
+        let horarios = [];
+        let activeDay = DIES[0];
+
+        function esc(value) {
+            return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function toMinutes(hhmm) {
+            const [h,m] = String(hhmm || '').split(':').map(Number);
+            return (Number.isFinite(h) && Number.isFinite(m)) ? (h*60)+m : 0;
+        }
+
+        function teamName(teamId) {
+            const id = String(teamId || '');
+            if (!id) return 'Sense equip';
+            const t = teams.find(x => String(x.id) === id);
+            return t ? t.name : `Equip ${id}`;
+        }
+
+        function normalizeHorari(row) {
+            return {
+                id: String(row.id || `${Date.now()}_${Math.random().toString(36).slice(2)}`),
+                team_id: String(row.team_id || '').trim(),
+                dia: String(row.dia || ''),
+                inici: String(row.inici || ''),
+                fi: String(row.fi || ''),
+                camp: String(row.camp || '').trim(),
+                vestidor: String(row.vestidor || '').trim()
+            };
+        }
+
+        function renderTabs() {
+            const el = document.getElementById('dayTabs');
+            el.innerHTML = DIES.map(day => (
+                `<button class="day-tab ${day===activeDay?'active':''}" data-day="${esc(day)}">${esc(day)}</button>`
+            )).join('');
+            el.querySelectorAll('.day-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeDay = btn.dataset.day;
+                    renderTabs();
+                    renderBoard();
+                });
+            });
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            const dayBig = document.getElementById('dayBig');
+            const daySub = document.getElementById('daySub');
+            const dayRows = horarios
+                .filter(h => h.dia === activeDay && h.inici && h.fi)
+                .sort((a,b) => toMinutes(a.inici) - toMinutes(b.inici) || toMinutes(a.fi) - toMinutes(b.fi));
+
+            dayBig.textContent = activeDay;
+
+            if (dayRows.length === 0) {
+                daySub.textContent = 'Sense franges registrades per aquest dia';
+                board.innerHTML = `<div class="empty">No hi ha franges d'entrenament per ${esc(activeDay)}.</div>`;
+                return;
+            }
+
+            const groupsMap = {};
+            dayRows.forEach(item => {
+                const key = `${item.inici}|${item.fi}`;
+                if (!groupsMap[key]) groupsMap[key] = { inici: item.inici, fi: item.fi, items: [] };
+                groupsMap[key].items.push(item);
+            });
+
+            const groups = Object.values(groupsMap).sort((a,b) => toMinutes(a.inici) - toMinutes(b.inici));
+            daySub.textContent = `${groups.length} franges`;
+
+            const vestidorNumber = (value) => {
+                const raw = String(value || '').trim();
+                const m = raw.match(/(\d+)/);
+                return m ? m[1] : '';
+            };
+
+            const cellData = (items, campName) => {
+                const match = items.find(x => String(x.camp || '') === campName);
+                if (!match) return { team: '', locker: '' };
+                return {
+                    team: teamName(match.team_id),
+                    locker: vestidorNumber(match.vestidor)
+                };
+            };
+
+            const cellMarkup = (cell) => {
+                const hasTeam = Boolean(cell.team);
+                return `<div class="team-line"><div class="team-pill ${hasTeam ? '' : 'empty'}">${esc(cell.team || '')}</div></div>`;
+            };
+
+            const renderVestidors = (items) => {
+                const entries = [];
+                const seen = new Set();
+                items.forEach(item => {
+                    const team = teamName(item.team_id);
+                    const locker = vestidorNumber(item.vestidor);
+                    if (!locker) return;
+                    const key = `${team}__${locker}`;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    entries.push({ team, locker });
+                });
+
+                if (!entries.length) {
+                    return `<aside class="vestidors-box"><h4>Vestidors</h4><div class="vestidors-empty">Sense assignació</div></aside>`;
+                }
+
+                return `
+                    <aside class="vestidors-box">
+                        <h4>Vestidors</h4>
+                        <ul class="vestidors-list">
+                            ${entries.map(e => `<li>- ${esc(e.team)} - ${esc(e.locker)}</li>`).join('')}
+                        </ul>
+                    </aside>
+                `;
+            };
+
+            const renderQuadField = (items) => {
+                const z1 = cellData(items, 'Espai 1');
+                const z2 = cellData(items, 'Espai 2');
+                const z3 = cellData(items, 'Espai 3');
+                const z4 = cellData(items, 'Espai 4');
+                return `
+                    <div class="field-card">
+                        <div class="field quad">
+                            <span class="mark midline"></span>
+                            <span class="mark center-circle"></span>
+                            <span class="mark center-dot"></span>
+                            <span class="mark big-left"></span>
+                            <span class="mark big-right"></span>
+                            <span class="mark small-left"></span>
+                            <span class="mark small-right"></span>
+                            <span class="mark spot-left"></span>
+                            <span class="mark spot-right"></span>
+                            <span class="mark arc-left"></span>
+                            <span class="mark arc-right"></span>
+                            <span class="mark corner tl"></span>
+                            <span class="mark corner tr"></span>
+                            <span class="mark corner bl"></span>
+                            <span class="mark corner br"></span>
+                            <span class="mark split-v"></span>
+                            <span class="mark split-h"></span>
+                            <div class="zones quad">
+                                <div class="zone">${cellMarkup(z1)}</div>
+                                <div class="zone">${cellMarkup(z2)}</div>
+                                <div class="zone">${cellMarkup(z3)}</div>
+                                <div class="zone">${cellMarkup(z4)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            const renderF11Field = (items) => {
+                const left = cellData(items, 'Espai 1/2 (F11)');
+                const right = cellData(items, 'Espai 3/4 (F11)');
+                return `
+                    <div class="field-card">
+                        <div class="field duo">
+                            <span class="mark midline"></span>
+                            <span class="mark center-circle"></span>
+                            <span class="mark center-dot"></span>
+                            <span class="mark big-left"></span>
+                            <span class="mark big-right"></span>
+                            <span class="mark small-left"></span>
+                            <span class="mark small-right"></span>
+                            <span class="mark spot-left"></span>
+                            <span class="mark spot-right"></span>
+                            <span class="mark arc-left"></span>
+                            <span class="mark arc-right"></span>
+                            <span class="mark corner tl"></span>
+                            <span class="mark corner tr"></span>
+                            <span class="mark corner bl"></span>
+                            <span class="mark corner br"></span>
+                            <div class="zones duo">
+                                <div class="zone">${cellMarkup(left)}</div>
+                                <div class="zone">${cellMarkup(right)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            const html = groups.map(group => {
+                const hasStd = group.items.some(x => CAMP_STD.includes(String(x.camp || '')));
+                const hasF11 = group.items.some(x => CAMP_F11.includes(String(x.camp || '')));
+                const pending = group.items.filter(x => !String(x.camp || '').trim()).map(x => teamName(x.team_id));
+
+                return `
+                    <article class="slot">
+                        <div class="slot-head">
+                            <div class="slot-time">${esc(group.inici)} - ${esc(group.fi)}</div>
+                            <div class="slot-tag">${group.items.length} assignacions</div>
+                        </div>
+                        <div class="slot-layout">
+                            <div class="fields">
+                                ${hasStd ? renderQuadField(group.items) : ''}
+                                ${hasF11 ? renderF11Field(group.items) : ''}
+                            </div>
+                            ${renderVestidors(group.items)}
+                        </div>
+                        ${pending.length ? `<div class="pending-list" style="margin-top:0.65rem;">${pending.map(p => `<span class="pending-item">${esc(p)} · sense camp</span>`).join('')}</div>` : ''}
+                    </article>
+                `;
+            }).join('');
+
+            board.innerHTML = html;
+        }
+
+        async function loadData() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            const refreshStatus = document.getElementById('refreshStatus');
+            if (refreshBtn) refreshBtn.disabled = true;
+            if (refreshStatus) {
+                refreshStatus.className = 'refresh-status';
+                refreshStatus.textContent = 'Carregant...';
+            }
+
+            try {
+                const [teamsRes, horariosRes] = await Promise.all([
+                    fetch(API_EQUIPS),
+                    fetch(API_HORARIOS)
+                ]);
+
+                teams = teamsRes.ok ? await teamsRes.json() : [];
+                horarios = horariosRes.ok ? await horariosRes.json() : [];
+
+                if (!Array.isArray(teams)) teams = [];
+                if (!Array.isArray(horarios)) horarios = [];
+
+                teams = teams.map(t => ({ id: String(t.id || ''), name: String(t.name || `Equip ${t.id || ''}`) }));
+                horarios = horarios.map(normalizeHorari);
+
+                renderTabs();
+                renderBoard();
+
+                if (refreshStatus) {
+                    refreshStatus.className = 'refresh-status ok';
+                    refreshStatus.textContent = 'Actualitzat';
+                }
+            } catch (err) {
+                document.getElementById('board').innerHTML = `<div class="empty">Error carregant dades d'horaris.</div>`;
+                console.error(err);
+                if (refreshStatus) {
+                    refreshStatus.className = 'refresh-status err';
+                    refreshStatus.textContent = 'Error';
+                }
+            } finally {
+                if (refreshBtn) refreshBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', loadData);
+        loadData();
+    </script>
+</body>
+</html>
