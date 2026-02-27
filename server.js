@@ -131,6 +131,14 @@ const AUTH_REQUIRED = USE_SUPABASE;
 const SUPABASE_SECCIONS_TABLE = 'seccions_data';
 const supabaseBaseUrl = USE_SUPABASE ? new URL(SUPABASE_URL) : null;
 const sessionCache = new Map();
+const ROLES = {
+    ADMIN: 'admin',
+    DIRECCIO: 'direccio',
+    SENIOR: 'senior',
+    FUTBOL_BASE: 'futbol_base',
+    SCOUTING: 'scouting',
+    VIEWER: 'viewer'
+};
 
 if (IS_RENDER && !HAS_SUPABASE_CONFIG) {
     throw new Error('Render sense Supabase configurat: cal definir SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY');
@@ -226,6 +234,171 @@ async function verifySupabaseSession(accessToken) {
     if (!user || !user.id) return null;
     sessionCache.set(token, { user, expiresAt: Date.now() + 30 * 1000 });
     return user;
+}
+
+function normalizeRoleName(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return '';
+    const compact = raw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\s-]+/g, '_');
+
+    if (compact === 'admin' || compact === 'administrator' || compact === 'superadmin') return ROLES.ADMIN;
+    if (compact === 'direccio' || compact === 'direccion' || compact === 'management') return ROLES.DIRECCIO;
+    if (compact === 'senior') return ROLES.SENIOR;
+    if (compact === 'futbol_base' || compact === 'base') return ROLES.FUTBOL_BASE;
+    if (compact === 'scouting' || compact === 'captacio' || compact === 'captacion') return ROLES.SCOUTING;
+    if (compact === 'viewer' || compact === 'read' || compact === 'readonly' || compact === 'lectura') return ROLES.VIEWER;
+    return '';
+}
+
+function extractUserRoles(user) {
+    const metaCandidates = [
+        user && typeof user.app_metadata === 'object' ? user.app_metadata : null,
+        user && typeof user.user_metadata === 'object' ? user.user_metadata : null,
+        user && typeof user.raw_app_meta_data === 'object' ? user.raw_app_meta_data : null,
+        user && typeof user.raw_user_meta_data === 'object' ? user.raw_user_meta_data : null
+    ].filter(Boolean);
+
+    const buckets = [
+        user && user.app_metadata ? user.app_metadata.roles : null,
+        user && user.app_metadata ? user.app_metadata.role : null,
+        user && user.user_metadata ? user.user_metadata.roles : null,
+        user && user.user_metadata ? user.user_metadata.role : null,
+        user && user.raw_app_meta_data ? user.raw_app_meta_data.roles : null,
+        user && user.raw_app_meta_data ? user.raw_app_meta_data.role : null,
+        user && user.raw_user_meta_data ? user.raw_user_meta_data.roles : null,
+        user && user.raw_user_meta_data ? user.raw_user_meta_data.role : null,
+        user ? user.role : null
+    ];
+
+    metaCandidates.forEach(meta => {
+        if (meta.roles !== undefined) buckets.push(meta.roles);
+        if (meta.role !== undefined) buckets.push(meta.role);
+    });
+
+    const collected = [];
+    for (const bucket of buckets) {
+        if (!bucket) continue;
+        if (Array.isArray(bucket)) {
+            bucket.forEach(item => collected.push(item));
+            continue;
+        }
+        if (typeof bucket === 'string') {
+            bucket.split(',').map(part => part.trim()).filter(Boolean).forEach(item => collected.push(item));
+        }
+    }
+
+    const normalized = [...new Set(collected.map(normalizeRoleName).filter(Boolean))];
+    return normalized.length ? normalized : [ROLES.VIEWER];
+}
+
+function hasAnyRole(userRoles, requiredRoles) {
+    if (!Array.isArray(userRoles) || !userRoles.length) return false;
+    if (!Array.isArray(requiredRoles) || !requiredRoles.length) return true;
+    if (userRoles.includes(ROLES.ADMIN)) return true;
+    return requiredRoles.some(role => userRoles.includes(role));
+}
+
+function isReadMethod(method) {
+    const m = String(method || '').toUpperCase();
+    return m === 'GET' || m === 'HEAD';
+}
+
+function isSeniorPath(pathname) {
+    const p = String(pathname || '').toLowerCase();
+    return p.startsWith('/seccions/senior') ||
+        p.startsWith('/seccions/primer-equip') ||
+        p.startsWith('/seccions/filial') ||
+        p.startsWith('/web jugadors/') ||
+        p.startsWith('/web filial/');
+}
+
+function isFutbolBasePath(pathname) {
+    const p = String(pathname || '').toLowerCase();
+    return p.startsWith('/seccions/futbol-base') ||
+        p.startsWith('/seccions/f7') ||
+        p.startsWith('/seccions/f11') ||
+        p.startsWith('/seccions/minis') ||
+        p.startsWith('/seccions/s7') ||
+        p.startsWith('/seccions/s8') ||
+        p.startsWith('/seccions/s9') ||
+        p.startsWith('/seccions/s10') ||
+        p.startsWith('/seccions/s11') ||
+        p.startsWith('/seccions/s12') ||
+        p.startsWith('/seccions/s13') ||
+        p.startsWith('/seccions/s14') ||
+        p.startsWith('/seccions/s16') ||
+        p.startsWith('/seccions/juvenil-masculi') ||
+        p.startsWith('/seccions/juvenil-femeni') ||
+        p.startsWith('/seccions/alevi-femeni') ||
+        p.startsWith('/seccions/infantil-femeni') ||
+        p.startsWith('/seccions/cadet-femeni');
+}
+
+function isScoutingPath(pathname) {
+    const p = String(pathname || '').toLowerCase();
+    return p.startsWith('/seccions/scouting') ||
+        p.startsWith('/seccions/captacio-futbol-base') ||
+        p.startsWith('/seccions/captacio-senior');
+}
+
+function getAuthorizationRule(pathname, method) {
+    const p = String(pathname || '').toLowerCase();
+    const m = String(method || 'GET').toUpperCase();
+
+    if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/session') {
+        return { requiredRoles: [], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/api/jugadors-seguiment')) {
+        return { requiredRoles: [ROLES.SCOUTING, ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/api/equips') || p.startsWith('/api/equip-config') || p.startsWith('/api/jugadors') || p.startsWith('/api/rols') || p.startsWith('/api/posicions')) {
+        return { requiredRoles: [ROLES.SENIOR, ROLES.FUTBOL_BASE, ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/api/horarios')) {
+        return { requiredRoles: [ROLES.DIRECCIO, ROLES.SENIOR, ROLES.FUTBOL_BASE], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/api/players') || p.startsWith('/api/observacions')) {
+        return { requiredRoles: [ROLES.DIRECCIO, ROLES.SENIOR, ROLES.FUTBOL_BASE, ROLES.SCOUTING], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/api/')) {
+        return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (isSeniorPath(p)) {
+        return { requiredRoles: [ROLES.SENIOR, ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (isFutbolBasePath(p)) {
+        return { requiredRoles: [ROLES.FUTBOL_BASE, ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (isScoutingPath(p)) {
+        return { requiredRoles: [ROLES.SCOUTING, ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    return { requiredRoles: [], readOnlyAllowed: true, method: m };
+}
+
+function isAuthorized(userRoles, pathname, method) {
+    const rule = getAuthorizationRule(pathname, method);
+
+    if (hasAnyRole(userRoles, rule.requiredRoles)) {
+        return true;
+    }
+
+    if (rule.readOnlyAllowed && isReadMethod(method) && userRoles.includes(ROLES.VIEWER) && (!rule.requiredRoles || rule.requiredRoles.length === 0)) {
+        return true;
+    }
+
+    return false;
 }
 
 async function readDatabase() {
@@ -1758,6 +1931,22 @@ const server = http.createServer(async (req, res) => {
             }
 
             req.authUser = user;
+            req.authRoles = extractUserRoles(user);
+
+            if (!isAuthorized(req.authRoles, pathname, req.method)) {
+                if (pathname.startsWith('/api/')) {
+                    res.writeHead(403, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'Forbidden',
+                        role: req.authRoles,
+                        path: pathname
+                    }));
+                } else {
+                    res.writeHead(302, { Location: '/index.html?forbidden=1' });
+                    res.end();
+                }
+                return;
+            }
         }
     } catch (authErr) {
         console.error('Auth guard error:', authErr && authErr.message ? authErr.message : authErr);
@@ -1832,7 +2021,18 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ authenticated: true, user: { id: user.id, email: user.email || '' } }));
+                const roles = extractUserRoles(user);
+                res.end(JSON.stringify({
+                    authenticated: true,
+                    user: { id: user.id, email: user.email || '', roles },
+                    debug: {
+                        app_metadata: user.app_metadata || null,
+                        user_metadata: user.user_metadata || null,
+                        raw_app_meta_data: user.raw_app_meta_data || null,
+                        raw_user_meta_data: user.raw_user_meta_data || null,
+                        top_level_role: user.role || null
+                    }
+                }));
             } catch (_) {
                 clearSessionCookie(res);
                 res.writeHead(200, { 'Content-Type': 'application/json' });

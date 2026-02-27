@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -7,450 +7,659 @@
     <script src="../top-nav.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
-        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
-        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
-        header{max-width:960px;margin:0 auto 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
-        h1{color:var(--primary);font-weight:800;font-size:1.5rem;}
-        .breadcrumb{font-size:0.85rem;color:#64748b;margin-top:0.25rem;}
-        .breadcrumb a{color:var(--primary);text-decoration:none;font-weight:600;}
-        .breadcrumb a:hover{text-decoration:underline;}
-        .card{background:white;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
-        .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
-        label{display:block;font-weight:700;font-size:0.82rem;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
-        textarea{width:100%;min-height:120px;padding:0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;resize:vertical;line-height:1.6;}
-        textarea:focus{border-color:var(--primary);}
-        input[type=text],input[type=tel],input[type=number]{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;}
-        input:focus,select:focus{border-color:var(--primary);}
-        select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:white;}
-        .btn{padding:0.65rem 1.5rem;border-radius:0.5rem;font-weight:700;cursor:pointer;border:none;font-size:0.88rem;}
-        .btn-primary{background:var(--primary);color:white;}
-        .btn-primary:hover{background:#b91c1c;}
-        .btn-remove{background:none;border:none;color:var(--primary);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;}
-        .btn-delete-small { color: #94a3b8; background: none; border: none; cursor: pointer; padding: 0.2rem; font-size: 1rem; }
-        .btn-delete-small:hover { color: var(--primary); }
+        :root {
+            --primary: #d91d1d;
+            --bg: #f1f5f9;
+            --border: #e2e8f0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: var(--bg);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .page-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .screen {
+            width: 100%;
+            min-height: calc(100vh - 130px);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            padding: 1.25rem;
+        }
+        .hidden {
+            display: none;
+        }
+        .screen-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .screen-title {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 0.01em;
+        }
+        .btn {
+            border: 1px solid transparent;
+            border-radius: 0.55rem;
+            font-size: 0.84rem;
+            font-weight: 800;
+            padding: 0.58rem 0.95rem;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #b91c1c;
+        }
+        .btn-muted {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        .filters-row {
+            display: grid;
+            grid-template-columns: 140px 170px 1fr 210px;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            align-items: end;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: #475569;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        select,
+        input[type=text],
+        input[type=tel],
+        input[type=number],
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 0.55rem;
+            padding: 0.62rem 0.78rem;
+            font-size: 0.88rem;
+            outline: none;
+            background: #fff;
+        }
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+            line-height: 1.45;
+        }
+        select:focus,
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+        }
+        .players-table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 0.8rem;
+            overflow: auto;
+            background: #fff;
+        }
+        .players-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+        .players-table th,
+        .players-table td {
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            padding: 0.72rem 0.75rem;
+            vertical-align: middle;
+            font-size: 0.82rem;
+            white-space: normal;
+        }
+        .players-table th {
+            background: #fee2e2;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+        .players-table tr:last-child td {
+            border-bottom: 0;
+        }
+        .players-table tbody tr:hover {
+            background: #fff5f5;
+        }
+        .name-cell {
+            font-weight: 700;
+        }
+        .name-link {
+            color: #b91c1c;
+            text-decoration: none;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.82rem;
+            padding: 0.2rem 0.35rem;
+            border-radius: 0.45rem;
+            transition: background 0.15s, color 0.15s;
+            text-align: left;
+            white-space: normal;
+            display: inline-block;
+        }
+        .name-link:hover {
+            color: #991b1b;
+            background: #fff1f2;
+        }
+        .delete-x {
+            border: none;
+            background: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1;
+            padding: 0;
+        }
+        .delete-x:hover {
+            color: #991b1b;
+        }
+        .empty {
+            padding: 2.25rem 1rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.86rem;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.9rem;
+        }
+        .form-grid .full {
+            grid-column: 1 / -1;
+        }
+        .pos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+            gap: 0.5rem;
+            padding: 0.6rem;
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 0.6rem;
+        }
+        .pos-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .form-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.6rem;
+            justify-content: flex-end;
+        }
 
-        .scouting-container { display: flex; gap: 2rem; align-items: flex-start; }
-        .scouting-sidebar { width: 350px; flex-shrink: 0; background: white; border-radius: 1rem; border: 1px solid var(--border); padding: 1.5rem; max-height: 800px; overflow-y: auto; }
-        .scouting-content { flex: 1; min-width: 0; }
-        
-        .scouting-list { display: grid; gap: 0.75rem; }
-        .scouting-list-item { padding: 1rem; background: #fffafa; border: 1px solid #fecaca; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; position: relative; }
-        .scouting-list-item:hover { transform: translateX(5px); background: #fee2e2; }
-        .scouting-list-item.active { border-left: 5px solid var(--primary); background: #fee2e2; }
-        .scouting-list-name { font-weight: 800; color: var(--primary); font-size: 1rem; }
-        .scouting-list-meta { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
-
-        .scouting-detail-card { background: white; border-radius: 1rem; padding: 2rem; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); }
-        .scouting-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #fee2e2; padding-bottom: 1rem; }
-        .scouting-header-actions h2 { margin: 0; border: none; padding: 0; }
-        
-        .obs-list { margin-bottom: 1rem; }
-        .obs-item { background: #fffafa; border: 1px solid #fecaca; border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
-        .obs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .obs-meta { font-size: 0.82rem; color: #64748b; }
-        .obs-meta strong { color: var(--primary); }
-        .obs-text { font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
-        .add-obs-form { background: #f8fafc; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; }
-        .form-title { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 1rem; }
-        .obs-form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; margin-bottom: 0.75rem; align-items: end; }
-        .empty-msg { color: #94a3b8; font-size: 0.85rem; padding: 0.5rem; }
-
-        .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; padding: 0.5rem; background: #fff5f5; border: 1px solid #fecaca; border-radius: 0.5rem; margin-top: 0.4rem; }
-        .pos-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-        .pos-item input { width: auto; }
-        .scouting-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-        
-        .gender-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .gender-masculi { background: #dbeafe; color: #1d4ed8; }
-        .gender-femeni { background: #fce7f3; color: #be185d; }
-        .year-badge { background: #fef9c3; color: #854d0e; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 700; }
-
-        @media(max-width:768px){
-            .scouting-container { flex-direction: column; }
-            .scouting-sidebar { width: 100%; max-height: 400px; }
+        @media (max-width: 900px) {
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div>
-            <h1>&#x1F31F; Captació Futbol Base</h1>
-            <div class="breadcrumb"><a href="../index.html">Inici</a> &rarr; <a href="../estructura.html">Estructura Esportiva</a> &rarr; <a href="futbol-base.html">Futbol Base</a> &rarr; Captació</div>
-        </div>
-    </header>
-    <div class="scouting-container">
-        <!-- Sidebar: Llista de jugadors -->
-        <div class="scouting-sidebar">
-            <h2 style="color:var(--primary); font-size:1rem; margin-bottom:1rem; border-bottom:1px solid #fee2e2; padding-bottom:0.5rem;">&#x1F465; Jugadors en Cartera</h2>
-            <div id="scouting_list" class="scouting-list">
-                <!-- Injected by JS -->
+    <main class="page-wrap">
+        <section id="listScreen" class="screen">
+            <div class="screen-header">
+                <h1 class="screen-title">Jugadors en captació futbol base</h1>
+                <button class="btn btn-primary" id="btnNewPlayer" type="button">+ Alta jugador</button>
             </div>
-            <button class="btn btn-primary" onclick="showAddForm()" style="width:100%; margin-top:1.5rem; font-size:0.8rem;">+ NOU JUGADOR</button>
-        </div>
 
-        <!-- Main: Detalls o Formulari -->
-        <div class="scouting-content">
-            <div id="scouting_main_view">
-                <div class="card" style="text-align:center; padding:5rem 2rem;">
-                    <span style="font-size:3rem;">&#x1F31F;</span>
-                    <p style="color:#94a3b8; margin-top:1rem;">Selecciona un jugador per veure'n els detalls o afegeix-ne un de nou.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Hidden Template per al formulari d'alta -->
-    <template id="tpl_add_form">
-        <div class="card">
-            <h2>&#x2728; Nou Jugador a la Cartera</h2>
-            <div class="scouting-form-grid">
-                <div><label>Nom i Cognoms</label><input type="text" id="sc_nom" placeholder="Ex: Joan Ferran..."></div>
-                <div><label>Club Actual</label><input type="text" id="sc_club" placeholder="Ex: CE Manresa..."></div>
-                <div><label>Tel&egrave;fon</label><input type="tel" id="sc_tel" placeholder="Ex: 600 000 000..."></div>
-                <div><label>Poblaci&oacute;</label><input type="text" id="sc_poblacio" placeholder="Ex: Manresa..."></div>
-                <div><label>Any de Naixement</label><input type="number" id="sc_any_naixement" placeholder="Ex: 2015..." min="2005" max="2025"></div>
+            <div class="filters-row">
                 <div>
-                    <label>Gènere</label>
-                    <select id="sc_genere">
-                        <option value="">-- Selecciona --</option>
-                        <option value="Masculí">Masculí</option>
-                        <option value="Femení">Femení</option>
-                    </select>
+                    <label for="filterYear">Filtre per any</label>
+                    <select id="filterYear"></select>
+                </div>
+                <div>
+                    <label for="filterGender">Filtre per gènere</label>
+                    <select id="filterGender"></select>
+                </div>
+                <div>
+                    <label for="filterName">Filtre per nom</label>
+                    <input id="filterName" type="text" placeholder="Escriu per filtrar...">
+                </div>
+                <div>
+                    <label for="filterClub">Filtre per club</label>
+                    <select id="filterClub"></select>
                 </div>
             </div>
-            <div style="margin-bottom:1.5rem;">
-                <label>Posicionament (pots marcar varies)</label>
-                <div class="pos-grid">
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Porter"> Porter</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Lateral Dret"> Lateral Dret</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Lateral Esquerre"> Lateral Esquerre</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Central"> Central</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Pivot Defensiu"> Pivot Defensiu</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Interior"> Interior</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Mitja Punta"> Mitja Punta</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Extrem Dret"> Extrem Dret</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Extrem Esquerre"> Extrem Esquerre</label>
-                    <label class="pos-item"><input type="checkbox" name="sc_pos" value="Davanter Centre"> Davanter Centre</label>
-                </div>
-            </div>
-            <div style="margin-bottom:1rem;">
-                <label>Situaci&oacute; / Perfil r&agrave;pid</label>
-                <textarea id="sc_situacio" style="min-height:80px;" placeholder="Ex: Interès en canviar d'equip..."></textarea>
-            </div>
-            <div style="display:flex; gap:1rem;">
-                <button class="btn btn-primary" onclick="addPlayer()" style="flex:2;">GUARDAR JUGADOR</button>
-                <button class="btn" onclick="clearMainView()" style="background:#e2e8f0; flex:1;">CANCEL·LAR</button>
-            </div>
-        </div>
-    </template>
-    
-    <script>
-        const SEGMENT='base';
-        const API_SEGUIMENT=`/api/jugadors-seguiment?segment=${SEGMENT}`;
-        const ALL_POSITIONS = ['Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu', 'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'];
-        let players=[], selectedId=null;
 
-        async function load(){
+            <div class="players-table-wrap">
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>Jugador</th>
+                            <th>Any</th>
+                            <th>Gènere</th>
+                            <th>Club</th>
+                            <th>Posicions</th>
+                            <th>✕</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersBody"></tbody>
+                </table>
+                <div id="playersEmpty" class="empty hidden">No hi ha jugadors amb aquest filtre.</div>
+            </div>
+        </section>
+
+        <section id="formScreen" class="screen hidden">
+            <div class="screen-header">
+                <h2 class="screen-title" id="formTitle">Alta jugador</h2>
+                <button class="btn btn-muted" id="btnBackToList" type="button">Tornar al llistat</button>
+            </div>
+
+            <form id="playerForm">
+                <div class="form-grid">
+                    <div>
+                        <label for="f_nom">Nom i cognoms</label>
+                        <input id="f_nom" type="text" required>
+                    </div>
+                    <div>
+                        <label for="f_any">Any de naixement</label>
+                        <input id="f_any" type="number" min="2000" max="2030" required>
+                    </div>
+                    <div>
+                        <label for="f_genere">Gènere</label>
+                        <select id="f_genere" required>
+                            <option value="">-- Selecciona --</option>
+                            <option value="Masculí">Masculí</option>
+                            <option value="Femení">Femení</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="f_club">Club actual</label>
+                        <input id="f_club" type="text">
+                    </div>
+                    <div>
+                        <label for="f_tel">Telèfon</label>
+                        <input id="f_tel" type="tel">
+                    </div>
+                    <div>
+                        <label for="f_poblacio">Població</label>
+                        <input id="f_poblacio" type="text">
+                    </div>
+
+                    <div class="full">
+                        <label>Posicions</label>
+                        <div id="positionsGrid" class="pos-grid"></div>
+                    </div>
+
+                    <div class="full">
+                        <label for="f_situacio">Situació / perfil ràpid</label>
+                        <textarea id="f_situacio"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-muted" id="btnCancelForm" type="button">Cancel·lar</button>
+                    <button class="btn btn-primary" type="submit">Guardar</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const SEGMENT = 'base';
+        const API_SEGUIMENT = `/api/jugadors-seguiment?segment=${SEGMENT}`;
+        const API_POSICIONS = '/api/posicions';
+        const DEFAULT_POSITIONS = [
+            'Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu',
+            'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'
+        ];
+
+        let players = [];
+        let allPositions = [...DEFAULT_POSITIONS];
+        let selectedYearFilter = '__ALL__';
+        let selectedGenderFilter = '__ALL__';
+        let selectedClubFilter = '__ALL__';
+        let nameFilterValue = '';
+        let editingPlayerId = null;
+
+        function esc(value) {
+            const div = document.createElement('div');
+            div.textContent = String(value || '');
+            return div.innerHTML;
+        }
+
+        function normalizePositionList(list) {
+            return [...new Set((Array.isArray(list) ? list : [])
+                .map(item => {
+                    if (item && typeof item === 'object') return String(item.nom || item.name || item.value || '').trim();
+                    return String(item || '').trim();
+                })
+                .filter(Boolean))];
+        }
+
+        function showListScreen() {
+            document.getElementById('listScreen').classList.remove('hidden');
+            document.getElementById('formScreen').classList.add('hidden');
+        }
+
+        function showFormScreen() {
+            document.getElementById('listScreen').classList.add('hidden');
+            document.getElementById('formScreen').classList.remove('hidden');
+        }
+
+        async function loadPositions() {
             try {
-                const r=await fetch(API_SEGUIMENT);
-                if(!r.ok){
-                    const errorText=await r.text();
-                    throw new Error(`GET seguiment ${r.status}: ${errorText}`);
-                }
-                players = await r.json();
-                if(!Array.isArray(players)) players = [];
-                renderList();
-            } catch(e) { 
-                console.warn('Servidor no disponible');
-                players = [];
-                renderList();
+                const r = await fetch(API_POSICIONS);
+                if (!r.ok) throw new Error('No s\'han pogut carregar les posicions');
+                const payload = await r.json();
+                const list = normalizePositionList(payload);
+                if (list.length) allPositions = list;
+            } catch (_) {
+                allPositions = [...DEFAULT_POSITIONS];
             }
         }
 
-        function renderList(){
-            const list = document.getElementById('scouting_list');
-            if(!players.length){
-                list.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:2rem 1rem; font-size:0.85rem;">Encara no hi ha jugadors registrats.</div>';
+        async function loadPlayers() {
+            const r = await fetch(API_SEGUIMENT);
+            if (!r.ok) throw new Error('No s\'han pogut carregar els jugadors');
+            const data = await r.json();
+            players = Array.isArray(data) ? data : [];
+        }
+
+        function renderYearFilter() {
+            const select = document.getElementById('filterYear');
+            const years = [...new Set(players
+                .map(player => Number.parseInt(player.any_naixement, 10))
+                .filter(Number.isInteger))]
+                .sort((a, b) => b - a);
+
+            if (selectedYearFilter !== '__ALL__' && !years.includes(Number(selectedYearFilter))) {
+                selectedYearFilter = '__ALL__';
+            }
+
+            select.innerHTML = [
+                '<option value="__ALL__">Tots els anys</option>',
+                ...years.map(year => `<option value="${year}">${year}</option>`)
+            ].join('');
+            select.value = selectedYearFilter;
+        }
+
+        function renderGenderFilter() {
+            const select = document.getElementById('filterGender');
+            const genders = [...new Set(players.map(player => String(player.genere || '').trim()).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'ca'));
+
+            if (selectedGenderFilter !== '__ALL__' && !genders.includes(selectedGenderFilter)) {
+                selectedGenderFilter = '__ALL__';
+            }
+
+            select.innerHTML = [
+                '<option value="__ALL__">Tots els gèneres</option>',
+                ...genders.map(gender => `<option value="${esc(gender)}">${esc(gender)}</option>`)
+            ].join('');
+            select.value = selectedGenderFilter;
+        }
+
+        function renderClubFilter() {
+            const select = document.getElementById('filterClub');
+            const clubs = [...new Set(players.map(player => String(player.club || '').trim()).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'ca'));
+
+            if (selectedClubFilter !== '__ALL__' && !clubs.includes(selectedClubFilter)) {
+                selectedClubFilter = '__ALL__';
+            }
+
+            select.innerHTML = [
+                '<option value="__ALL__">Tots els clubs</option>',
+                ...clubs.map(club => `<option value="${esc(club)}">${esc(club)}</option>`)
+            ].join('');
+            select.value = selectedClubFilter;
+        }
+
+        function getFilteredPlayers() {
+            const q = nameFilterValue.toLocaleLowerCase('ca').trim();
+            return players.filter(player => {
+                const playerYear = Number.parseInt(player.any_naixement, 10);
+                const byYear = selectedYearFilter === '__ALL__' || playerYear === Number(selectedYearFilter);
+                const byGender = selectedGenderFilter === '__ALL__' || String(player.genere || '').trim() === selectedGenderFilter;
+                const byClub = selectedClubFilter === '__ALL__' || String(player.club || '').trim() === selectedClubFilter;
+                const byName = !q || String(player.nom || '').toLocaleLowerCase('ca').includes(q);
+                return byYear && byGender && byClub && byName;
+            });
+        }
+
+        function renderPlayersTable() {
+            const body = document.getElementById('playersBody');
+            const empty = document.getElementById('playersEmpty');
+            const rows = getFilteredPlayers();
+
+            if (!rows.length) {
+                body.innerHTML = '';
+                empty.classList.remove('hidden');
                 return;
             }
-            list.innerHTML = players.map((p,i)=>{
-                const genderClass = p.genere === 'Masculí' ? 'gender-masculi' : 'gender-femeni';
-                const genderLabel = p.genere || 'N/D';
+
+            empty.classList.add('hidden');
+            body.innerHTML = rows.map(player => {
+                const posicions = normalizePositionList(player.posicions).join(', ') || '-';
                 return `
-                    <div class="scouting-list-item ${selectedId===i?'active':''}" onclick="selectPlayer(${i})">
-                        <div class="scouting-list-name">${esc(p.nom)}</div>
-                        <div class="scouting-list-meta">
-                            <span class="gender-badge ${genderClass}">${genderLabel}</span>
-                            <span class="year-badge">${p.any_naixement || 'N/D'}</span>
-                            ${p.club ? ' · '+esc(p.club) : ''}
-                        </div>
-                    </div>
+                    <tr>
+                        <td class="name-cell"><button type="button" class="name-link" data-action="edit" data-id="${esc(player.id)}">${esc(player.nom)}</button></td>
+                        <td>${esc(player.any_naixement || '-')}</td>
+                        <td>${esc(player.genere || '-')}</td>
+                        <td>${esc(player.club || '-')}</td>
+                        <td>${esc(posicions)}</td>
+                        <td><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-id="${esc(player.id)}">✕</button></td>
+                    </tr>
                 `;
             }).join('');
         }
 
-        function selectPlayer(i){
-            selectedId = i;
-            renderList();
-            renderDetails();
-        }
-
-        function renderDetails(){
-            const p = players[selectedId];
-            if(!p) return;
-            const mainView = document.getElementById('scouting_main_view');
-            const genderClass = p.genere === 'Masculí' ? 'gender-masculi' : 'gender-femeni';
-            const contactesHtml = renderContactes();
-            mainView.innerHTML = `
-                <div class="scouting-detail-card">
-                    <div class="scouting-header-actions">
-                        <h2>&#x1F464; ${esc(p.nom)}</h2>
-                        <button class="btn" onclick="deletePlayer()" style="background:#fee2e2; color:var(--primary);">&#x1F5D1; ELIMINAR</button>
-                    </div>
-                    <div style="display:grid; gap:1rem;">
-                        <div><label>Nom i Cognoms</label><input type="text" value="${esc(p.nom)}" onchange="updateField('nom', this.value)"></div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
-                            <div><label>Club Actual</label><input type="text" value="${esc(p.club||'')}" onchange="updateField('club', this.value)"></div>
-                            <div><label>Població</label><input type="text" value="${esc(p.poblacio||'')}" onchange="updateField('poblacio', this.value)"></div>
-                        </div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
-                            <div><label>Telèfon</label><input type="tel" value="${esc(p.tel||'')}" onchange="updateField('tel', this.value)"></div>
-                            <div><label>Any de Naixement</label><input type="number" value="${p.any_naixement||''}" min="2005" max="2025" onchange="updateField('any_naixement', parseInt(this.value))"></div>
-                            <div>
-                                <label>Gènere</label>
-                                <select onchange="updateField('genere', this.value)">
-                                    <option value="" ${!p.genere?'selected':''}>-- Selecciona --</option>
-                                    <option value="Masculí" ${p.genere==='Masculí'?'selected':''}>Masculí</option>
-                                    <option value="Femení" ${p.genere==='Femení'?'selected':''}>Femení</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label>Posicions</label>
-                            <div class="pos-grid">
-                                ${ALL_POSITIONS.map(pos=>`
-                                    <label class="pos-item">
-                                        <input type="checkbox" value="${pos}" ${(p.posicions||[]).includes(pos)?'checked':''} onchange="togglePosition('${pos}', this.checked)"> ${pos}
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <div><label>Situació / Perfil</label><textarea onchange="updateField('situacio', this.value)">${esc(p.situacio||'')}</textarea></div>
-                        
-                        <div style="border-top: 2px solid #fee2e2; padding-top: 1.5rem; margin-top: 1rem;">
-                            <h3 style="color: var(--primary); font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem;">💬 Observacions i Comentaris</h3>
-                            <div class="obs-list">${contactesHtml}</div>
-                            <div class="add-obs-form">
-                                <div class="form-title">Nou Comentari</div>
-                                <div class="obs-form-row">
-                                    <div><label style="font-size: 0.75rem;">Autor</label><input type="text" id="contacte_autor" placeholder="Qui fa el comentari..."></div>
-                                    <div><label style="font-size: 0.75rem;">Data</label><input type="date" id="contacte_data"></div>
-                                    <div><button class="btn btn-primary" onclick="addContacte()" style="font-size: 0.8rem; padding: 0.5rem 1rem;">AFEGIR</button></div>
-                                </div>
-                                <div><label style="font-size: 0.75rem;">Comentari</label><textarea id="contacte_nota" style="min-height:100px;" placeholder="Escriu el comentari..."></textarea></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            const dataEl = document.getElementById('contacte_data');
-            if(dataEl && !dataEl.value){
-                dataEl.value = today;
-            }
-        }
-
-        function renderContactes(){
-            const p = players[selectedId];
-            if(!p) return '';
-            const contactes = p.contactes || [];
-            if(!contactes.length){
-                return '<div class="empty-msg">Sense observacions registrades.</div>';
-            }
-            return contactes.map((c, idx) => `
-                <div class="obs-item">
-                    <div class="obs-header">
-                        <div class="obs-meta"><strong>${esc(c.autor || 'Anònim')}</strong> &mdash; ${fmtDate(c.data)}</div>
-                        <button class="btn-remove" onclick="deleteContacte(${idx})" title="Eliminar comentari">&#x00D7;</button>
-                    </div>
-                    <div class="obs-text">${esc(c.nota || '')}</div>
-                </div>
+        function renderPositionChecks(selected = []) {
+            const selectedSet = new Set(normalizePositionList(selected));
+            const grid = document.getElementById('positionsGrid');
+            grid.innerHTML = allPositions.map(pos => `
+                <label class="pos-item">
+                    <input type="checkbox" name="f_pos" value="${esc(pos)}" ${selectedSet.has(pos) ? 'checked' : ''}>
+                    <span>${esc(pos)}</span>
+                </label>
             `).join('');
         }
 
-        async function addContacte(){
-            const today = new Date().toISOString().split('T')[0];
-            const autor = (document.getElementById('contacte_autor')?.value || '').trim() || 'Anònim';
-            const data = document.getElementById('contacte_data').value;
-            const nota = document.getElementById('contacte_nota').value.trim();
-            if(!data || !nota){alert('Completa data i nota del contacte.'); return;}
-            
-            if(!players[selectedId].contactes) players[selectedId].contactes = [];
-            players[selectedId].contactes.push({autor, data, nota});
-            if(document.getElementById('contacte_autor')) document.getElementById('contacte_autor').value = '';
-            document.getElementById('contacte_data').value = today;
-            document.getElementById('contacte_nota').value = '';
-            const player = players[selectedId];
-            if(player && player.id){
-                try{
-                    const r = await fetch(API_SEGUIMENT,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:player.id,contactes:player.contactes})});
-                    if(!r.ok){
-                        const errorText = await r.text();
-                        throw new Error(`PATCH contactes ${r.status}: ${errorText}`);
+        function getPlayerById(id) {
+            return players.find(player => String(player.id) === String(id));
+        }
+
+        function openCreateForm() {
+            editingPlayerId = null;
+            document.getElementById('formTitle').textContent = 'Alta jugador';
+            document.getElementById('playerForm').reset();
+            renderPositionChecks([]);
+            showFormScreen();
+        }
+
+        function openEditForm(playerId) {
+            const player = getPlayerById(playerId);
+            if (!player) return;
+            editingPlayerId = player.id;
+            document.getElementById('formTitle').textContent = 'Modificar jugador';
+            document.getElementById('f_nom').value = player.nom || '';
+            document.getElementById('f_any').value = player.any_naixement || '';
+            document.getElementById('f_genere').value = player.genere || '';
+            document.getElementById('f_club').value = player.club || '';
+            document.getElementById('f_tel').value = player.tel || '';
+            document.getElementById('f_poblacio').value = player.poblacio || '';
+            document.getElementById('f_situacio').value = player.situacio || '';
+            renderPositionChecks(player.posicions || []);
+            showFormScreen();
+        }
+
+        function getFormPayload() {
+            const nom = document.getElementById('f_nom').value.trim();
+            const anyNaixement = Number.parseInt(document.getElementById('f_any').value, 10);
+            const genere = document.getElementById('f_genere').value.trim();
+
+            if (!nom) {
+                alert('El nom és obligatori.');
+                return null;
+            }
+            if (!Number.isInteger(anyNaixement)) {
+                alert('L\'any de naixement és obligatori.');
+                return null;
+            }
+            if (!genere) {
+                alert('El gènere és obligatori.');
+                return null;
+            }
+
+            return {
+                nom,
+                any_naixement: anyNaixement,
+                genere,
+                club: document.getElementById('f_club').value.trim(),
+                tel: document.getElementById('f_tel').value.trim(),
+                poblacio: document.getElementById('f_poblacio').value.trim(),
+                situacio: document.getElementById('f_situacio').value.trim(),
+                posicions: normalizePositionList(Array.from(document.querySelectorAll('input[name="f_pos"]:checked')).map(cb => cb.value))
+            };
+        }
+
+        async function savePlayer(event) {
+            event.preventDefault();
+            const payload = getFormPayload();
+            if (!payload) return;
+
+            try {
+                if (editingPlayerId === null) {
+                    const r = await fetch(API_SEGUIMENT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...payload, contactes: [] })
+                    });
+                    if (!r.ok) throw new Error('No s\'ha pogut crear el jugador');
+                    const response = await r.json();
+                    if (response?.jugador) {
+                        players.push(response.jugador);
                     }
-                }catch(e){
-                    console.warn('Error actualitzant contactes');
-                }
-            }
-            renderDetails();
-        }
+                } else {
+                    const r = await fetch(API_SEGUIMENT, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: editingPlayerId, ...payload })
+                    });
+                    if (!r.ok) throw new Error('No s\'ha pogut actualitzar el jugador');
 
-        async function deleteContacte(idx){
-            if(!confirm('Segur que vols eliminar aquest contacte?')) return;
-            players[selectedId].contactes.splice(idx, 1);
-            const player = players[selectedId];
-            if(player && player.id){
-                try{
-                    const r = await fetch(API_SEGUIMENT,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:player.id,contactes:player.contactes})});
-                    if(!r.ok){
-                        const errorText = await r.text();
-                        throw new Error(`PATCH contactes ${r.status}: ${errorText}`);
+                    const idx = players.findIndex(p => String(p.id) === String(editingPlayerId));
+                    if (idx >= 0) {
+                        players[idx] = { ...players[idx], ...payload };
                     }
-                }catch(e){
-                    console.warn('Error actualitzant contactes');
                 }
+
+                renderYearFilter();
+                renderGenderFilter();
+                renderClubFilter();
+                renderPlayersTable();
+                showListScreen();
+            } catch (_) {
+                alert('Error guardant el jugador.');
             }
-            renderDetails();
         }
 
-        function showAddForm(){
-            const mainView = document.getElementById('scouting_main_view');
-            const tpl = document.getElementById('tpl_add_form');
-            mainView.innerHTML = tpl.innerHTML;
-            selectedId = null;
-            renderList();
-        }
-
-        function clearMainView(){
-            selectedId = null;
-            renderList();
-            document.getElementById('scouting_main_view').innerHTML = `
-                <div class="card" style="text-align:center; padding:5rem 2rem;">
-                    <span style="font-size:3rem;">&#x1F31F;</span>
-                    <p style="color:#94a3b8; margin-top:1rem;">Selecciona un jugador per veure'n els detalls o afegeix-ne un de nou.</p>
-                </div>
-            `;
-        }
-
-        async function addPlayer(){
-            const nom = document.getElementById('sc_nom').value.trim();
-            if(!nom){alert('El nom és obligatori.'); return;}
-            const any_naixement = parseInt(document.getElementById('sc_any_naixement').value) || null;
-            if(!any_naixement){alert('L\'any de naixement és obligatori.'); return;}
-            const genere = document.getElementById('sc_genere').value.trim();
-            if(!genere){alert('El gènere és obligatori.'); return;}
-            const club = document.getElementById('sc_club').value.trim();
-            const tel = document.getElementById('sc_tel').value.trim();
-            const poblacio = document.getElementById('sc_poblacio').value.trim();
-            const situacio = document.getElementById('sc_situacio').value.trim();
-            const posicions = Array.from(document.querySelectorAll('input[name="sc_pos"]:checked')).map(cb=>cb.value);
-
-            try{
-                const r = await fetch(API_SEGUIMENT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nom, club, tel, poblacio, any_naixement, genere, posicions, situacio, contactes:[]})});
-                if(!r.ok){
-                    const errorText = await r.text();
-                    throw new Error(`POST seguiment ${r.status}: ${errorText}`);
-                }
-                const payload = await r.json();
-                if(payload && payload.jugador){
-                    players.push(payload.jugador);
-                }
-            }catch(e){
-                alert('Error al guardar jugador en seguiment');
-                return;
+        async function removePlayer(playerId) {
+            if (!confirm('Segur que vols eliminar aquest jugador?')) return;
+            try {
+                const r = await fetch(`${API_SEGUIMENT}&id=${encodeURIComponent(playerId)}`, { method: 'DELETE' });
+                if (!r.ok) throw new Error('No s\'ha pogut eliminar el jugador');
+                players = players.filter(player => String(player.id) !== String(playerId));
+                renderYearFilter();
+                renderGenderFilter();
+                renderClubFilter();
+                renderPlayersTable();
+            } catch (_) {
+                alert('Error eliminant el jugador.');
             }
-            renderList();
-            clearMainView();
         }
 
-        async function deletePlayer(){
-            if(!confirm('Segur que vols eliminar aquest jugador?')) return;
-            const player = players[selectedId];
-            if(!player) return;
-
-            try{
-                const r = await fetch(`${API_SEGUIMENT}&id=${encodeURIComponent(player.id)}`,{method:'DELETE'});
-                if(!r.ok){
-                    const errorText = await r.text();
-                    throw new Error(`DELETE seguiment ${r.status}: ${errorText}`);
-                }
-            }catch(e){
-                alert('Error al eliminar jugador');
-                return;
+        async function init() {
+            try {
+                await loadPositions();
+                await loadPlayers();
+                renderYearFilter();
+                renderGenderFilter();
+                renderClubFilter();
+                renderPlayersTable();
+                renderPositionChecks([]);
+            } catch (_) {
+                renderYearFilter();
+                renderGenderFilter();
+                renderClubFilter();
+                renderPlayersTable();
+                alert('No s\'ha pogut carregar la informació de captació.');
             }
 
-            players.splice(selectedId, 1);
-            clearMainView();
-            renderList();
-        }
+            document.getElementById('btnNewPlayer').addEventListener('click', openCreateForm);
+            document.getElementById('btnBackToList').addEventListener('click', showListScreen);
+            document.getElementById('btnCancelForm').addEventListener('click', showListScreen);
+            document.getElementById('playerForm').addEventListener('submit', savePlayer);
 
-        async function updateField(field, value){
-            players[selectedId][field] = value;
-            const player = players[selectedId];
-            if(player && player.id){
-                try{
-                    const r = await fetch(API_SEGUIMENT,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:player.id,[field]:value})});
-                    if(!r.ok){
-                        const errorText = await r.text();
-                        throw new Error(`PATCH seguiment ${r.status}: ${errorText}`);
-                    }
-                }catch(e){
-                    console.warn('Error actualitzant camp de seguiment');
+            document.getElementById('filterYear').addEventListener('change', (event) => {
+                selectedYearFilter = event.target.value;
+                renderPlayersTable();
+            });
+
+            document.getElementById('filterGender').addEventListener('change', (event) => {
+                selectedGenderFilter = event.target.value;
+                renderPlayersTable();
+            });
+
+            document.getElementById('filterClub').addEventListener('change', (event) => {
+                selectedClubFilter = event.target.value;
+                renderPlayersTable();
+            });
+
+            document.getElementById('filterName').addEventListener('input', (event) => {
+                nameFilterValue = event.target.value || '';
+                renderPlayersTable();
+            });
+
+            document.getElementById('playersBody').addEventListener('click', (event) => {
+                const action = event.target?.dataset?.action;
+                const playerId = event.target?.dataset?.id;
+                if (!action || !playerId) return;
+                if (action === 'edit') {
+                    openEditForm(playerId);
+                    return;
                 }
-            }
-            renderList();
-        }
-
-        async function togglePosition(pos, checked){
-            if(!players[selectedId].posicions) players[selectedId].posicions = [];
-            if(checked){
-                if(!players[selectedId].posicions.includes(pos)){
-                    players[selectedId].posicions.push(pos);
+                if (action === 'delete') {
+                    removePlayer(playerId);
                 }
-            } else {
-                players[selectedId].posicions = players[selectedId].posicions.filter(p=>p!==pos);
-            }
-            const player = players[selectedId];
-            if(player && player.id){
-                try{
-                    const r = await fetch(API_SEGUIMENT,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:player.id,posicions:players[selectedId].posicions})});
-                    if(!r.ok){
-                        const errorText = await r.text();
-                        throw new Error(`PATCH posicions ${r.status}: ${errorText}`);
-                    }
-                }catch(e){
-                    console.warn('Error actualitzant posicions de seguiment');
-                }
-            }
-            renderList();
+            });
         }
 
-        function esc(str){
-            if(!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        function fmtDate(d){
-            if(!d) return '-';
-            return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
-        }
-
-        const today = new Date().toISOString().split('T')[0];
-        window.onload = load;
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
-
-

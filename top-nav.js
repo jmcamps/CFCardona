@@ -39,7 +39,7 @@
     const pathname = window.location.pathname.toLowerCase();
     const style = document.createElement('style');
     style.textContent = `
-        .cf-topnav-wrap { max-width: 1200px; margin: 0 auto 1.25rem; position: sticky; top: 0.75rem; z-index: 40; }
+        .cf-topnav-wrap { max-width: 960px; margin: 0 auto 1.25rem; position: sticky; top: 0.75rem; z-index: 40; }
         .cf-topnav {
             display: flex; align-items: center; justify-content: flex-start; gap: 0.9rem;
             background: rgba(15, 23, 42, 0.85); color: #fff;
@@ -125,37 +125,80 @@
 
     const futbolBaseMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-fb-dropdown">
-            <button class="cf-nav-drop-btn" type="button" id="cf-nav-fb-btn">Estructura Futbol Base ▾</button>
+            <button class="cf-nav-drop-btn" type="button" id="cf-nav-fb-btn">Futbol base ▾</button>
             <div class="cf-nav-menu cf-fb-menu" id="cf-nav-fb-menu">
-                <div class="cf-fb-grid">
-                    <div>
-                        <div class="cf-fb-group-title">General</div>
-                        <a href="${links.futbolBase}">Futbol base</a>
-                        <a href="${links.futbolBaseMasculi}">Futbol base masculí</a>
-                        <a href="${links.futbolBaseFemeni}">Futbol base femení</a>
+                <div class="cf-nav-feature-grid" style="grid-template-columns: repeat(2, minmax(260px, 1fr));">
+                    <div class="cf-nav-feature">
+                        <span class="cf-nav-feature-title"><span class="icon">🛡️</span>Base Masculí</span>
+                        <span class="cf-nav-feature-desc">Accés a totes les categories masculines de formació.</span>
+                        <div class="cf-nav-feature-list">
+                            <a class="cf-nav-feature-sub" href="${links.minis}">
+                                <span class="cf-nav-feature-sub-title">Minis</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2020 i 2021.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s7}">
+                                <span class="cf-nav-feature-sub-title">S7</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2019.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s8}">
+                                <span class="cf-nav-feature-sub-title">S8</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2018.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s9}">
+                                <span class="cf-nav-feature-sub-title">S9</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2017.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s10}">
+                                <span class="cf-nav-feature-sub-title">S10</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2016.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s11}">
+                                <span class="cf-nav-feature-sub-title">S11</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2015.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s12}">
+                                <span class="cf-nav-feature-sub-title">S12</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2014.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s13}">
+                                <span class="cf-nav-feature-sub-title">S13</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2013.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s14}">
+                                <span class="cf-nav-feature-sub-title">S14</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2012.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.s16}">
+                                <span class="cf-nav-feature-sub-title">S16</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2010 i 2011.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.juvenilMasculi}">
+                                <span class="cf-nav-feature-sub-title">Juvenil Masculí</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2007, 2008 i 2009.</span>
+                            </a>
+                        </div>
                     </div>
-                    <div>
-                        <div class="cf-fb-group-title">Masculí</div>
-                        <a href="${links.f7}">Futbol 7</a>
-                        <a href="${links.minis}">Minis</a>
-                        <a href="${links.s7}">S7</a>
-                        <a href="${links.s8}">S8</a>
-                        <a href="${links.s9}">S9</a>
-                        <a href="${links.s10}">S10</a>
-                        <a href="${links.s11}">S11</a>
-                        <a href="${links.s12}">S12</a>
-                        <a href="${links.f11}">Futbol 11</a>
-                        <a href="${links.s13}">S13</a>
-                        <a href="${links.s14}">S14</a>
-                        <a href="${links.s16}">S16</a>
-                        <a href="${links.juvenilMasculi}">Juvenil masculí</a>
-                    </div>
-                    <div>
-                        <div class="cf-fb-group-title">Femení</div>
-                        <a href="${links.aleviFemeni}">Aleví femení</a>
-                        <a href="${links.infantilFemeni}">Infantil femení</a>
-                        <a href="${links.cadetFemeni}">Cadet femení</a>
-                        <a href="${links.juvenilFemeni}">Juvenil femení</a>
+                    <div class="cf-nav-feature">
+                        <span class="cf-nav-feature-title"><span class="icon">🌸</span>Base Femení</span>
+                        <span class="cf-nav-feature-desc">Accés a totes les categories femenines de formació.</span>
+                        <div class="cf-nav-feature-list">
+                            <a class="cf-nav-feature-sub" href="${links.aleviFemeni}">
+                                <span class="cf-nav-feature-sub-title">Aleví Femení</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2014 i 2015.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.infantilFemeni}">
+                                <span class="cf-nav-feature-sub-title">Infantil Femení</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2012 i 2013.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.cadetFemeni}">
+                                <span class="cf-nav-feature-sub-title">Cadet Femení</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2010 i 2011.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.juvenilFemeni}">
+                                <span class="cf-nav-feature-sub-title">Juvenil Femení</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2007, 2008 i 2009.</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -164,19 +207,17 @@
 
     const seniorMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-senior-dropdown">
-            <button class="cf-nav-drop-btn" type="button" id="cf-nav-senior-btn">Estructura Senior ▾</button>
+            <button class="cf-nav-drop-btn" type="button" id="cf-nav-senior-btn">Senior ▾</button>
             <div class="cf-nav-menu cf-fb-menu" id="cf-nav-senior-menu">
-                <div class="cf-fb-grid" style="grid-template-columns: repeat(2, minmax(170px, 1fr));">
-                    <div>
-                        <div class="cf-fb-group-title">Senior</div>
-                        <a href="${links.senior}">Vista Senior</a>
-                        <a href="${links.captacioSenior}">Captació Senior</a>
-                    </div>
-                    <div>
-                        <div class="cf-fb-group-title">Equips</div>
-                        <a href="${links.primerEquip}">Primer equip</a>
-                        <a href="${links.filial}">Filial</a>
-                    </div>
+                <div class="cf-nav-feature-grid" style="grid-template-columns: repeat(2, minmax(220px, 1fr));">
+                    <a class="cf-nav-feature" href="${links.primerEquip}">
+                        <span class="cf-nav-feature-title"><span class="icon">⚽</span>Primer equip</span>
+                        <span class="cf-nav-feature-desc">Planificació de plantilla, staff i seguiment esportiu del primer equip.</span>
+                    </a>
+                    <a class="cf-nav-feature" href="${links.filial}">
+                        <span class="cf-nav-feature-title"><span class="icon">🛡️</span>Filial</span>
+                        <span class="cf-nav-feature-desc">Planificació de plantilla, staff i seguiment esportiu del filial.</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -189,7 +230,6 @@
         </a>
         <div class="cf-nav">
             <a class="cf-nav-link ${isActive('/index.html') ? 'active' : ''}" href="${links.home}">Inici</a>
-            <a class="cf-nav-link ${isActive('/estructura.html') ? 'active' : ''}" href="${links.estructura}">Estructura</a>
             <div class="cf-nav-dropdown" id="cf-nav-dropdown">
                 <button class="cf-nav-drop-btn" type="button" id="cf-nav-drop-btn">Direcció esportiva ▾</button>
                 <div class="cf-nav-menu" id="cf-nav-menu">
@@ -202,19 +242,11 @@
                             <span class="cf-nav-feature-title"><span class="icon">👥</span>Comissió esportiva</span>
                             <span class="cf-nav-feature-desc">Coordina decisions esportives, seguiment de rendiment i captació senior.</span>
                         </a>
-                        <a class="cf-nav-feature" href="${links.senior}" id="cf-senior-entry">
-                            <span class="cf-nav-feature-title"><span class="icon">⚽</span>Senior</span>
-                            <span class="cf-nav-feature-desc">Gestiona estructura i contingut del Primer Equip i Filial.</span>
-                        </a>
-                        <a class="cf-nav-feature" href="${links.futbolBase}" id="cf-futbolbase-entry">
-                            <span class="cf-nav-feature-title"><span class="icon">🎓</span>Futbol base</span>
-                            <span class="cf-nav-feature-desc">Accedeix al model de formació, categories masculines i femenines.</span>
-                        </a>
-                        <a class="cf-nav-feature" href="${links.captacioSenior}">
+                        <a class="cf-nav-feature" href="${links.captacioSenior}" id="cf-scouting-senior-entry">
                             <span class="cf-nav-feature-title"><span class="icon">🔎</span>Captació Senior</span>
                             <span class="cf-nav-feature-desc">Cartera i seguiment de perfils per Primer Equip i Filial.</span>
                         </a>
-                        <a class="cf-nav-feature" href="${links.captacioFutbolBase}">
+                        <a class="cf-nav-feature" href="${links.captacioFutbolBase}" id="cf-scouting-base-entry">
                             <span class="cf-nav-feature-title"><span class="icon">🧭</span>Captació Futbol Base</span>
                             <span class="cf-nav-feature-desc">Prospecció de talent per a les categories de formació.</span>
                         </a>
@@ -274,4 +306,70 @@
             window.location.href = `${base}/login.html`;
         });
     }
+
+    function normalizeRole(role) {
+        const raw = String(role || '').trim().toLowerCase();
+        if (!raw) return '';
+        const compact = raw
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[\s-]+/g, '_');
+        if (compact === 'administrator' || compact === 'superadmin') return 'admin';
+        if (compact === 'management' || compact === 'direccion') return 'direccio';
+        if (compact === 'base') return 'futbol_base';
+        return compact;
+    }
+
+    function normalizeRoleList(rawRoles) {
+        if (Array.isArray(rawRoles)) {
+            return [...new Set(rawRoles.map(normalizeRole).filter(Boolean))];
+        }
+        if (typeof rawRoles === 'string') {
+            return [...new Set(rawRoles.split(',').map(part => normalizeRole(part)).filter(Boolean))];
+        }
+        if (rawRoles && typeof rawRoles === 'object') {
+            if (Array.isArray(rawRoles.roles)) {
+                return [...new Set(rawRoles.roles.map(normalizeRole).filter(Boolean))];
+            }
+        }
+        return [];
+    }
+
+    function hasAnyRole(roles, required) {
+        const normalizedRoles = normalizeRoleList(roles);
+        if (!normalizedRoles.length) return false;
+        if (normalizedRoles.includes('admin')) return true;
+        return required.some(r => normalizedRoles.includes(r));
+    }
+
+    (async function applyRoleVisibility() {
+        try {
+            const res = await fetch(`${base}/api/auth/session`, { credentials: 'same-origin' });
+            if (!res.ok) return;
+            const data = await res.json();
+            const roles = data && data.user ? normalizeRoleList(data.user.roles) : [];
+
+            const seniorAllowed = hasAnyRole(roles, ['direccio', 'senior']);
+            const baseAllowed = hasAnyRole(roles, ['direccio', 'futbol_base']);
+            const scoutingAllowed = hasAnyRole(roles, ['direccio', 'scouting']);
+
+            const seniorMenu = document.getElementById('cf-nav-senior-dropdown');
+            if (seniorMenu && !seniorAllowed) seniorMenu.style.display = 'none';
+
+            const baseMenu = document.getElementById('cf-nav-fb-dropdown');
+            if (baseMenu && !baseAllowed) baseMenu.style.display = 'none';
+
+            const seniorEntry = document.getElementById('cf-senior-entry');
+            if (seniorEntry && !seniorAllowed) seniorEntry.style.display = 'none';
+
+            const baseEntry = document.getElementById('cf-futbolbase-entry');
+            if (baseEntry && !baseAllowed) baseEntry.style.display = 'none';
+
+            const scoutingSeniorEntry = document.getElementById('cf-scouting-senior-entry');
+            if (scoutingSeniorEntry && !scoutingAllowed) scoutingSeniorEntry.style.display = 'none';
+
+            const scoutingBaseEntry = document.getElementById('cf-scouting-base-entry');
+            if (scoutingBaseEntry && !scoutingAllowed) scoutingBaseEntry.style.display = 'none';
+        } catch (_) {}
+    })();
 })();
