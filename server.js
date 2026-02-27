@@ -204,6 +204,7 @@ function getSessionTokenFromRequest(req) {
 function isPublicPath(pathname) {
     const path = String(pathname || '');
     return path === '/login.html' || path === '/auth.js' || path === '/favicon.ico' ||
+    path === '/set-password.html' || path === '/set-password.js' ||
     path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session' || path === '/api/auth/exchange';
 }
 
@@ -2048,6 +2049,39 @@ const server = http.createServer(async (req, res) => {
                 clearSessionCookie(res);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ authenticated: false }));
+            }
+        })();
+        return;
+    }
+
+    if (pathname === '/api/auth/password' && req.method === 'POST') {
+        (async () => {
+            try {
+                const token = getSessionTokenFromRequest(req);
+                if (!token) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Sessió no vàlida' }));
+                    return;
+                }
+
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const password = String(parsed.password || '').trim();
+
+                if (password.length < 8) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'La contrasenya ha de tenir mínim 8 caràcters' }));
+                    return;
+                }
+
+                await supabaseAuthRequest('PUT', '/auth/v1/user', { password }, token);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: true }));
+            } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'No s\'ha pogut actualitzar la contrasenya', details: msg }));
             }
         })();
         return;

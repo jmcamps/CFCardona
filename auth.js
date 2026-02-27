@@ -22,6 +22,7 @@
         const params = parseParamsFromSearchAndHash();
         const accessToken = String(params.access_token || '').trim();
         const expiresIn = Number(params.expires_in || 3600);
+        const callbackType = String(params.type || '').trim().toLowerCase();
         const errorDescription = String(params.error_description || params.error || '').trim();
 
         if (errorDescription) {
@@ -51,7 +52,11 @@
             }
 
             window.history.replaceState({}, document.title, '/login.html');
-            window.location.replace('/index.html');
+            if (callbackType === 'invite') {
+                window.location.replace('/set-password.html');
+            } else {
+                window.location.replace('/index.html');
+            }
             return true;
         } catch (err) {
             msg.textContent = err && err.message ? err.message : 'Error validant invitació';
