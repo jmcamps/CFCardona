@@ -204,7 +204,7 @@ function getSessionTokenFromRequest(req) {
 function isPublicPath(pathname) {
     const path = String(pathname || '');
     return path === '/login.html' || path === '/auth.js' || path === '/favicon.ico' ||
-        path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session';
+    path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session' || path === '/api/auth/exchange';
 }
 
 function setSessionCookie(res, token, maxAgeSeconds = 3600) {
@@ -348,7 +348,7 @@ function getAuthorizationRule(pathname, method) {
     const p = String(pathname || '').toLowerCase();
     const m = String(method || 'GET').toUpperCase();
 
-    if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/session') {
+    if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/session' || p === '/api/auth/exchange') {
         return { requiredRoles: [], readOnlyAllowed: true };
     }
 
@@ -1934,7 +1934,8 @@ const server = http.createServer(async (req, res) => {
                     res.writeHead(401, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'Unauthorized' }));
                 } else {
-                    res.writeHead(302, { Location: '/login.html' });
+                    const search = requestUrl.search || '';
+                    res.writeHead(302, { Location: `/login.html${search}` });
                     res.end();
                 }
                 return;
@@ -2047,6 +2048,39 @@ const server = http.createServer(async (req, res) => {
                 clearSessionCookie(res);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ authenticated: false }));
+            }
+        })();
+        return;
+    }
+
+    if (pathname === '/api/auth/exchange' && req.method === 'POST') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const accessToken = String(parsed.access_token || '').trim();
+                const expiresIn = parsed && parsed.expires_in ? Number(parsed.expires_in) : 3600;
+
+                if (!accessToken) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'access_token obligatori' }));
+                    return;
+                }
+
+                const user = await verifySupabaseSession(accessToken);
+                if (!user) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Token invàlid o expirat' }));
+                    return;
+                }
+
+                setSessionCookie(res, accessToken, expiresIn);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: true, user: { id: user.id, email: user.email || '' } }));
+            } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'No s\'ha pogut intercanviar la sessió', details: msg }));
             }
         })();
         return;
