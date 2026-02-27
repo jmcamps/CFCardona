@@ -2092,12 +2092,29 @@ const server = http.createServer(async (req, res) => {
             try {
                 const body = await readBody(req);
                 const parsed = body ? JSON.parse(body) : {};
-                const accessToken = String(parsed.access_token || '').trim();
-                const expiresIn = parsed && parsed.expires_in ? Number(parsed.expires_in) : 3600;
+                let accessToken = String(parsed.access_token || '').trim();
+                let expiresIn = parsed && parsed.expires_in ? Number(parsed.expires_in) : 3600;
+                const tokenHash = String(parsed.token_hash || '').trim();
+                const verifyType = String(parsed.type || '').trim().toLowerCase();
+
+                if (!accessToken && tokenHash) {
+                    const allowedTypes = new Set(['invite', 'recovery', 'magiclink', 'signup', 'email']);
+                    const type = allowedTypes.has(verifyType) ? verifyType : 'invite';
+                    const verified = await supabaseAuthRequest('POST', '/auth/v1/verify', {
+                        type,
+                        token_hash: tokenHash
+                    });
+
+                    accessToken = String(verified && verified.access_token ? verified.access_token : '').trim();
+                    const verifiedExpiresIn = Number(verified && verified.expires_in ? verified.expires_in : 0);
+                    if (Number.isFinite(verifiedExpiresIn) && verifiedExpiresIn > 0) {
+                        expiresIn = verifiedExpiresIn;
+                    }
+                }
 
                 if (!accessToken) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'access_token obligatori' }));
+                    res.end(JSON.stringify({ error: 'access_token o token_hash obligatoris' }));
                     return;
                 }
 

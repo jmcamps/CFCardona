@@ -21,6 +21,7 @@
     async function handleSupabaseCallback() {
         const params = parseParamsFromSearchAndHash();
         const accessToken = String(params.access_token || '').trim();
+        const tokenHash = String(params.token_hash || '').trim();
         const expiresIn = Number(params.expires_in || 3600);
         const callbackType = String(params.type || '').trim().toLowerCase();
         const errorDescription = String(params.error_description || params.error || '').trim();
@@ -31,7 +32,7 @@
             return false;
         }
 
-        if (!accessToken) {
+        if (!accessToken && !tokenHash) {
             return false;
         }
 
@@ -43,7 +44,12 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ access_token: accessToken, expires_in: expiresIn })
+                body: JSON.stringify({
+                    access_token: accessToken,
+                    expires_in: expiresIn,
+                    token_hash: tokenHash,
+                    type: callbackType
+                })
             });
 
             const data = await res.json().catch(() => ({}));
