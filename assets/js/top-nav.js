@@ -152,47 +152,47 @@
                         <div class="cf-nav-feature-list">
                             <a class="cf-nav-feature-sub" href="${links.minis}">
                                 <span class="cf-nav-feature-sub-title">Minis</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2020 i 2021.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2021 i 2022.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s7}">
                                 <span class="cf-nav-feature-sub-title">S7</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2019.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2020.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s8}">
                                 <span class="cf-nav-feature-sub-title">S8</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2018.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2019.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s9}">
                                 <span class="cf-nav-feature-sub-title">S9</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2017.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2018.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s10}">
                                 <span class="cf-nav-feature-sub-title">S10</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2016.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2017.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s11}">
                                 <span class="cf-nav-feature-sub-title">S11</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2015.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2016.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s12}">
                                 <span class="cf-nav-feature-sub-title">S12</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2014.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2015.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s13}">
                                 <span class="cf-nav-feature-sub-title">S13</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2013.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2014.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s14}">
                                 <span class="cf-nav-feature-sub-title">S14</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2012.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2013.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s16}">
                                 <span class="cf-nav-feature-sub-title">S16</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2010 i 2011.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2011 i 2012.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.juvenilMasculi}">
                                 <span class="cf-nav-feature-sub-title">Juvenil Masculí</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2007, 2008 i 2009.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2008, 2009 i 2010.</span>
                             </a>
                         </div>
                     </div>
@@ -202,19 +202,19 @@
                         <div class="cf-nav-feature-list">
                             <a class="cf-nav-feature-sub" href="${links.aleviFemeni}">
                                 <span class="cf-nav-feature-sub-title">Aleví Femení</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2014 i 2015.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2015 i 2016.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.infantilFemeni}">
                                 <span class="cf-nav-feature-sub-title">Infantil Femení</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2012 i 2013.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2013 i 2014.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.cadetFemeni}">
                                 <span class="cf-nav-feature-sub-title">Cadet Femení</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2010 i 2011.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2011 i 2012.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.juvenilFemeni}">
                                 <span class="cf-nav-feature-sub-title">Juvenil Femení</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2007, 2008 i 2009.</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2008, 2009 i 2010.</span>
                             </a>
                         </div>
                     </div>
