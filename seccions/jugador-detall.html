@@ -52,10 +52,6 @@
                                 <label>Població de residència</label>
                                 <input type="text" id="poblacio" placeholder="Ex: Cardona">
                             </div>
-                            <div class="input-group">
-                                <label>Rol actual a l’equip</label>
-                                <select id="rol_actual"><option value="">Selecciona...</option></select>
-                            </div>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
                             <div class="input-group">
@@ -73,34 +69,6 @@
                         <div class="input-group" style="margin-top: 1rem;">
                             <label>Posicions (múltiple)</label>
                             <div id="posicions_grid" class="positions-grid"></div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-h3">💶 Condicions Econòmiques</div>
-                        <div class="input-group"><label>Fitxa mensual (€)</label><input type="text" id="fitxa_mensual" placeholder="0 ’></div>
-                        <div class="input-group"><label>Primes per partit</label><input type="text" id="primes_partit" placeholder="Ex: 50€/guanyat"></div>
-                        <div class="input-group"><label>Prima permanència</label><input type="text" id="prima_permanencia" placeholder="Ex: 200 ’></div>
-                        <div class="input-group"><label>Altres incentius</label><input type="text" id="altres_incentius" placeholder="..."></div>
-                    </div>
-
-                    <div class="card full-width">
-                        <div class="card-h3">📋 Planificació Temporada Vinent</div>
-                        <div class="grid-2-col" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div class="input-group">
-                                <label>Rol previst</label>
-                                <select id="rol_previst"><option value="">Selecciona...</option></select>
-                            </div>
-                            <div class="input-group"><label>Situació actual converses</label><input type="text" id="conv_situacio" placeholder="Pendent / Apalabrat / Renovat..."></div>
-                        </div>
-                        <div class="input-group">
-                            <label>Resum de converses (Historial)</label>
-                            <div id="conv_list" class="conversations-list"></div>
-                            <div class="add-conv-form" style="display:grid; grid-template-columns: 140px 1fr auto; gap: 0.5rem; margin-top: 1rem;">
-                                <input type="date" id="new_conv_date" class="input-date">
-                                <input type="text" id="new_conv_text" placeholder="Resum de la conversa...">
-                                <button type="button" class="btn-add" onclick="addConversation()">AFEGIR</button>
-                            </div>
                         </div>
                     </div>
 

@@ -182,6 +182,7 @@ function formatDate(dateStr) {
 }
 
 function renderConversations() {
+    if (!convListEl) return;
     if (!currentConversations.length) {
         convListEl.innerHTML = '<div style="color:#94a3b8; font-size:0.8rem; padding:0.5rem;">Sense converses registrades.</div>';
         return;
@@ -358,30 +359,37 @@ function buildPlayerPayload() {
         nom: String((document.getElementById('nom_display') || {}).value || '').trim(),
         any_naixement: String((document.getElementById('any_naixement') || {}).value || '').trim(),
         revisio_medica: ((document.getElementById('revisio_medica') || {}).value || 'false') === 'true',
-        rol_actual_id: (() => {
-            const raw = String((document.getElementById('rol_actual') || {}).value || '').trim();
-            return raw ? Number(raw) : null;
-        })(),
-        rol_previst_id: (() => {
-            const raw = String((document.getElementById('rol_previst') || {}).value || '').trim();
-            return raw ? Number(raw) : null;
-        })(),
         conversations: currentConversations,
         comentaris: currentComentaris,
         posicions: Array.from(document.querySelectorAll('input[name="player_pos"]:checked')).map(cb => cb.value)
     };
 
+    const rolActualEl = document.getElementById('rol_actual');
+    if (rolActualEl) {
+        const raw = String(rolActualEl.value || '').trim();
+        payload.rol_actual_id = raw ? Number(raw) : null;
+    }
+
+    const rolPrevistEl = document.getElementById('rol_previst');
+    if (rolPrevistEl) {
+        const raw = String(rolPrevistEl.value || '').trim();
+        payload.rol_previst_id = raw ? Number(raw) : null;
+    }
+
     const roleById = rolesCatalog.reduce((acc, role) => {
         acc[String(role.id)] = role.nom;
         return acc;
     }, {});
-    payload.rol_actual = payload.rol_actual_id ? (roleById[String(payload.rol_actual_id)] || '') : '';
-    payload.rol_previst = payload.rol_previst_id ? (roleById[String(payload.rol_previst_id)] || '') : '';
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'rol_actual_id')) {
+        payload.rol_actual = payload.rol_actual_id ? (roleById[String(payload.rol_actual_id)] || '') : '';
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, 'rol_previst_id')) {
+        payload.rol_previst = payload.rol_previst_id ? (roleById[String(payload.rol_previst_id)] || '') : '';
+    }
 
     const fields = [
         'edat', 'poblacio',
-        'fitxa_mensual', 'primes_partit', 'prima_permanencia', 'altres_incentius',
-        'conv_situacio',
         'val_forts', 'val_millorar', 'val_lesions', 'val_compromis'
     ];
 
