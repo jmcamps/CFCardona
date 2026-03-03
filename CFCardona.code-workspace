@@ -5,6 +5,7 @@
 		}
 	],
 	"settings": {
+		"files.encoding": "utf8",
 		"java.configuration.maven.userSettings": "C:\\eld4\\apache-maven-3.3.9\\conf\\settings.xml",
 		"java.configuration.maven.globalSettings": "C:\\eld4\\apache-maven-3.3.9\\conf\\settings.xml",
 		"maven.terminal.useJavaHome": true,

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -137,8 +137,8 @@
             <div class="scouting-form-grid">
                 <div><label>Nom i Cognoms</label><input type="text" id="sc_nom" placeholder="Ex: Joan Ferran..."></div>
                 <div><label>Club Actual</label><input type="text" id="sc_club" placeholder="Ex: CE Manresa..."></div>
-                <div><label>Tel&egrave;fon</label><input type="tel" id="sc_tel" placeholder="Ex: 600 000 000..."></div>
-                <div><label>Poblaci&oacute;</label><input type="text" id="sc_poblacio" placeholder="Ex: Manresa..."></div>
+                <div><label>Telèfon</label><input type="tel" id="sc_tel" placeholder="Ex: 600 000 000..."></div>
+                <div><label>Població</label><input type="text" id="sc_poblacio" placeholder="Ex: Manresa..."></div>
             </div>
             <div style="margin-bottom:1.5rem;">
                 <label>Posicionament (pots marcar varies)</label>
@@ -185,7 +185,7 @@
     </div>
             </div>
             <div style="margin-bottom:1rem;">
-                <label>Situaci&oacute; de mercat / Perfil r&agrave;pid</label>
+                <label>Situació de mercat / Perfil ràpid</label>
                 <textarea id="sc_situacio" style="min-height:80px;" placeholder="Ex: Acaba contracte al juny..."></textarea>
             </div>
             <div style="display:flex; gap:1rem;">
@@ -361,7 +361,7 @@
             el.innerHTML = players.map(p => `
                 <div class="scouting-list-item ${p.id === selectedId ? 'active' : ''}" onclick="selectPlayer(${p.id})">
                     <div class="scouting-list-name">${esc(p.nom)}</div>
-                    <div class="scouting-list-meta">${esc(p.club) || 'Lliure'} &middot; ${(p.posicions || []).slice(0,2).join(', ')}</div>
+                    <div class="scouting-list-meta">${esc(p.club) || 'Lliure'} · ${(p.posicions || []).slice(0,2).join(', ')}</div>
                 </div>
             `).join('');
         }
@@ -402,13 +402,13 @@
                                 onchange="updateField(${p.id}, 'club', this.value)">
                         </div>
                         <div>
-                            <label style="font-size:0.7rem;">Tel&egrave;fon Contacte</label>
+                            <label style="font-size:0.7rem;">Telèfon Contacte</label>
                             <input type="tel" value="${esc(p.tel)}" placeholder="600 000 000"
                                 onchange="updateField(${p.id}, 'tel', this.value)">
                         </div>
                         <div>
-                            <label style="font-size:0.7rem;">Poblaci&oacute;</label>
-                            <input type="text" value="${esc(p.poblacio)}" placeholder="Poblaci&oacute;..."
+                            <label style="font-size:0.7rem;">Població</label>
+                            <input type="text" value="${esc(p.poblacio)}" placeholder="Població..."
                                 onchange="updateField(${p.id}, 'poblacio', this.value)">
                         </div>
                     </div>
@@ -421,9 +421,9 @@
                     </div>
 
                     <div style="margin-bottom:1.5rem;">
-                        <label style="font-size:0.7rem;">Situaci&oacute; de Mercat / Estat actual</label>
+                        <label style="font-size:0.7rem;">Situació de Mercat / Estat actual</label>
                         <textarea style="min-height:60px; font-size:0.85rem; padding:0.6rem;" 
-                            placeholder="Situaci&oacute; actual del jugador..."
+                            placeholder="Situació actual del jugador..."
                             onchange="updateField(${p.id}, 'situacio', this.value)">${p.situacio || ''}</textarea>
                     </div>
 
@@ -453,7 +453,7 @@
                                 return `
                                 <div class="contact-item">
                                     <div class="contact-content">
-                                        <span class="contact-meta">${fmtDate(c.data)} &mdash; ${esc(c.autor)}</span>
+                                        <span class="contact-meta">${fmtDate(c.data)} — ${esc(c.autor)}</span>
                                         <div>${esc(c.resultat)}</div>
                                     </div>
                                     <button class="btn-delete-small" onclick="deleteContact(${p.id}, '${cid}')">&#x00D7;</button>
@@ -470,5 +470,7 @@
     </script>
 </body>
 </html>
+
+
 
 
