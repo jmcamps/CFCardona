@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minis | CF Cardona</title>
-    <script src="../top-nav.js" defer></script>
+    <script src="../assets/js/top-nav.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
@@ -297,6 +297,16 @@
 
         function isNumericId(value){
             return /^\d+$/.test(String(value||'').trim());
+        }
+
+        function toBool(value){
+            if(typeof value==='boolean') return value;
+            if(typeof value==='number') return value!==0;
+            const text=String(value??'').trim().toLowerCase();
+            if(!text) return false;
+            if(['true','t','1','yes','si','sí'].includes(text)) return true;
+            if(['false','f','0','no'].includes(text)) return false;
+            return !!value;
         }
 
         function normalizeName(value){

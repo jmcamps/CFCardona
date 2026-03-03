@@ -1710,7 +1710,6 @@ async function writeHorarios(horarios) {
 
 async function ensureHorariosTable() {
     if (!USE_SUPABASE) return;
-    console.log('Note: horarios_entrenaments table debe estar creada manualmente en Supabase');
 }
 
 async function readObservacions(scope) {
