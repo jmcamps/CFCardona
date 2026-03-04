@@ -50,6 +50,9 @@
         .plantilla-table td input[type=number]{margin:0;}
         .plantilla-table td input[type=checkbox]{width:auto;}
         .plantilla-actions{width:220px;text-align:right;white-space:nowrap;}
+        .plantilla-groups{display:grid;gap:0.9rem;}
+        .plantilla-group{border:1px solid var(--border);border-radius:0.8rem;overflow:auto;background:#fff;}
+        .plantilla-group-title{background:#f8fafc;color:#334155;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;font-size:0.76rem;padding:0.58rem 0.75rem;border-bottom:1px solid var(--border);}
         .obs-list{margin-bottom:1rem;}
         .obs-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;}
         .obs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
@@ -122,20 +125,7 @@
     </div>
     <div class="card">
         <h2 id="plantilla_title">&#x1F4CB; Plantilla de Jugadors (0)</h2>
-        <div style="overflow-x:auto;">
-            <table class="plantilla-table">
-                <thead>
-                    <tr>
-                        <th>Jugador</th>
-                        <th>Posició</th>
-                        <th class="plantilla-actions"></th>
-                    </tr>
-                </thead>
-                <tbody id="player-list-tbody">
-                    <!-- Player items will be injected here by JavaScript -->
-                </tbody>
-            </table>
-        </div>
+        <div id="player-groups" class="plantilla-groups"></div>
         <div style="margin-top:1rem; display:flex; justify-content:flex-end;">
             <a href="jugador-detall.html?mode=create&equipId=2" class="fed-link" style="font-size:0.75rem; padding:0.45rem 0.9rem;">+ AFEGIR JUGADOR</a>
         </div>
@@ -198,34 +188,139 @@
         const API_EQUIP_CONFIG = '/api/equip-config';
         const API_HORARIOS = '/api/horarios';
         const EQUIP_ID = 2;
+        const PLAYER_GROUPS = [
+            {
+                key: 'sense_posicio',
+                label: 'SENSE POSICIO DEFINIDA',
+                positions: new Set([])
+            },
+            {
+                key: 'porters',
+                label: 'Porters',
+                positions: new Set(['porter'])
+            },
+            {
+                key: 'defenses',
+                label: 'Defenses',
+                positions: new Set(['lateral dret', 'central', 'lateral esquerre'])
+            },
+            {
+                key: 'mitjcampistes',
+                label: 'Mitjcampistes',
+                positions: new Set(['interior', 'mitja punta', 'pivot', 'pivot defensiu'])
+            },
+            {
+                key: 'davanters',
+                label: 'Davanters',
+                positions: new Set(['extrem esquerre', 'davanter centre', 'davanter center', 'extrem dret'])
+            }
+        ];
 
         let db = {}, observacions = [], horaris = [], partits = [], plantilla = [];
         const SF = ["s_primer_entrenador_nom", "s_primer_entrenador_tel", "s_segon_entrenador_nom", "s_segon_entrenador_tel", "s_preparador_fisic_nom", "s_preparador_fisic_tel", "s_delegat_nom", "s_delegat_tel", "s_fisioterapeuta_nom", "s_fisioterapeuta_tel", "s_analista_tactic_nom", "s_analista_tactic_tel"];
+
+        function normalizePositionName(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function getPlayerPositionsList(player) {
+            if (Array.isArray(player && player.posicions) && player.posicions.length) {
+                return player.posicions
+                    .map(item => String(item || '').trim())
+                    .filter(Boolean);
+            }
+            return String(player && player.posicio ? player.posicio : '')
+                .split(/[;,/|]/)
+                .map(value => String(value || '').trim())
+                .filter(Boolean);
+        }
+
+        function getPlayerPositionTokens(player) {
+            return getPlayerPositionsList(player)
+                .map(normalizePositionName)
+                .filter(Boolean);
+        }
+
+        function getPlayerGroupKey(player) {
+            const positions = getPlayerPositionTokens(player);
+            if (!positions.length) return 'sense_posicio';
+
+            let bestKey = 'sense_posicio';
+            let bestScore = 0;
+
+            PLAYER_GROUPS.forEach(group => {
+                if (group.key === 'sense_posicio') return;
+                const score = positions.reduce((acc, pos) => acc + (group.positions.has(pos) ? 1 : 0), 0);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestKey = group.key;
+                }
+            });
+
+            return bestScore > 0 ? bestKey : 'sense_posicio';
+        }
         
         function renderPlantilla() {
-            const tbody = document.getElementById('player-list-tbody');
-            if (!tbody) return;
+            const groupsContainer = document.getElementById('player-groups');
+            if (!groupsContainer) return;
             const plantillaTitle = document.getElementById('plantilla_title');
             if (plantillaTitle) plantillaTitle.innerHTML = '&#x1F4CB; Plantilla de Jugadors (' + (Array.isArray(plantilla) ? plantilla.length : 0) + ')';
 
             if (!plantilla || plantilla.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">No hi ha jugadors registrats per a aquest equip.</td></tr>';
+                groupsContainer.innerHTML = '<div class="empty-msg">No hi ha jugadors registrats per a aquest equip.</div>';
                 return;
             }
 
-            plantilla.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+            const playersSorted = [...plantilla].sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+            const groupedPlayers = PLAYER_GROUPS.reduce((acc, group) => {
+                acc[group.key] = [];
+                return acc;
+            }, {});
 
-            tbody.innerHTML = plantilla.map(player => {
-                const playerId = encodeURIComponent(String(player.id || ''));
+            playersSorted.forEach(player => {
+                const key = getPlayerGroupKey(player);
+                if (!groupedPlayers[key]) groupedPlayers[key] = [];
+                groupedPlayers[key].push(player);
+            });
+
+            groupsContainer.innerHTML = PLAYER_GROUPS.map(group => {
+                const list = groupedPlayers[group.key] || [];
+                const rows = list.length
+                    ? list.map(player => {
+                        const playerId = encodeURIComponent(String(player.id || ''));
+                        const posicioText = getPlayerPositionsList(player).join(', ') || 'N/D';
+                        return `
+                            <tr>
+                                <td>${esc(player.nom || 'N/A')}</td>
+                                <td>${esc(posicioText)}</td>
+                                <td class="plantilla-actions">
+                                    <a href="jugador-detall.html?playerId=${playerId}" class="fed-link btn-edit">VEURE DETALLS</a>
+                                    <button class="btn-remove" onclick="removePlayer(${Number(player.id)||0})" title="Eliminar jugador">&#x00D7;</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')
+                    : '<tr><td colspan="3" class="empty-msg">Sense jugadors en aquest grup.</td></tr>';
+
                 return `
-                    <tr>
-                        <td>${player.nom || 'N/A'}</td>
-                        <td>${player.posicio || 'N/A'}</td>
-                        <td class="plantilla-actions">
-                            <a href="jugador-detall.html?playerId=${playerId}" class="fed-link btn-edit">VEURE DETALLS</a>
-                            <button class="btn-remove" onclick="removePlayer(${Number(player.id)||0})" title="Eliminar jugador">&#x00D7;</button>
-                        </td>
-                    </tr>
+                    <div class="plantilla-group">
+                        <div class="plantilla-group-title">${group.label} (${list.length})</div>
+                        <table class="plantilla-table">
+                            <thead>
+                                <tr>
+                                    <th>Jugador</th>
+                                    <th>Posició</th>
+                                    <th class="plantilla-actions"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
                 `;
             }).join('');
         }

@@ -555,13 +555,30 @@ async function readJugadorsByEquip(equipId) {
         throw new Error('equipId invàlid');
     }
 
+    const normalizePosicionsList = (rawValue) => {
+        if (Array.isArray(rawValue)) {
+            return rawValue.map(v => String(v || '').trim()).filter(Boolean);
+        }
+        if (rawValue === undefined || rawValue === null) {
+            return [];
+        }
+        return String(rawValue)
+            .split(/[;,/|]/)
+            .map(v => v.trim())
+            .filter(Boolean);
+    };
+
     if (USE_SUPABASE) {
         const rows = await supabaseRestRequest(
             'GET',
             `/rest/v1/jugador?equip_id=eq.${id}&select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club&order=nom.asc`
         );
-        return Array.isArray(rows)
-            ? rows.map(row => ({
+        const safeRows = Array.isArray(rows) ? rows : [];
+        const mappedRows = await Promise.all(safeRows.map(async (row) => {
+            const posicionsFromJoin = await readJugadorPosicions(row.id);
+            const posicionsFallback = normalizePosicionsList(row.posicions ?? row.posicio ?? row.posicio_preferida);
+            const posicions = posicionsFromJoin.length ? posicionsFromJoin : posicionsFallback;
+            return {
                 id: String(row.id),
                 nom: row.nom || '',
                 any_naixement: Number.isFinite(Number(row.any_naixement)) ? Number(row.any_naixement) : null,
@@ -569,24 +586,32 @@ async function readJugadorsByEquip(equipId) {
                 revisio: normalizeBoolean(row.revisio_medica),
                 inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
                 pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
-                vinculat_club: normalizeBoolean(row.vinculat_club)
-            }))
-            : [];
+                vinculat_club: normalizeBoolean(row.vinculat_club),
+                posicions,
+                posicio: posicions.join(', ')
+            };
+        }));
+        return mappedRows;
     }
 
     const data = await readDatabase();
     const sectionData = data.seccio_s13 || {};
     const plantilla = Array.isArray(sectionData.plantilla) ? sectionData.plantilla : [];
-    return plantilla.map((p, index) => ({
-        id: String(index + 1),
-        nom: p.nom || '',
-        any_naixement: Number.isFinite(Number(p.any_naixement)) ? Number(p.any_naixement) : null,
-        naixement: p.naixement || '',
-        revisio: normalizeBoolean(p.revisio),
-        inscripcio_feta: normalizeBoolean(p.inscripcio_feta ?? p.inscripcio),
-        pagament_fcf_fet: normalizeBoolean(p.pagament_fcf_fet ?? p.pagament_fcf),
-        vinculat_club: normalizeBoolean(p.vinculat_club)
-    }));
+    return plantilla.map((p, index) => {
+        const posicions = normalizePosicionsList(p.posicions ?? p.posicio ?? p.posicio_preferida);
+        return {
+            id: String(index + 1),
+            nom: p.nom || '',
+            any_naixement: Number.isFinite(Number(p.any_naixement)) ? Number(p.any_naixement) : null,
+            naixement: p.naixement || '',
+            revisio: normalizeBoolean(p.revisio),
+            inscripcio_feta: normalizeBoolean(p.inscripcio_feta ?? p.inscripcio),
+            pagament_fcf_fet: normalizeBoolean(p.pagament_fcf_fet ?? p.pagament_fcf),
+            vinculat_club: normalizeBoolean(p.vinculat_club),
+            posicions,
+            posicio: posicions.join(', ')
+        };
+    });
 }
 
 async function readJugadorById(jugadorId) {

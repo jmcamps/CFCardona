@@ -117,6 +117,10 @@
             overflow: auto;
             background: #fff;
         }
+        .players-groups {
+            display: grid;
+            gap: 0.9rem;
+        }
         .players-table {
             width: 100%;
             border-collapse: collapse;
@@ -142,6 +146,34 @@
         }
         .players-table tbody tr:hover {
             background: #fff5f5;
+        }
+        .players-table tbody tr.group-row:hover,
+        .players-table tbody tr.group-empty-row:hover {
+            background: transparent;
+        }
+        .players-table thead th.group-title {
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.76rem;
+            padding: 0.58rem 0.75rem;
+        }
+        .players-table .group-title {
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.76rem;
+            padding: 0.58rem 0.75rem;
+        }
+        .players-table .group-empty {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-style: italic;
+            padding: 0.6rem 0.75rem;
         }
         .name-cell {
             font-weight: 700;
@@ -319,22 +351,8 @@
             </div>
         </div>
 
-        <div class="players-table-wrap">
-            <table class="players-table">
-                <thead>
-                    <tr>
-                        <th>Jugador</th>
-                        <th>Any</th>
-                        <th>Gènere</th>
-                        <th>Club</th>
-                        <th>Posicions</th>
-                        <th>✕</th>
-                    </tr>
-                </thead>
-                <tbody id="playersBody"></tbody>
-            </table>
-            <div id="playersEmpty" class="empty hidden">No hi ha jugadors amb aquest filtre.</div>
-        </div>
+        <div id="playersGroups" class="players-groups"></div>
+        <div id="playersEmpty" class="empty hidden">No hi ha jugadors amb aquest filtre.</div>
     </section>
 
     <section id="formScreen" class="screen hidden">
@@ -426,6 +444,33 @@
             'Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu',
             'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'
         ];
+        const PLAYER_GROUPS = [
+            {
+                key: 'sense_posicio',
+                label: 'SENSE POSICIO DEFINIDA',
+                positions: new Set([])
+            },
+            {
+                key: 'porters',
+                label: 'Porters',
+                positions: new Set(['porter'])
+            },
+            {
+                key: 'defenses',
+                label: 'Defenses',
+                positions: new Set(['lateral dret', 'central', 'lateral esquerre'])
+            },
+            {
+                key: 'mitjcampistes',
+                label: 'Mitjcampistes',
+                positions: new Set(['interior', 'mitja punta', 'pivot', 'pivot defensiu'])
+            },
+            {
+                key: 'davanters',
+                label: 'Davanters',
+                positions: new Set(['extrem esquerre', 'davanter centre', 'davanter center', 'extrem dret'])
+            }
+        ];
 
         let players = [];
         let allPositions = [...DEFAULT_POSITIONS];
@@ -448,6 +493,53 @@
                     return String(item || '').trim();
                 })
                 .filter(Boolean))];
+        }
+
+        function normalizePositionName(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function getPlayerGroupKey(player) {
+            const positions = normalizePositionList(player && player.posicions)
+                .map(normalizePositionName)
+                .filter(Boolean);
+
+            if (!positions.length) {
+                return 'sense_posicio';
+            }
+
+            let bestKey = 'sense_posicio';
+            let bestScore = 0;
+
+            PLAYER_GROUPS.forEach(group => {
+                if (group.key === 'sense_posicio') return;
+                const score = positions.reduce((acc, pos) => acc + (group.positions.has(pos) ? 1 : 0), 0);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestKey = group.key;
+                }
+            });
+
+            return bestKey;
+        }
+
+        function renderPlayerRow(player) {
+            const posicions = normalizePositionList(player.posicions).join(', ') || '-';
+            return `
+                <tr>
+                    <td class="name-cell"><button type="button" class="name-link" data-action="edit" data-id="${esc(player.id)}">${esc(player.nom)}</button></td>
+                    <td>${esc(player.any_naixement || '-')}</td>
+                    <td>${esc(player.genere || '-')}</td>
+                    <td>${esc(player.club || '-')}</td>
+                    <td>${esc(posicions)}</td>
+                    <td><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-id="${esc(player.id)}">✕</button></td>
+                </tr>
+            `;
         }
 
         function showListScreen() {
@@ -515,28 +607,51 @@
         }
 
         function renderPlayersTable() {
-            const body = document.getElementById('playersBody');
+            const groupsContainer = document.getElementById('playersGroups');
             const empty = document.getElementById('playersEmpty');
             const rows = getFilteredPlayers();
 
             if (!rows.length) {
-                body.innerHTML = '';
+                groupsContainer.innerHTML = '';
                 empty.classList.remove('hidden');
                 return;
             }
 
             empty.classList.add('hidden');
-            body.innerHTML = rows.map(player => {
-                const posicions = normalizePositionList(player.posicions).join(', ') || '-';
+            const groupedRows = PLAYER_GROUPS.reduce((acc, group) => {
+                acc[group.key] = [];
+                return acc;
+            }, {});
+
+            rows.forEach(player => {
+                const key = getPlayerGroupKey(player);
+                if (!groupedRows[key]) groupedRows[key] = [];
+                groupedRows[key].push(player);
+            });
+
+            groupsContainer.innerHTML = PLAYER_GROUPS.map(group => {
+                const list = groupedRows[group.key] || [];
+                const tableRows = list.length
+                    ? list.map(renderPlayerRow).join('')
+                    : `<tr class="group-empty-row"><td colspan="6" class="group-empty">Sense jugadors en aquest grup.</td></tr>`;
+
                 return `
-                    <tr>
-                        <td class="name-cell"><button type="button" class="name-link" data-action="edit" data-id="${esc(player.id)}">${esc(player.nom)}</button></td>
-                        <td>${esc(player.any_naixement || '-')}</td>
-                        <td>${esc(player.genere || '-')}</td>
-                        <td>${esc(player.club || '-')}</td>
-                        <td>${esc(posicions)}</td>
-                        <td><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-id="${esc(player.id)}">✕</button></td>
-                    </tr>
+                    <div class="players-table-wrap">
+                        <table class="players-table">
+                            <thead>
+                                <tr><th colspan="6" class="group-title">${group.label} (${list.length})</th></tr>
+                                <tr>
+                                    <th>Jugador</th>
+                                    <th>Any</th>
+                                    <th>Gènere</th>
+                                    <th>Club</th>
+                                    <th>Posicions</th>
+                                    <th>✕</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
                 `;
             }).join('');
         }
@@ -849,7 +964,7 @@
                 renderPlayersTable();
             });
 
-            document.getElementById('playersBody').addEventListener('click', (event) => {
+            document.getElementById('playersGroups').addEventListener('click', (event) => {
                 const action = event.target?.dataset?.action;
                 const playerId = event.target?.dataset?.id;
                 if (!action || !playerId) return;
