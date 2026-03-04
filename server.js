@@ -645,6 +645,29 @@ async function readJugadorById(jugadorId) {
         const rolPrevistIdRaw = fromRowOrDetall('rol_previst_id', null);
         const rolActualId = Number.isFinite(Number(rolActualIdRaw)) ? Number(rolActualIdRaw) : null;
         const rolPrevistId = Number.isFinite(Number(rolPrevistIdRaw)) ? Number(rolPrevistIdRaw) : null;
+        const observacionsDecoded = decodeJugadorComentarisFallback(fromRowOrDetall('observacions', ''));
+
+        let comentarisNormalized = normalizeJugadorComentaris(fromRowOrDetall('comentaris', []));
+        if (!comentarisNormalized.length && observacionsDecoded.isFallback) {
+            comentarisNormalized = observacionsDecoded.comentaris;
+        }
+
+        const useObservacionsTable = await hasObservacionsTable();
+        if (useObservacionsTable) {
+            const scope = getJugadorComentarisScope(safeId);
+            const comentarisRows = await readObservacions(scope);
+            const comentarisFromTable = normalizeJugadorComentaris(
+                (Array.isArray(comentarisRows) ? comentarisRows : []).map(item => ({
+                    autor: item.autor || 'Anònim',
+                    data: item.data || '',
+                    text: item.text || ''
+                }))
+            );
+
+            if (comentarisFromTable.length || !comentarisNormalized.length) {
+                comentarisNormalized = comentarisFromTable;
+            }
+        }
 
         return {
             id: String(row.id),
@@ -671,11 +694,11 @@ async function readJugadorById(jugadorId) {
             val_millorar: fromRowOrDetall('val_millorar', ''),
             val_lesions: fromRowOrDetall('val_lesions', ''),
             val_compromis: fromRowOrDetall('val_compromis', ''),
-            observacions: fromRowOrDetall('observacions', ''),
+            observacions: observacionsDecoded.legacy,
             posicions: posicionsNormalized,
             conversations: Array.isArray(fromRowOrDetall('conversations', [])) ? fromRowOrDetall('conversations', []) : [],
             substitutes: Array.isArray(fromRowOrDetall('substitutes', [])) ? fromRowOrDetall('substitutes', []) : [],
-            comentaris: Array.isArray(fromRowOrDetall('comentaris', [])) ? fromRowOrDetall('comentaris', []) : []
+            comentaris: comentarisNormalized
         };
     }
 
@@ -713,7 +736,7 @@ async function readJugadorById(jugadorId) {
         posicions: Array.isArray(found.posicions) ? found.posicions : [],
         conversations: Array.isArray(found.conversations) ? found.conversations : [],
         substitutes: Array.isArray(found.substitutes) ? found.substitutes : [],
-        comentaris: Array.isArray(found.comentaris) ? found.comentaris : []
+        comentaris: normalizeJugadorComentaris(found.comentaris)
     };
 }
 
@@ -738,6 +761,126 @@ function parseAnyNaixement(rawValue) {
         return null;
     }
     return year;
+}
+
+const JUGADOR_COMENTARIS_FALLBACK_PREFIX = '__CF_JUGADOR_COMENTARIS__:';
+
+function normalizeJugadorComentaris(comentaris) {
+    const rows = Array.isArray(comentaris) ? comentaris : [];
+    return rows
+        .map(item => ({
+            autor: String(item?.autor || 'Anònim').trim() || 'Anònim',
+            data: String(item?.data || '').trim(),
+            text: String(item?.text ?? item?.nota ?? '').trim()
+        }))
+        .filter(item => item.data || item.text);
+}
+
+function encodeJugadorComentarisFallback(comentaris, legacyObservacions = '') {
+    const normalized = normalizeJugadorComentaris(comentaris);
+    if (!normalized.length) return null;
+
+    const legacy = String(legacyObservacions || '').trim();
+    if (!legacy) {
+        return `${JUGADOR_COMENTARIS_FALLBACK_PREFIX}${JSON.stringify(normalized)}`;
+    }
+
+    return `${JUGADOR_COMENTARIS_FALLBACK_PREFIX}${JSON.stringify({
+        legacy,
+        comentaris: normalized
+    })}`;
+}
+
+function decodeJugadorComentarisFallback(rawValue) {
+    const raw = String(rawValue ?? '').trim();
+    if (!raw.startsWith(JUGADOR_COMENTARIS_FALLBACK_PREFIX)) {
+        return {
+            isFallback: false,
+            legacy: raw,
+            comentaris: []
+        };
+    }
+
+    const jsonPart = raw.slice(JUGADOR_COMENTARIS_FALLBACK_PREFIX.length);
+    if (!jsonPart) {
+        return {
+            isFallback: true,
+            legacy: '',
+            comentaris: []
+        };
+    }
+
+    try {
+        const parsed = JSON.parse(jsonPart);
+        if (Array.isArray(parsed)) {
+            return {
+                isFallback: true,
+                legacy: '',
+                comentaris: normalizeJugadorComentaris(parsed)
+            };
+        }
+
+        if (parsed && typeof parsed === 'object') {
+            return {
+                isFallback: true,
+                legacy: String(parsed.legacy || '').trim(),
+                comentaris: normalizeJugadorComentaris(parsed.comentaris)
+            };
+        }
+    } catch (_) {}
+
+    return {
+        isFallback: true,
+        legacy: '',
+        comentaris: []
+    };
+}
+
+function getJugadorComentarisScope(playerId) {
+    const safeId = String(playerId || '').trim();
+    return `jugador_detall_${safeId}`;
+}
+
+async function syncJugadorComentaris(playerId, comentaris = [], options = {}) {
+    const safeId = String(playerId || '').trim();
+    if (!safeId || !USE_SUPABASE) return;
+
+    const normalized = normalizeJugadorComentaris(comentaris);
+    const useObservacionsTable = await hasObservacionsTable();
+
+    if (useObservacionsTable) {
+        const scope = getJugadorComentarisScope(safeId);
+        await supabaseRestRequest('DELETE', `/rest/v1/observacions?scope=eq.${encodeURIComponent(scope)}`);
+
+        if (!normalized.length) return;
+
+        const rows = normalized.map(item => ({
+            id: randomUUID(),
+            scope,
+            autor: item.autor || 'Anònim',
+            data: item.data || new Date().toISOString().slice(0, 10),
+            text: item.text || ''
+        }));
+        await supabaseRestRequest('POST', '/rest/v1/observacions', rows);
+        return;
+    }
+
+    const legacyObservacions = String(options.legacyObservacions || '').trim();
+    const fallbackValue = normalized.length
+        ? encodeJugadorComentarisFallback(normalized, legacyObservacions)
+        : (legacyObservacions || null);
+
+    try {
+        await supabaseRestRequest(
+            'PATCH',
+            `/rest/v1/jugador?id=eq.${encodeURIComponent(safeId)}`,
+            { observacions: fallbackValue }
+        );
+    } catch (err) {
+        if (!isMissingSupabaseColumnError(err, 'observacions')) {
+            throw err;
+        }
+    }
 }
 
 function normalizeBoolean(value) {
@@ -1003,7 +1146,12 @@ async function syncJugadorPosicions(playerId, posicions = []) {
         const posId = await ensurePosicioIdByName(posName);
         rows.push({ jugador_id: pid, posicio_id: posId });
     }
-    await supabaseRestRequest('POST', '/rest/v1/jugador_posicio', rows);
+    await supabaseRestRequest(
+        'POST',
+        '/rest/v1/jugador_posicio?on_conflict=jugador_id,posicio_id',
+        rows,
+        'resolution=merge-duplicates'
+    );
 }
 
 function mapSeguimentRowToClient(row, posicionsByPlayer = {}, contactesByPlayer = {}) {
@@ -1017,11 +1165,13 @@ function mapSeguimentRowToClient(row, posicionsByPlayer = {}, contactesByPlayer 
         any_naixement: row.any_naixement || null,
         genere: row.genere || '',
         segment: normalizeSeguimentSegment(row.segment) || '',
-        situacio: row.informe_tecnic || row.observacions || '',
+        situacio: getSeguimentSituacio(row),
         posicions: posicionsByPlayer[playerId] || [],
         contactes: contactesByPlayer[playerId] || []
     };
 }
+
+const SEGUIMENT_CONTACTES_FALLBACK_PREFIX = '__CF_CAPTACIO_CONTACTES__:';
 
 function normalizeSeguimentContactes(contactes) {
     const rows = Array.isArray(contactes) ? contactes : [];
@@ -1029,9 +1179,52 @@ function normalizeSeguimentContactes(contactes) {
         .map(contacte => ({
             autor: String(contacte?.autor || 'Anònim').trim() || 'Anònim',
             data: String(contacte?.data || '').trim(),
-            nota: String(contacte?.nota || '').trim()
+            nota: String(contacte?.nota ?? contacte?.text ?? '').trim()
         }))
         .filter(contacte => contacte.data || contacte.nota);
+}
+
+function encodeSeguimentContactesFallback(contactes) {
+    const normalized = normalizeSeguimentContactes(contactes);
+    if (!normalized.length) return null;
+    return `${SEGUIMENT_CONTACTES_FALLBACK_PREFIX}${JSON.stringify(normalized)}`;
+}
+
+function decodeSeguimentContactesFallback(rawValue) {
+    const raw = String(rawValue || '').trim();
+    if (!raw.startsWith(SEGUIMENT_CONTACTES_FALLBACK_PREFIX)) return [];
+    const jsonPart = raw.slice(SEGUIMENT_CONTACTES_FALLBACK_PREFIX.length);
+    if (!jsonPart) return [];
+
+    try {
+        const parsed = JSON.parse(jsonPart);
+        return normalizeSeguimentContactes(parsed);
+    } catch (_) {
+        return [];
+    }
+}
+
+function getSeguimentSituacio(row) {
+    const informe = String(row && row.informe_tecnic ? row.informe_tecnic : '').trim();
+    if (informe) return informe;
+
+    const observacionsRaw = String(row && row.observacions ? row.observacions : '').trim();
+    if (!observacionsRaw) return '';
+    if (observacionsRaw.startsWith(SEGUIMENT_CONTACTES_FALLBACK_PREFIX)) return '';
+    return observacionsRaw;
+}
+
+async function hasObservacionsTable() {
+    if (!USE_SUPABASE) return false;
+    try {
+        await supabaseRestRequest('GET', '/rest/v1/observacions?select=id&limit=1');
+        return true;
+    } catch (err) {
+        if (isMissingSupabaseTableError(err, 'observacions')) {
+            return false;
+        }
+        throw err;
+    }
 }
 
 function normalizeSeguimentSegment(segment) {
@@ -1107,11 +1300,30 @@ function getSeguimentContactScope(playerId) {
 async function syncSeguimentContactes(playerId, contactes = []) {
     const pid = Number(playerId);
     if (!Number.isInteger(pid) || pid <= 0) return;
+    if (!USE_SUPABASE) return;
 
     const scope = getSeguimentContactScope(pid);
-    await supabaseRestRequest('DELETE', `/rest/v1/observacions?scope=eq.${encodeURIComponent(scope)}`);
-
     const normalized = normalizeSeguimentContactes(contactes);
+    const nextFallback = encodeSeguimentContactesFallback(normalized);
+
+    try {
+        await supabaseRestRequest(
+            'PATCH',
+            `/rest/v1/jugador_en_seguiment?id=eq.${encodeURIComponent(String(pid))}`,
+            { observacions: nextFallback }
+        );
+    } catch (err) {
+        if (!isMissingSupabaseColumnError(err, 'observacions')) {
+            throw err;
+        }
+    }
+
+    const useObservacionsTable = await hasObservacionsTable();
+    if (!useObservacionsTable) {
+        return;
+    }
+
+    await supabaseRestRequest('DELETE', `/rest/v1/observacions?scope=eq.${encodeURIComponent(scope)}`);
     if (!normalized.length) return;
 
     const rows = normalized.map(contacte => ({
@@ -1170,19 +1382,30 @@ async function readJugadorsSeguiment(segment = '') {
 
         const safePlayersRows = Array.isArray(playersRows) ? playersRows : [];
         const contactesByPlayer = {};
-        await Promise.all(
-            safePlayersRows.map(async row => {
+        const useObservacionsTable = await hasObservacionsTable();
+        if (useObservacionsTable) {
+            await Promise.all(
+                safePlayersRows.map(async row => {
+                    const playerId = String(row.id);
+                    const scope = getSeguimentContactScope(playerId);
+                    const obs = await readObservacions(scope);
+                    const fromObservacions = (Array.isArray(obs) ? obs : []).map(item => ({
+                        id: item.id ? String(item.id) : '',
+                        autor: item.autor || 'Anònim',
+                        data: item.data || '',
+                        nota: item.text || ''
+                    }));
+                    contactesByPlayer[playerId] = fromObservacions.length
+                        ? normalizeSeguimentContactes(fromObservacions)
+                        : decodeSeguimentContactesFallback(row && row.observacions);
+                })
+            );
+        } else {
+            safePlayersRows.forEach(row => {
                 const playerId = String(row.id);
-                const scope = getSeguimentContactScope(playerId);
-                const obs = await readObservacions(scope);
-                contactesByPlayer[playerId] = (Array.isArray(obs) ? obs : []).map(item => ({
-                    id: item.id ? String(item.id) : '',
-                    autor: item.autor || 'Anònim',
-                    data: item.data || '',
-                    nota: item.text || ''
-                }));
-            })
-        );
+                contactesByPlayer[playerId] = decodeSeguimentContactesFallback(row && row.observacions);
+            });
+        }
 
         let mapped = safePlayersRows.map(row => mapSeguimentRowToClient(row, posicionsByPlayer, contactesByPlayer));
         if (usingLegacySegmentFallback && Array.isArray(segmentIds)) {
@@ -1422,21 +1645,49 @@ async function createJugador(payload) {
     }
 
     if (USE_SUPABASE) {
-        const rows = await supabaseRestRequest(
-            'POST',
-            '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club',
-            [{
-                equip_id: equipId,
-                nom,
-                any_naixement: anyNaixement,
-                data_naixement: dataNaixement,
-                revisio_medica: revisioMedica,
-                inscripcio_feta: inscripcioFeta,
-                pagament_fcf_fet: pagamentFcfFet,
-                vinculat_club: vinculatClub
-            }],
-            'return=representation'
-        );
+        const insertRow = {
+            equip_id: equipId,
+            nom,
+            any_naixement: anyNaixement,
+            data_naixement: dataNaixement,
+            revisio_medica: revisioMedica,
+            inscripcio_feta: inscripcioFeta,
+            pagament_fcf_fet: pagamentFcfFet,
+            vinculat_club: vinculatClub
+        };
+
+        let rows;
+        try {
+            rows = await supabaseRestRequest(
+                'POST',
+                '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club',
+                [insertRow],
+                'return=representation'
+            );
+        } catch (err) {
+            const missingFlagsColumns =
+                isMissingSupabaseColumnError(err, 'inscripcio_feta') ||
+                isMissingSupabaseColumnError(err, 'pagament_fcf_fet') ||
+                isMissingSupabaseColumnError(err, 'vinculat_club');
+
+            if (!missingFlagsColumns) {
+                throw err;
+            }
+
+            rows = await supabaseRestRequest(
+                'POST',
+                '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica',
+                [{
+                    equip_id: equipId,
+                    nom,
+                    any_naixement: anyNaixement,
+                    data_naixement: dataNaixement,
+                    revisio_medica: revisioMedica
+                }],
+                'return=representation'
+            );
+        }
+
         const row = Array.isArray(rows) ? rows[0] : null;
         if (!row || row.id === undefined || row.id === null) {
             throw new Error('No s\'ha pogut obtenir l\'id del jugador creat');
@@ -1447,9 +1698,9 @@ async function createJugador(payload) {
             any_naixement: Number.isFinite(Number(row?.any_naixement)) ? Number(row.any_naixement) : anyNaixement,
             naixement: row?.data_naixement || dataNaixement || '',
             revisio: row ? normalizeBoolean(row.revisio_medica) : revisioMedica,
-            inscripcio_feta: row ? normalizeBoolean(row.inscripcio_feta) : inscripcioFeta,
-            pagament_fcf_fet: row ? normalizeBoolean(row.pagament_fcf_fet) : pagamentFcfFet,
-            vinculat_club: row ? normalizeBoolean(row.vinculat_club) : vinculatClub
+            inscripcio_feta: row ? normalizeBoolean(row.inscripcio_feta ?? inscripcioFeta) : inscripcioFeta,
+            pagament_fcf_fet: row ? normalizeBoolean(row.pagament_fcf_fet ?? pagamentFcfFet) : pagamentFcfFet,
+            vinculat_club: row ? normalizeBoolean(row.vinculat_club ?? vinculatClub) : vinculatClub
         };
     }
 
@@ -1475,6 +1726,10 @@ async function updateJugador(payload) {
     const id = String(payload?.id || '').trim();
     if (!id) {
         throw new Error('id obligatori');
+    }
+
+    if (payload && payload.comentaris !== undefined) {
+        payload.comentaris = normalizeJugadorComentaris(payload.comentaris);
     }
 
     const patch = {};
@@ -1585,6 +1840,12 @@ async function updateJugador(payload) {
 
         if (payload.posicions !== undefined) {
             await syncJugadorPosicions(id, payload.posicions);
+        }
+        if (payload.comentaris !== undefined) {
+            const observacionsDecoded = decodeJugadorComentarisFallback(existing.observacions);
+            await syncJugadorComentaris(id, payload.comentaris, {
+                legacyObservacions: observacionsDecoded.legacy
+            });
         }
         return;
     }

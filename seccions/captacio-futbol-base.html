@@ -216,12 +216,81 @@
             gap: 0.6rem;
             justify-content: flex-end;
         }
+        .obs-list {
+            margin-bottom: 0.75rem;
+        }
+        .obs-item {
+            background: #fffafa;
+            border: 1px solid #fecaca;
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .obs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .obs-meta {
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+        .obs-meta strong {
+            color: var(--primary);
+        }
+        .obs-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: #0f172a;
+        }
+        .add-obs-form {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+        .form-title {
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 1rem;
+        }
+        .obs-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            align-items: end;
+        }
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.15rem;
+        }
+        .btn-remove:hover {
+            color: var(--primary);
+        }
+        .empty-msg {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            padding: 0.5rem;
+        }
 
         @media (max-width: 900px) {
             .filters-row {
                 grid-template-columns: 1fr;
             }
             .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .obs-form-row {
                 grid-template-columns: 1fr;
             }
         }
@@ -318,6 +387,31 @@
                         <label for="f_situacio">Situació / perfil ràpid</label>
                         <textarea id="f_situacio"></textarea>
                     </div>
+
+                    <div class="full" id="commentsSection">
+                        <label>Observacions i Comentaris</label>
+                        <div id="commentsList" class="obs-list"><div class="empty-msg">Sense observacions registrades.</div></div>
+                        <div class="add-obs-form">
+                            <div class="form-title">Nou Comentari</div>
+                            <div class="obs-form-row">
+                                <div>
+                                    <label for="f_comment_autor">Autor</label>
+                                    <input id="f_comment_autor" type="text" placeholder="Qui fa el comentari...">
+                                </div>
+                                <div>
+                                    <label for="f_comment_data">Data</label>
+                                    <input id="f_comment_data" type="date">
+                                </div>
+                                <div style="display:flex;align-items:flex-end;">
+                                    <button class="btn btn-primary" id="btnAddComment" type="button">AFEGIR</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="f_comment_text">Comentari</label>
+                                <textarea id="f_comment_text" style="min-height:100px;" placeholder="Escriu el comentari..."></textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -344,6 +438,7 @@
         let selectedClubFilter = '__ALL__';
         let nameFilterValue = '';
         let editingPlayerId = null;
+        let currentContactes = [];
 
         function esc(value) {
             const div = document.createElement('div');
@@ -493,11 +588,129 @@
             return players.find(player => String(player.id) === String(id));
         }
 
+        function normalizeContactes(list) {
+            return (Array.isArray(list) ? list : [])
+                .map(item => ({
+                    autor: String(item?.autor || 'Anònim').trim() || 'Anònim',
+                    data: String(item?.data || '').trim(),
+                    nota: String(item?.nota ?? item?.text ?? '').trim()
+                }))
+                .filter(item => item.data || item.nota);
+        }
+
+        function formatShortDate(dateStr) {
+            const date = new Date(dateStr);
+            if (Number.isNaN(date.getTime())) return dateStr || '-';
+            return date.toLocaleDateString('ca-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        }
+
+        function renderContactes() {
+            const listEl = document.getElementById('commentsList');
+            if (!listEl) return;
+
+            if (!currentContactes.length) {
+                listEl.innerHTML = '<div class="empty-msg">Sense observacions registrades.</div>';
+                return;
+            }
+
+            listEl.innerHTML = currentContactes.map((contacte, index) => `
+                <div class="obs-item">
+                    <div class="obs-header">
+                        <div class="obs-meta"><strong>${esc(contacte.autor || 'Anònim')}</strong> — ${esc(formatShortDate(contacte.data || ''))}</div>
+                        <button type="button" class="btn-remove" data-comment-index="${index}">×</button>
+                    </div>
+                    <div class="obs-text">${esc(contacte.nota || '')}</div>
+                </div>
+            `).join('');
+        }
+
+        function resetContacteInputs() {
+            const autorEl = document.getElementById('f_comment_autor');
+            const dataEl = document.getElementById('f_comment_data');
+            const textEl = document.getElementById('f_comment_text');
+            if (autorEl) autorEl.value = '';
+            if (dataEl) dataEl.value = new Date().toISOString().slice(0, 10);
+            if (textEl) textEl.value = '';
+        }
+
+        async function patchPlayerContactes() {
+            if (editingPlayerId === null) return;
+
+            const r = await fetch(API_SEGUIMENT, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: editingPlayerId, contactes: normalizeContactes(currentContactes) })
+            });
+
+            if (!r.ok) {
+                let detail = 'No s\'han pogut guardar els comentaris';
+                try {
+                    const errPayload = await r.json();
+                    detail = errPayload?.details || errPayload?.error || detail;
+                } catch (_) {}
+                throw new Error(detail);
+            }
+
+            const idx = players.findIndex(p => String(p.id) === String(editingPlayerId));
+            if (idx >= 0) {
+                players[idx] = { ...players[idx], contactes: normalizeContactes(currentContactes) };
+            }
+        }
+
+        async function addContacte() {
+            const autorEl = document.getElementById('f_comment_autor');
+            const dataEl = document.getElementById('f_comment_data');
+            const textEl = document.getElementById('f_comment_text');
+            if (!textEl) return;
+
+            const nota = String(textEl.value || '').trim();
+            if (!nota) return;
+
+            const prevContactes = [...currentContactes];
+
+            currentContactes.unshift({
+                autor: String((autorEl && autorEl.value) || '').trim() || 'Anònim',
+                data: String((dataEl && dataEl.value) || '').trim() || new Date().toISOString().slice(0, 10),
+                nota
+            });
+            renderContactes();
+            resetContacteInputs();
+
+            try {
+                await patchPlayerContactes();
+            } catch (error) {
+                currentContactes = prevContactes;
+                renderContactes();
+                const detail = error && error.message ? `\n\nDetall: ${error.message}` : '';
+                alert(`No s'ha pogut guardar el comentari.${detail}`);
+            }
+        }
+
+        async function removeContacte(index) {
+            if (!Number.isInteger(index) || index < 0 || index >= currentContactes.length) return;
+            const prevContactes = [...currentContactes];
+            currentContactes.splice(index, 1);
+            renderContactes();
+
+            try {
+                await patchPlayerContactes();
+            } catch (error) {
+                currentContactes = prevContactes;
+                renderContactes();
+                const detail = error && error.message ? `\n\nDetall: ${error.message}` : '';
+                alert(`No s'ha pogut esborrar el comentari.${detail}`);
+            }
+        }
+
         function openCreateForm() {
             editingPlayerId = null;
             document.getElementById('formTitle').textContent = 'Alta jugador';
             document.getElementById('playerForm').reset();
             renderPositionChecks([]);
+            document.getElementById('commentsSection').classList.add('hidden');
+            currentContactes = [];
+            renderContactes();
+            resetContacteInputs();
             showFormScreen();
         }
 
@@ -506,6 +719,7 @@
             if (!player) return;
             editingPlayerId = player.id;
             document.getElementById('formTitle').textContent = 'Modificar jugador';
+            document.getElementById('commentsSection').classList.remove('hidden');
             document.getElementById('f_nom').value = player.nom || '';
             document.getElementById('f_any').value = player.any_naixement || '';
             document.getElementById('f_genere').value = player.genere || '';
@@ -514,6 +728,9 @@
             document.getElementById('f_poblacio').value = player.poblacio || '';
             document.getElementById('f_situacio').value = player.situacio || '';
             renderPositionChecks(player.posicions || []);
+            currentContactes = normalizeContactes(player.contactes || []);
+            renderContactes();
+            resetContacteInputs();
             showFormScreen();
         }
 
@@ -543,7 +760,8 @@
                 tel: document.getElementById('f_tel').value.trim(),
                 poblacio: document.getElementById('f_poblacio').value.trim(),
                 situacio: document.getElementById('f_situacio').value.trim(),
-                posicions: normalizePositionList(Array.from(document.querySelectorAll('input[name="f_pos"]:checked')).map(cb => cb.value))
+                posicions: normalizePositionList(Array.from(document.querySelectorAll('input[name="f_pos"]:checked')).map(cb => cb.value)),
+                contactes: normalizeContactes(currentContactes)
             };
         }
 
@@ -557,12 +775,22 @@
                     const r = await fetch(API_SEGUIMENT, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...payload, contactes: [] })
+                        body: JSON.stringify(payload)
                     });
-                    if (!r.ok) throw new Error('No s\'ha pogut crear el jugador');
+                    if (!r.ok) {
+                        let detail = 'No s\'ha pogut crear el jugador';
+                        try {
+                            const errPayload = await r.json();
+                            detail = errPayload?.details || errPayload?.error || detail;
+                        } catch (_) {}
+                        throw new Error(detail);
+                    }
                     const response = await r.json();
                     if (response?.jugador) {
-                        players.push(response.jugador);
+                        players.push({
+                            ...response.jugador,
+                            contactes: normalizeContactes(response.jugador.contactes || payload.contactes)
+                        });
                     }
                 } else {
                     const r = await fetch(API_SEGUIMENT, {
@@ -570,7 +798,14 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id: editingPlayerId, ...payload })
                     });
-                    if (!r.ok) throw new Error('No s\'ha pogut actualitzar el jugador');
+                    if (!r.ok) {
+                        let detail = 'No s\'ha pogut actualitzar el jugador';
+                        try {
+                            const errPayload = await r.json();
+                            detail = errPayload?.details || errPayload?.error || detail;
+                        } catch (_) {}
+                        throw new Error(detail);
+                    }
 
                     const idx = players.findIndex(p => String(p.id) === String(editingPlayerId));
                     if (idx >= 0) {
@@ -583,8 +818,9 @@
                 renderClubFilter();
                 renderPlayersTable();
                 showListScreen();
-            } catch (_) {
-                alert('Error guardant el jugador.');
+            } catch (error) {
+                const detail = error && error.message ? `\n\nDetall: ${error.message}` : '';
+                alert(`Error guardant el jugador.${detail}`);
             }
         }
 
@@ -612,6 +848,8 @@
                 renderClubFilter();
                 renderPlayersTable();
                 renderPositionChecks([]);
+                renderContactes();
+                resetContacteInputs();
             } catch (_) {
                 renderYearFilter();
                 renderGenderFilter();
@@ -624,6 +862,14 @@
             document.getElementById('btnBackToList').addEventListener('click', showListScreen);
             document.getElementById('btnCancelForm').addEventListener('click', showListScreen);
             document.getElementById('playerForm').addEventListener('submit', savePlayer);
+            document.getElementById('btnAddComment').addEventListener('click', addContacte);
+
+            document.getElementById('commentsList').addEventListener('click', (event) => {
+                const button = event.target.closest('button[data-comment-index]');
+                if (!button) return;
+                const index = Number.parseInt(button.dataset.commentIndex, 10);
+                removeContacte(index);
+            });
 
             document.getElementById('filterYear').addEventListener('change', (event) => {
                 selectedYearFilter = event.target.value;

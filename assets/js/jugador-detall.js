@@ -427,8 +427,20 @@ async function savePlayerData(options = {}) {
                 body: JSON.stringify(createPayload)
             });
 
-            if (!createResponse.ok) throw new Error('No s\'ha pogut crear el jugador');
-            const createResult = await createResponse.json();
+            let createResult = null;
+            try {
+                createResult = await createResponse.json();
+            } catch (_) {
+                createResult = null;
+            }
+
+            if (!createResponse.ok) {
+                const detail = createResult && typeof createResult === 'object'
+                    ? (createResult.details || createResult.error || '')
+                    : '';
+                throw new Error(detail || 'No s\'ha pogut crear el jugador');
+            }
+
             const created = createResult && createResult.jugador ? createResult.jugador : null;
             if (!created || created.id === undefined || created.id === null) {
                 throw new Error('No s\'ha rebut l\'ID del jugador creat');
@@ -443,7 +455,8 @@ async function savePlayerData(options = {}) {
             window.history.replaceState({}, '', nextUrl);
         } catch (e) {
             if (!silentValidation) {
-                alert('No s\'ha pogut crear el jugador.');
+                const detail = e && e.message ? `\n\nDetall: ${e.message}` : '';
+                alert(`No s'ha pogut crear el jugador.${detail}`);
             }
             return;
         }
