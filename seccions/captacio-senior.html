@@ -528,12 +528,22 @@
             return bestKey;
         }
 
+        function calculateAgeFromBirthYear(anyNaixement) {
+            const year = Number.parseInt(anyNaixement, 10);
+            if (!Number.isInteger(year)) return '-';
+            const currentYear = new Date().getFullYear();
+            if (year < 1900 || year > currentYear) return '-';
+            return String(currentYear - year);
+        }
+
         function renderPlayerRow(player) {
             const posicions = normalizePositionList(player.posicions).join(', ') || '-';
+            const edat = calculateAgeFromBirthYear(player.any_naixement);
             return `
                 <tr>
                     <td class="name-cell"><button type="button" class="name-link" data-action="edit" data-id="${esc(player.id)}">${esc(player.nom)}</button></td>
                     <td>${esc(player.any_naixement || '-')}</td>
+                    <td>${esc(edat)}</td>
                     <td>${esc(player.genere || '-')}</td>
                     <td>${esc(player.club || '-')}</td>
                     <td>${esc(posicions)}</td>
@@ -633,16 +643,17 @@
                 const list = groupedRows[group.key] || [];
                 const tableRows = list.length
                     ? list.map(renderPlayerRow).join('')
-                    : `<tr class="group-empty-row"><td colspan="6" class="group-empty">Sense jugadors en aquest grup.</td></tr>`;
+                    : `<tr class="group-empty-row"><td colspan="7" class="group-empty">Sense jugadors en aquest grup.</td></tr>`;
 
                 return `
                     <div class="players-table-wrap">
                         <table class="players-table">
                             <thead>
-                                <tr><th colspan="6" class="group-title">${group.label} (${list.length})</th></tr>
+                                <tr><th colspan="7" class="group-title">${group.label} (${list.length})</th></tr>
                                 <tr>
                                     <th>Jugador</th>
                                     <th>Any</th>
+                                    <th>Edat</th>
                                     <th>Gènere</th>
                                     <th>Club</th>
                                     <th>Posicions</th>
