@@ -98,8 +98,30 @@
 
         @media(max-width:900px){
             body{padding:1rem;}
+            .head{padding:1rem;}
+            .head h1{font-size:1.2rem;}
+            .actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:0.45rem;}
+            .actions .btn,
+            .actions .refresh-status{width:100%;justify-content:center;}
+            .day-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.4rem;}
+            .day-tab{text-align:center;width:100%;}
             .slot-layout{grid-template-columns:1fr;}
             .fields{grid-template-columns:1fr;}
+            .slot{padding:0.72rem;}
+            .slot-time{font-size:0.85rem;}
+            .team-pill{font-size:0.84rem;}
+        }
+
+        @media(max-width:640px){
+            body{padding:0.7rem;}
+            .actions{grid-template-columns:1fr;}
+            .day-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
+            .day-title{font-size:1rem;}
+            .day-sub{font-size:0.75rem;}
+            .slot-layout{gap:0.6rem;}
+            .vestidors-box{padding:0.55rem 0.6rem;}
+            .field .field-lines{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);}
+            .team-pill{font-size:0.78rem;padding:0.16rem 0.4rem;}
         }
     </style>
 </head>

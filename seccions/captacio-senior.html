@@ -316,6 +316,21 @@
         }
 
         @media (max-width: 900px) {
+            body {
+                padding: 0.75rem;
+            }
+            .screen {
+                min-height: auto;
+                padding: 1rem;
+            }
+            .screen-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .screen-header .btn {
+                width: 100%;
+                min-height: 44px;
+            }
             .filters-row {
                 grid-template-columns: 1fr;
             }
@@ -324,6 +339,71 @@
             }
             .obs-form-row {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .players-table-wrap {
+                overflow: visible;
+            }
+            .players-table {
+                min-width: 0;
+            }
+            .players-table thead tr:not(:first-child) {
+                display: none;
+            }
+            .players-table .group-title {
+                font-size: 0.72rem;
+                padding: 0.52rem 0.65rem;
+            }
+            .players-table tbody tr {
+                display: grid;
+                gap: 0.15rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.65rem;
+                padding: 0.45rem 0.55rem;
+                margin: 0.5rem;
+            }
+            .players-table tbody tr td {
+                border-bottom: none;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 0.75rem;
+                padding: 0.3rem 0;
+                font-size: 0.82rem;
+            }
+            .players-table tbody tr td::before {
+                content: attr(data-label);
+                font-size: 0.68rem;
+                font-weight: 800;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                flex: 0 0 auto;
+            }
+            .players-table tbody tr td:last-child {
+                justify-content: flex-end;
+            }
+            .players-table tbody tr td:last-child::before {
+                margin-right: auto;
+            }
+            .name-cell .name-link {
+                padding: 0;
+                font-size: 0.9rem;
+            }
+            .players-table tbody tr.group-empty-row {
+                display: block;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+            .players-table tbody tr.group-empty-row td {
+                display: block;
+                padding: 0.6rem 0.75rem;
+            }
+            .players-table tbody tr.group-empty-row td::before {
+                content: none;
             }
         }
     </style>
@@ -541,13 +621,13 @@
             const edat = calculateAgeFromBirthYear(player.any_naixement);
             return `
                 <tr>
-                    <td class="name-cell"><button type="button" class="name-link" data-action="edit" data-id="${esc(player.id)}">${esc(player.nom)}</button></td>
-                    <td>${esc(player.any_naixement || '-')}</td>
-                    <td>${esc(edat)}</td>
-                    <td>${esc(player.genere || '-')}</td>
-                    <td>${esc(player.club || '-')}</td>
-                    <td>${esc(posicions)}</td>
-                    <td><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-id="${esc(player.id)}">✕</button></td>
+                    <td class="name-cell" data-label="Jugador"><button type="button" class="name-link" data-action="edit" data-id="${esc(player.id)}">${esc(player.nom)}</button></td>
+                    <td data-label="Any">${esc(player.any_naixement || '-')}</td>
+                    <td data-label="Edat">${esc(edat)}</td>
+                    <td data-label="Gènere">${esc(player.genere || '-')}</td>
+                    <td data-label="Club">${esc(player.club || '-')}</td>
+                    <td data-label="Posicions">${esc(posicions)}</td>
+                    <td data-label="Acció"><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-id="${esc(player.id)}">✕</button></td>
                 </tr>
             `;
         }
