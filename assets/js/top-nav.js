@@ -83,6 +83,7 @@
         }
 
         .cf-mobile-open-btn,
+        .cf-mobile-backdrop,
         .cf-mobile-drawer-head,
         .cf-mobile-close-btn { display: none; }
 
@@ -249,6 +250,8 @@
                 align-items: center;
                 gap: 0.6rem;
                 padding: 0.6rem 0.75rem;
+                position: relative;
+                z-index: 1190;
             }
             .cf-brand { font-size: 0.88rem; }
             .cf-brand-logo { width: 32px; height: 32px; }
@@ -265,20 +268,52 @@
                 padding: 0.45rem 0.68rem;
                 cursor: pointer;
             }
+            .cf-topnav-wrap.mobile-open .cf-mobile-open-btn {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .cf-mobile-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 1180;
+                background: rgba(15,23,42,0.42);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.22s ease;
+            }
+            .cf-topnav-wrap.mobile-open .cf-mobile-backdrop {
+                opacity: 1;
+                pointer-events: auto;
+            }
 
             .cf-nav {
                 position: fixed;
-                inset: 0;
+                top: 0;
+                right: 0;
+                left: auto;
+                bottom: 0;
+                width: min(360px, calc(100vw - 0.8rem));
+                max-width: 92vw;
+                height: 100dvh;
                 z-index: 1200;
                 background: #f8fafc;
-                display: none;
+                box-shadow: -12px 0 30px rgba(2,6,23,0.24);
+                display: flex;
                 flex-direction: column;
                 align-items: stretch;
                 gap: 0.55rem;
                 padding: 0.9rem;
                 overflow-y: auto;
+                transform: translateX(104%);
+                transition: transform 0.23s ease;
+                pointer-events: none;
             }
-            .cf-topnav-wrap.mobile-open .cf-nav { display: flex; }
+            .cf-topnav-wrap.mobile-open .cf-nav {
+                transform: translateX(0);
+                pointer-events: auto;
+            }
 
             .cf-mobile-drawer-head {
                 display: flex;
@@ -472,6 +507,7 @@
             <span>CF Cardona</span>
         </a>
         <button type="button" class="cf-mobile-open-btn" id="cf-mobile-open-btn" aria-expanded="false" aria-controls="cf-main-nav">Menú ☰</button>
+        <button type="button" class="cf-mobile-backdrop" id="cf-mobile-backdrop" aria-label="Tancar menú"></button>
         <div class="cf-nav" id="cf-main-nav" aria-hidden="false">
             <div class="cf-mobile-drawer-head">
                 <span class="cf-mobile-drawer-title">Navegació</span>
@@ -554,6 +590,7 @@
 
     const mainNav = document.getElementById('cf-main-nav');
     const mobileOpenBtn = document.getElementById('cf-mobile-open-btn');
+    const mobileBackdrop = document.getElementById('cf-mobile-backdrop');
     const mobileCloseBtn = document.getElementById('cf-mobile-close-btn');
     const mobileQuery = window.matchMedia('(max-width: 760px)');
 
@@ -624,6 +661,12 @@
 
     if (mobileCloseBtn) {
         mobileCloseBtn.addEventListener('click', function () {
+            setMobileMenuOpen(false);
+        });
+    }
+
+    if (mobileBackdrop) {
+        mobileBackdrop.addEventListener('click', function () {
             setMobileMenuOpen(false);
         });
     }
