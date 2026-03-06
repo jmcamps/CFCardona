@@ -207,6 +207,56 @@
 
         .cf-fb-menu { min-width: 640px; }
         .cf-fb-grid { display: grid; grid-template-columns: repeat(3, minmax(170px, 1fr)); gap: 0.6rem; }
+        .cf-fb-mobile-groups { display: none; }
+        .cf-fb-mobile-group {
+            border: 1px solid #d1dbe6;
+            border-radius: 0.7rem;
+            background: #fff;
+            overflow: hidden;
+        }
+        .cf-fb-mobile-group summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 0.72rem 0.8rem;
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            user-select: none;
+        }
+        .cf-fb-mobile-group summary::-webkit-details-marker { display: none; }
+        .cf-fb-mobile-group summary::after {
+            content: '▾';
+            font-size: 0.78rem;
+            color: #475569;
+            transition: transform 0.18s ease;
+        }
+        .cf-fb-mobile-group[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .cf-fb-mobile-links {
+            display: grid;
+            gap: 0.4rem;
+            padding: 0.2rem 0.55rem 0.55rem;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .cf-fb-mobile-links a {
+            display: block;
+            width: 100%;
+            text-decoration: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.6rem;
+            background: #fff;
+            padding: 0.54rem 0.58rem;
+            color: #0f172a;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .cf-fb-mobile-links a:hover { background: #fff5f5; border-color: #fecaca; }
         .cf-fb-group-title {
             font-size: 0.7rem;
             text-transform: uppercase;
@@ -410,6 +460,8 @@
             .cf-nav-feature-grid { grid-template-columns: 1fr !important; }
             .cf-fb-grid { grid-template-columns: 1fr; }
             .cf-fb-menu { min-width: 0; width: 100%; }
+            #cf-nav-fb-menu .cf-nav-feature-grid { display: none; }
+            .cf-fb-mobile-groups { display: grid; width: 100%; gap: 0.55rem; }
             .cf-nav-menu a {
                 font-size: 0.84rem;
                 white-space: normal;
@@ -470,6 +522,28 @@
         } catch (_) {
             return '/';
         }
+    }
+
+    function extractHashRoutePath() {
+        const rawHash = String(window.location.hash || '').trim();
+        if (!rawHash) return '';
+
+        let decodedHash = rawHash;
+        try {
+            decodedHash = decodeURIComponent(rawHash);
+        } catch (_) {}
+
+        const withoutHash = decodedHash.replace(/^#/, '').trim();
+        if (!withoutHash) return '';
+
+        const match = withoutHash.match(/([./a-zA-Z0-9_-]*seccions\/[a-zA-Z0-9_-]+\.html|[./a-zA-Z0-9_-]+\.html)/i);
+        return match && match[1] ? match[1] : '';
+    }
+
+    function getCurrentRoutePath() {
+        const hashPath = extractHashRoutePath();
+        if (hashPath) return normalizePath(hashPath);
+        return normalizePath(window.location.href);
     }
 
     function isSamePath(currentPath, targetPath) {
@@ -557,6 +631,35 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="cf-fb-mobile-groups" id="cf-fb-mobile-groups">
+                    <details class="cf-fb-mobile-group" id="cf-fb-mobile-masc">
+                        <summary>🛡️ Base Masculí</summary>
+                        <div class="cf-fb-mobile-links">
+                            <a href="${links.minis}">Minis</a>
+                            <a href="${links.s7}">S7</a>
+                            <a href="${links.s8}">S8</a>
+                            <a href="${links.s9}">S9</a>
+                            <a href="${links.s10}">S10</a>
+                            <a href="${links.s11}">S11</a>
+                            <a href="${links.s12}">S12</a>
+                            <a href="${links.s13}">S13</a>
+                            <a href="${links.s14}">S14</a>
+                            <a href="${links.s16}">S16</a>
+                            <a href="${links.juvenilMasculi}">Juvenil Masculí</a>
+                        </div>
+                    </details>
+
+                    <details class="cf-fb-mobile-group" id="cf-fb-mobile-fem">
+                        <summary>🌸 Base Femení</summary>
+                        <div class="cf-fb-mobile-links">
+                            <a href="${links.aleviFemeni}">Aleví Femení</a>
+                            <a href="${links.infantilFemeni}">Infantil Femení</a>
+                            <a href="${links.cadetFemeni}">Cadet Femení</a>
+                            <a href="${links.juvenilFemeni}">Juvenil Femení</a>
+                        </div>
+                    </details>
+                </div>
             </div>
         </div>
     `;
@@ -592,7 +695,7 @@
                 <button type="button" class="cf-mobile-close-btn" id="cf-mobile-close-btn" aria-label="Tancar menú">✕</button>
             </div>
 
-            <a class="cf-nav-link" href="${links.home}">Inici</a>
+            <a class="cf-nav-link cf-nav-link-home" href="${links.home}">Inici</a>
 
             <div class="cf-nav-dropdown" id="cf-nav-dropdown">
                 <button class="cf-nav-drop-btn" type="button" id="cf-nav-drop-btn">Direcció esportiva <span class="cf-caret">▾</span></button>
@@ -671,14 +774,23 @@
     const mobileBackdrop = document.getElementById('cf-mobile-backdrop');
     const mobileCloseBtn = document.getElementById('cf-mobile-close-btn');
     const mobileQuery = window.matchMedia('(max-width: 760px)');
+    const homePath = normalizePath(links.home);
 
     function applyActiveStates() {
-        const currentPath = normalizePath(window.location.href);
+        const currentPath = getCurrentRoutePath();
         const allLinks = nav.querySelectorAll('a[href]');
+        const hashPath = normalizePath(extractHashRoutePath() || '');
+        const hashInSections = hashPath.includes('/seccions/');
 
         allLinks.forEach(function (anchor) {
             const targetPath = normalizePath(anchor.getAttribute('href'));
-            const active = isSamePath(currentPath, targetPath);
+            let active = isSamePath(currentPath, targetPath);
+
+            if (anchor.classList.contains('cf-nav-link-home')) {
+                const inSections = currentPath.includes('/seccions/') || hashInSections;
+                active = !inSections && isSamePath(currentPath, homePath);
+            }
+
             anchor.classList.toggle('active', active);
         });
 
@@ -690,6 +802,16 @@
         }
         if (seniorDrop) {
             seniorDrop.classList.toggle('has-active', !!seniorDrop.querySelector('a.active'));
+        }
+
+        const fbMascDetails = document.getElementById('cf-fb-mobile-masc');
+        const fbFemDetails = document.getElementById('cf-fb-mobile-fem');
+        if (fbMascDetails && fbFemDetails) {
+            const mascHasActive = !!fbMascDetails.querySelector('a.active');
+            const femHasActive = !!fbFemDetails.querySelector('a.active');
+
+            if (mascHasActive) fbMascDetails.open = true;
+            if (femHasActive) fbFemDetails.open = true;
         }
     }
 
@@ -790,6 +912,8 @@
         closeAllDropdowns();
         setMobileMenuOpen(false);
     });
+
+    window.addEventListener('hashchange', applyActiveStates);
 
     if (mainNav) {
         mainNav.addEventListener('click', function (event) {
