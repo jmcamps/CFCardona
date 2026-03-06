@@ -80,6 +80,101 @@
 .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
         .alert-banner{max-width:960px;margin:0 auto 1.5rem;background:#fff1f2;border:1px solid #fecaca;color:#b91c1c;border-radius:0.75rem;padding:0.9rem 1.1rem;font-weight:800;display:none;align-items:center;gap:0.6rem;box-shadow:0 4px 10px rgba(185,28,28,0.12);}
         .alert-banner span{font-size:1.1rem;}
+        .table-wrap{overflow-x:auto;}
+        .section-head{display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
+        .section-head h2{margin-bottom:0;border-bottom:none;padding-bottom:0;}
+        .section-head-link{font-size:0.75rem;padding:0.4rem 0.8rem;}
+        .actions-end{display:flex;justify-content:flex-end;}
+        .mobile-card-table{width:100%;}
+
+        @media(max-width:760px){
+            body{padding:0.9rem;overflow-x:hidden;}
+            .card{padding:1rem;border-radius:0.85rem;margin-bottom:1rem;}
+            .card h2{font-size:1rem;margin-bottom:1rem;}
+            .section-head{flex-direction:column;align-items:stretch;margin-bottom:1rem;}
+            .section-head-link,
+            .actions-end .btn,
+            .actions-end .fed-link,
+            .actions-end .btn-link{width:100%;justify-content:center;text-align:center;}
+            .partit-item{flex-direction:column;gap:0.7rem;}
+            .partit-item .btn-remove{align-self:flex-end;}
+            .obs-header{align-items:flex-start;gap:0.6rem;}
+            .table-wrap{overflow:visible;}
+
+            .mobile-card-table{border-collapse:separate;border-spacing:0;}
+            .mobile-card-table thead{display:none;}
+            .mobile-card-table tbody{display:grid;gap:0.65rem;}
+            .mobile-card-table tr{display:block;background:#fff;border:1px solid var(--border);border-radius:0.75rem;padding:0.35rem 0.7rem;}
+            .mobile-card-table td{display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;border-bottom:1px dashed #e2e8f0;padding:0.48rem 0;}
+            .mobile-card-table td:last-child{border-bottom:none;}
+            .mobile-card-table td::before{
+                content:attr(data-label);
+                font-size:0.68rem;
+                font-weight:800;
+                text-transform:uppercase;
+                letter-spacing:0.04em;
+                color:#64748b;
+                min-width:44%;
+            }
+            .mobile-card-table td[data-label="Jugador"],
+            .mobile-card-table td[data-label="Jugadora"]{
+                display:block;
+            }
+            .mobile-card-table td[data-label="Jugador"]::before,
+            .mobile-card-table td[data-label="Jugadora"]::before{
+                display:block;
+                min-width:0;
+                margin-bottom:0.35rem;
+            }
+            .mobile-card-table td[data-label="Jugador"] input[type=text],
+            .mobile-card-table td[data-label="Jugadora"] input[type=text]{
+                width:100%;
+                margin-left:0;
+            }
+            .mobile-card-table td[data-label="Nom i cognoms"]{
+                display:block;
+            }
+            .mobile-card-table td[data-label="Nom i cognoms"]::before{
+                display:block;
+                min-width:0;
+                margin-bottom:0.35rem;
+            }
+            .mobile-card-table td[data-label="Nom i cognoms"] input[type=text]{
+                width:100%;
+                margin-left:0;
+            }
+            .mobile-card-table td[data-label="Telèfon"]{
+                display:block;
+            }
+            .mobile-card-table td[data-label="Telèfon"]::before{
+                display:block;
+                min-width:0;
+                margin-bottom:0.35rem;
+            }
+            .mobile-card-table td[data-label="Telèfon"] input[type=tel]{
+                width:100%;
+                margin-left:0;
+            }
+            .mobile-card-table td input[type=text],
+            .mobile-card-table td input[type=tel],
+            .mobile-card-table td input[type=date],
+            .mobile-card-table td input[type=time],
+            .mobile-card-table td input[type=number],
+            .mobile-card-table td input[type=url],
+            .mobile-card-table td select{
+                flex:1;
+                margin-left:auto;
+            }
+            .mobile-card-table td input[type=checkbox]{margin-left:auto;}
+            .mobile-card-table .plantilla-actions{
+                width:auto;
+                text-align:left;
+                display:flex;
+                justify-content:flex-end;
+                align-items:center;
+            }
+        }
+
         @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
     </style>
 </head>
@@ -88,8 +183,8 @@
     <div id="staff_alert" class="alert-banner"><span>&#x26A0;&#xFE0F;</span><div id="staff_alert_text"></div></div>
         <div class="card">
         <h2>&#x1F91D; Staff</h2>
-        <div style="overflow-x:auto;">
-            <table class="plantilla-table">
+        <div class="table-wrap">
+            <table class="plantilla-table mobile-card-table">
                 <thead>
                     <tr>
                         <th>Rol</th>
@@ -99,19 +194,19 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="dia-badge">Primer Entrenador</td>
-                        <td><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Primer Entrenador</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Segon Entrenador</td>
-                        <td><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Segon Entrenador</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Tercer Entrenador</td>
-                        <td><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Tercer Entrenador</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                 </tbody>
             </table>
@@ -119,8 +214,8 @@
     </div>
     <div class="card">
         <h2 id="plantilla_title">&#x1F4CB; Plantilla de Jugadors (0)</h2>
-        <div style="overflow-x:auto;">
-            <table class="plantilla-table">
+        <div class="table-wrap">
+            <table class="plantilla-table mobile-card-table">
                 <thead>
                     <tr>
                         <th>Jugador</th>
@@ -152,15 +247,15 @@
                 <div><label>Vinculat al club</label><input type="checkbox" id="p_vinculat_club"></div>
                 <div></div>
             </div>
-            <div style="display:flex;justify-content:flex-end;">
+            <div class="actions-end">
                 <button class="btn btn-primary" onclick="addPlayer()">AFEGIR JUGADOR</button>
             </div>
         </div>
     </div>
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:2px solid #fee2e2; padding-bottom:0.75rem;">
-            <h2 style="margin-bottom:0; border-bottom:none; padding-bottom:0;">&#x1F5D3; Horari d&apos;Entrenaments</h2>
-            <a href="horari-entrenaments.html" class="fed-link" style="font-size:0.75rem; padding:0.4rem 0.8rem;">GESTIONAR HORARIS</a>
+        <div class="section-head">
+            <h2>&#x1F5D3; Horari d&apos;Entrenaments</h2>
+            <a href="horari-entrenaments.html" class="fed-link section-head-link">GESTIONAR HORARIS</a>
         </div>
         <div id="horari_list" class="empty-msg">Sense sessions registrades.</div>
     </div>
@@ -519,8 +614,8 @@
                 if(idxA!==idxB) return idxA-idxB;
                 return String(a.inici||'').localeCompare(String(b.inici||''));
             });
-            el.innerHTML='<table class="horari-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
-                +sessions.map(h=>'<tr><td class="dia-badge">'+h.dia+'</td><td>'+(h.inici||'-')+'</td><td>'+(h.fi||'-')+'</td><td>'+(esc(h.vestidor)||'-')+'</td><td>'+(esc(h.camp)||'-')+'</td></tr>').join('')
+            el.innerHTML='<table class="horari-table mobile-card-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
+                +sessions.map(h=>'<tr><td data-label="Dia" class="dia-badge">'+h.dia+'</td><td data-label="Inici">'+(h.inici||'-')+'</td><td data-label="Fi">'+(h.fi||'-')+'</td><td data-label="Vestidor">'+(esc(h.vestidor)||'-')+'</td><td data-label="Camp">'+(esc(h.camp)||'-')+'</td></tr>').join('')
                 +'</tbody></table>';
         }
 
@@ -598,13 +693,13 @@
                 const checkedVinculatClub=p.vinculat_club?'checked':'';
                 const birthYear=normalizeBirthYear(p.naixement||'');
                 return '<tr>'
-                    +'<td><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
-                    +'<td><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
-                    +'<td style="text-align:center;"><input type="checkbox" '+checkedRevisio+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
-                    +'<td style="text-align:center;"><input type="checkbox" '+checkedInscripcio+' onchange="updatePlayer('+i+',\'inscripcio\',this.checked)"></td>'
-                    +'<td style="text-align:center;"><input type="checkbox" '+checkedPagamentFcf+' onchange="updatePlayer('+i+',\'pagament_fcf\',this.checked)"></td>'
-                    +'<td style="text-align:center;"><input type="checkbox" '+checkedVinculatClub+' onchange="updatePlayer('+i+',\'vinculat_club\',this.checked)"></td>'
-                    +'<td class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
+                    +'<td data-label="Jugador"><input type="text" value="'+esc(p.nom||'')+'" onchange="updatePlayer('+i+',\'nom\',this.value)"></td>'
+                    +'<td data-label="Any naixement"><input type="number" min="1990" max="2030" value="'+birthYear+'" onchange="updatePlayer('+i+',\'naixement\',this.value)"></td>'
+                    +'<td data-label="Revisió mèdica" style="text-align:center;"><input type="checkbox" '+checkedRevisio+' onchange="updatePlayer('+i+',\'revisio\',this.checked)"></td>'
+                    +'<td data-label="Inscripció" style="text-align:center;"><input type="checkbox" '+checkedInscripcio+' onchange="updatePlayer('+i+',\'inscripcio\',this.checked)"></td>'
+                    +'<td data-label="Pagament FCF" style="text-align:center;"><input type="checkbox" '+checkedPagamentFcf+' onchange="updatePlayer('+i+',\'pagament_fcf\',this.checked)"></td>'
+                    +'<td data-label="Vinculat al club" style="text-align:center;"><input type="checkbox" '+checkedVinculatClub+' onchange="updatePlayer('+i+',\'vinculat_club\',this.checked)"></td>'
+                    +'<td data-label="Accions" class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
             }).join('');
         }
