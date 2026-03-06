@@ -49,6 +49,12 @@
             top: 0.75rem;
             z-index: 40;
         }
+        .cf-topnav-wrap,
+        .cf-topnav,
+        .cf-nav,
+        .cf-nav * {
+            box-sizing: border-box;
+        }
         .cf-topnav {
             display: flex;
             align-items: center;
@@ -315,7 +321,7 @@
                 flex-direction: column;
                 align-items: stretch;
                 gap: 0.55rem;
-                padding: 0.9rem;
+                padding: 0.95rem 0.9rem 0.95rem 1.05rem;
                 overflow-y: auto;
                 overflow-x: hidden;
                 transform: translateX(104%);
@@ -337,6 +343,7 @@
                 font-size: 0.9rem;
                 color: #0f172a;
                 font-weight: 800;
+                padding-left: 0.08rem;
             }
             .cf-mobile-close-btn {
                 display: inline-flex;
@@ -415,6 +422,12 @@
             .cf-nav-feature,
             .cf-nav-feature-list,
             .cf-nav-feature-sub { min-width: 0; max-width: 100%; }
+            .cf-nav-feature-grid,
+            .cf-nav-feature-list,
+            .cf-nav-feature,
+            .cf-nav-feature-sub {
+                width: 100%;
+            }
             .cf-nav-feature,
             .cf-nav-feature-sub,
             .cf-nav-feature-title,
@@ -444,7 +457,27 @@
     const nav = document.createElement('nav');
     nav.className = 'cf-topnav';
 
-    const isActive = (needle) => pathname.includes(needle);
+    function normalizePath(value) {
+        try {
+            const parsed = new URL(value, window.location.href);
+            let normalized = (parsed.pathname || '').toLowerCase();
+            normalized = normalized.replace(/\\+/g, '/');
+            normalized = normalized.replace(/\/{2,}/g, '/');
+            if (normalized.length > 1 && normalized.endsWith('/')) {
+                normalized = normalized.slice(0, -1);
+            }
+            return normalized || '/';
+        } catch (_) {
+            return '/';
+        }
+    }
+
+    function isSamePath(currentPath, targetPath) {
+        if (currentPath === targetPath) return true;
+        if ((currentPath === '/' || currentPath === '') && targetPath.endsWith('/index.html')) return true;
+        if ((targetPath === '/' || targetPath === '') && currentPath.endsWith('/index.html')) return true;
+        return false;
+    }
 
     const futbolBaseMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-fb-dropdown">
@@ -559,7 +592,7 @@
                 <button type="button" class="cf-mobile-close-btn" id="cf-mobile-close-btn" aria-label="Tancar menú">✕</button>
             </div>
 
-            <a class="cf-nav-link ${isActive('/index.html') ? 'active' : ''}" href="${links.home}">Inici</a>
+            <a class="cf-nav-link" href="${links.home}">Inici</a>
 
             <div class="cf-nav-dropdown" id="cf-nav-dropdown">
                 <button class="cf-nav-drop-btn" type="button" id="cf-nav-drop-btn">Direcció esportiva <span class="cf-caret">▾</span></button>
@@ -638,6 +671,27 @@
     const mobileBackdrop = document.getElementById('cf-mobile-backdrop');
     const mobileCloseBtn = document.getElementById('cf-mobile-close-btn');
     const mobileQuery = window.matchMedia('(max-width: 760px)');
+
+    function applyActiveStates() {
+        const currentPath = normalizePath(window.location.href);
+        const allLinks = nav.querySelectorAll('a[href]');
+
+        allLinks.forEach(function (anchor) {
+            const targetPath = normalizePath(anchor.getAttribute('href'));
+            const active = isSamePath(currentPath, targetPath);
+            anchor.classList.toggle('active', active);
+        });
+
+        if (drop) {
+            drop.classList.toggle('has-active', !!drop.querySelector('a.active'));
+        }
+        if (fbDrop) {
+            fbDrop.classList.toggle('has-active', !!fbDrop.querySelector('a.active'));
+        }
+        if (seniorDrop) {
+            seniorDrop.classList.toggle('has-active', !!seniorDrop.querySelector('a.active'));
+        }
+    }
 
     function closeAllDropdowns() {
         if (drop) drop.classList.remove('open');
@@ -751,6 +805,7 @@
     } else if (mobileQuery && typeof mobileQuery.addListener === 'function') {
         mobileQuery.addListener(syncResponsiveMenuState);
     }
+    applyActiveStates();
     syncResponsiveMenuState();
 
     if (logoutBtn) {
