@@ -49,18 +49,18 @@
             top: 0.75rem;
             z-index: 40;
         }
-        .cf-topnav-wrap,
+
         .cf-topnav,
-        .cf-nav,
-        .cf-nav * {
+        .cf-topnav * {
             box-sizing: border-box;
         }
+
         .cf-topnav {
+            position: relative;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
             gap: 0.9rem;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.88);
             color: #fff;
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 1rem;
@@ -68,6 +68,7 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 12px 28px rgba(2,6,23,0.22);
         }
+
         .cf-brand {
             display: inline-flex;
             align-items: center;
@@ -79,6 +80,7 @@
             margin-right: 0.2rem;
             flex-shrink: 0;
         }
+
         .cf-brand-logo {
             width: 34px;
             height: 34px;
@@ -91,15 +93,19 @@
         .cf-mobile-open-btn,
         .cf-mobile-backdrop,
         .cf-mobile-drawer-head,
-        .cf-mobile-close-btn { display: none; }
+        .cf-mobile-close-btn {
+            display: none;
+        }
 
         .cf-nav {
             display: flex;
             align-items: center;
             gap: 0.35rem;
-            flex-wrap: wrap;
             width: 100%;
+            min-width: 0;
+            flex-wrap: wrap;
         }
+
         .cf-nav-link,
         .cf-nav-drop-btn {
             color: rgba(255,255,255,0.92);
@@ -110,10 +116,21 @@
             padding: 0.45rem 0.7rem;
             border: 1px solid transparent;
             background: transparent;
+            line-height: 1.2;
         }
+
         .cf-nav-link:hover,
-        .cf-nav-drop-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
-        .cf-nav-link.active { background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.3); color: #fff; }
+        .cf-nav-drop-btn:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        .cf-nav-link.active {
+            background: rgba(239,68,68,0.22);
+            border-color: rgba(239,68,68,0.3);
+            color: #fff;
+        }
+
         .cf-nav-dropdown.open > .cf-nav-drop-btn,
         .cf-nav-dropdown.has-active > .cf-nav-drop-btn {
             background: rgba(239,68,68,0.22);
@@ -121,35 +138,68 @@
             color: #fff;
         }
 
-        .cf-nav-dropdown { position: relative; }
+        .cf-nav-dropdown {
+            position: relative;
+        }
+
+        #cf-nav-fb-dropdown {
+            position: static;
+        }
+
         .cf-nav-drop-btn {
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
         }
+
         .cf-caret {
             font-size: 0.72rem;
             opacity: 0.9;
         }
+
         .cf-nav-menu {
             position: absolute;
             left: 0;
             top: calc(100% + 0.5rem);
-            min-width: 860px;
+            min-width: 0;
+            max-width: calc(100vw - 1rem);
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 0.8rem;
             box-shadow: 0 12px 30px rgba(2,6,23,0.18);
             padding: 0.7rem;
             display: none;
-            z-index: 50;
+            z-index: 60;
         }
+
+        .cf-nav-dropdown.open > .cf-nav-menu {
+            display: block;
+        }
+
+        #cf-nav-menu {
+            width: min(92vw, 540px);
+        }
+
+        #cf-nav-senior-menu {
+            width: min(92vw, 500px);
+        }
+
+        #cf-nav-fb-menu {
+            left: 0;
+            right: 0;
+            width: auto;
+            max-width: none;
+            max-height: min(78vh, 780px);
+            overflow-y: auto;
+        }
+
         .cf-nav-feature-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(260px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.7rem;
         }
+
         .cf-nav-feature {
             display: block;
             text-decoration: none;
@@ -159,8 +209,15 @@
             padding: 0.75rem 0.8rem;
             background: #fff;
             transition: all 0.2s;
+            min-width: 0;
         }
-        .cf-nav-feature:hover { border-color: #fecaca; background: #fff5f5; transform: translateY(-1px); }
+
+        .cf-nav-feature:hover {
+            border-color: #fecaca;
+            background: #fff5f5;
+            transform: translateY(-1px);
+        }
+
         .cf-nav-feature-title {
             display: block;
             font-size: 0.86rem;
@@ -168,29 +225,57 @@
             color: #0f172a;
             margin-bottom: 0.25rem;
         }
-        .cf-nav-feature-title .icon { margin-right: 0.35rem; }
+
+        .cf-nav-feature-title .icon {
+            margin-right: 0.35rem;
+        }
+
         .cf-nav-feature-desc {
             display: block;
             font-size: 0.75rem;
             line-height: 1.4;
             color: #64748b;
         }
-        .cf-nav-menu a {
-            display: block;
+
+        .cf-nav-feature-list {
+            margin-top: 0.55rem;
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .cf-nav-feature-sub {
             text-decoration: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.6rem;
+            padding: 0.5rem 0.55rem;
+            background: #f8fafc;
+            display: block;
+            min-width: 0;
+        }
+
+        .cf-nav-feature-sub:hover {
+            border-color: #fecaca;
+            background: #fff5f5;
+        }
+
+        .cf-nav-feature-sub-title {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 800;
             color: #0f172a;
-            font-weight: 700;
-            font-size: 0.82rem;
-            padding: 0.45rem 0.55rem;
-            border-radius: 0.55rem;
+            margin-bottom: 0.15rem;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
-        .cf-nav-menu a:hover { background: #f1f5f9; color: #d91d1d; }
-        .cf-nav-menu a.active {
-            background: #fee2e2;
-            border: 1px solid #fecaca;
-            color: #991b1b;
+
+        .cf-nav-feature-sub-desc {
+            display: block;
+            font-size: 0.72rem;
+            color: #64748b;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
-        .cf-nav-dropdown.open .cf-nav-menu { display: block; }
 
         .cf-logout-btn {
             margin-left: auto;
@@ -203,90 +288,9 @@
             padding: 0.42rem 0.65rem;
             cursor: pointer;
         }
-        .cf-logout-btn:hover { background: rgba(255,255,255,0.14); }
 
-        .cf-fb-menu { min-width: 640px; }
-        .cf-fb-grid { display: grid; grid-template-columns: repeat(3, minmax(170px, 1fr)); gap: 0.6rem; }
-        .cf-fb-mobile-groups { display: none; }
-        .cf-fb-mobile-group {
-            border: 1px solid #d1dbe6;
-            border-radius: 0.7rem;
-            background: #fff;
-            overflow: hidden;
-        }
-        .cf-fb-mobile-group summary {
-            list-style: none;
-            cursor: pointer;
-            padding: 0.72rem 0.8rem;
-            font-size: 0.86rem;
-            font-weight: 800;
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            user-select: none;
-        }
-        .cf-fb-mobile-group summary::-webkit-details-marker { display: none; }
-        .cf-fb-mobile-group summary::after {
-            content: '▾';
-            font-size: 0.78rem;
-            color: #475569;
-            transition: transform 0.18s ease;
-        }
-        .cf-fb-mobile-group[open] summary::after {
-            transform: rotate(180deg);
-        }
-        .cf-fb-mobile-links {
-            display: grid;
-            gap: 0.4rem;
-            padding: 0.2rem 0.55rem 0.55rem;
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-        }
-        .cf-fb-mobile-links a {
-            display: block;
-            width: 100%;
-            text-decoration: none;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.6rem;
-            background: #fff;
-            padding: 0.54rem 0.58rem;
-            color: #0f172a;
-            font-size: 0.82rem;
-            font-weight: 700;
-        }
-        .cf-fb-mobile-links a:hover { background: #fff5f5; border-color: #fecaca; }
-        .cf-fb-group-title {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #64748b;
-            font-weight: 800;
-            padding: 0.3rem 0.55rem;
-        }
-        .cf-nav-feature-list { margin-top: 0.55rem; display: grid; gap: 0.35rem; }
-        .cf-nav-feature-sub {
-            text-decoration: none;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.6rem;
-            padding: 0.5rem 0.55rem;
-            background: #f8fafc;
-            display: block;
-        }
-        .cf-nav-feature-sub:hover { border-color: #fecaca; background: #fff5f5; }
-        .cf-nav-feature-sub-title {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 0.15rem;
-        }
-        .cf-nav-feature-sub-desc {
-            display: block;
-            font-size: 0.72rem;
-            color: #64748b;
-            line-height: 1.35;
+        .cf-logout-btn:hover {
+            background: rgba(255,255,255,0.14);
         }
 
         .cf-page-title-wrap {
@@ -298,6 +302,7 @@
             padding: 1rem 1.15rem;
             box-shadow: 0 4px 10px rgba(2,6,23,0.06);
         }
+
         .cf-page-title {
             color: #d91d1d;
             font-size: 1.35rem;
@@ -307,21 +312,131 @@
             margin: 0;
         }
 
+        @media (min-width: 761px) {
+            .card > h2 {
+                margin-top: 0;
+                margin-bottom: 1.35rem;
+                padding-bottom: 0.72rem;
+                line-height: 1.25;
+            }
+
+            .card > .section-head {
+                margin-bottom: 1.35rem;
+                padding-bottom: 0.72rem;
+            }
+
+            .card > .section-head h2 {
+                margin-bottom: 0;
+                padding-bottom: 0;
+                line-height: 1.25;
+            }
+
+            .table-wrap,
+            .players-table-wrap {
+                overflow: auto;
+                border-radius: 0.8rem;
+                background: #fff;
+            }
+
+            .plantilla-table,
+            .players-table {
+                min-width: 760px;
+            }
+
+            .horari-table {
+                min-width: 560px;
+            }
+
+            :is(.plantilla-table, .horari-table, .players-table) {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.8rem;
+            }
+
+            .table-wrap :is(.plantilla-table, .horari-table, .players-table),
+            .players-table-wrap :is(.plantilla-table, .horari-table, .players-table) {
+                border-radius: 0;
+            }
+
+            :is(.plantilla-table, .horari-table, .players-table) th,
+            :is(.plantilla-table, .horari-table, .players-table) td {
+                border-bottom: 1px solid #e2e8f0;
+                text-align: left;
+                padding: 0.72rem 0.75rem;
+                vertical-align: middle;
+                font-size: 0.82rem;
+                line-height: 1.25;
+                white-space: normal;
+            }
+
+            :is(.plantilla-table, .horari-table) tbody tr {
+                height: 3.05rem;
+            }
+
+            :is(.plantilla-table, .horari-table) td > :is(input[type=text], input[type=tel], input[type=date], input[type=time], input[type=number], input[type=url], select) {
+                height: 2.1rem;
+                min-height: 2.1rem;
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+                font-size: 0.82rem;
+                line-height: 1.2;
+            }
+
+            :is(.plantilla-table, .horari-table) td input[type=checkbox] {
+                width: 1rem;
+                height: 1rem;
+            }
+
+            :is(.plantilla-table, .horari-table) th,
+            .players-table th:not(.group-title) {
+                background: #fee2e2;
+                color: #d91d1d;
+                font-weight: 700;
+                font-size: 0.78rem;
+            }
+
+            :is(.plantilla-table, .horari-table, .players-table) tr:last-child td {
+                border-bottom: 0;
+            }
+
+            :is(.plantilla-table, .horari-table) tbody tr:hover,
+            .players-table tbody tr:not(.group-row):not(.group-empty-row):hover {
+                background: #fff5f5;
+            }
+
+            :is(.plantilla-table, .horari-table, .players-table) th:first-child {
+                border-top-left-radius: 0.8rem;
+            }
+
+            :is(.plantilla-table, .horari-table, .players-table) th:last-child {
+                border-top-right-radius: 0.8rem;
+            }
+        }
+
         @media (max-width: 760px) {
             .cf-topnav-wrap {
                 position: static;
                 margin: 0 auto 1rem;
                 top: auto;
             }
+
             .cf-topnav {
-                align-items: center;
                 gap: 0.6rem;
                 padding: 0.6rem 0.75rem;
-                position: relative;
                 z-index: 1190;
             }
-            .cf-brand { font-size: 0.88rem; }
-            .cf-brand-logo { width: 32px; height: 32px; }
+
+            .cf-brand {
+                font-size: 0.88rem;
+            }
+
+            .cf-brand-logo {
+                width: 32px;
+                height: 32px;
+            }
 
             .cf-mobile-open-btn {
                 display: inline-flex;
@@ -335,6 +450,7 @@
                 padding: 0.45rem 0.68rem;
                 cursor: pointer;
             }
+
             .cf-topnav-wrap.mobile-open .cf-mobile-open-btn {
                 opacity: 0;
                 pointer-events: none;
@@ -350,6 +466,7 @@
                 pointer-events: none;
                 transition: opacity 0.22s ease;
             }
+
             .cf-topnav-wrap.mobile-open .cf-mobile-backdrop {
                 opacity: 1;
                 pointer-events: auto;
@@ -359,9 +476,8 @@
                 position: fixed;
                 top: 0;
                 right: 0;
-                left: auto;
                 bottom: 0;
-                width: min(380px, 100vw);
+                width: min(390px, 100vw);
                 max-width: 100vw;
                 height: 100dvh;
                 z-index: 1200;
@@ -377,7 +493,9 @@
                 transform: translateX(104%);
                 transition: transform 0.23s ease;
                 pointer-events: none;
+                flex-wrap: nowrap;
             }
+
             .cf-topnav-wrap.mobile-open .cf-nav {
                 transform: translateX(0);
                 pointer-events: auto;
@@ -389,12 +507,14 @@
                 justify-content: space-between;
                 margin-bottom: 0.2rem;
             }
+
             .cf-mobile-drawer-title {
                 font-size: 0.9rem;
                 color: #0f172a;
                 font-weight: 800;
                 padding-left: 0.08rem;
             }
+
             .cf-mobile-close-btn {
                 display: inline-flex;
                 align-items: center;
@@ -410,7 +530,15 @@
                 cursor: pointer;
             }
 
-            .cf-nav-dropdown { width: 100%; }
+            .cf-nav-dropdown {
+                width: 100%;
+                position: relative;
+            }
+
+            #cf-nav-fb-dropdown {
+                position: relative;
+            }
+
             .cf-nav-link,
             .cf-nav-drop-btn,
             .cf-logout-btn {
@@ -423,24 +551,30 @@
                 padding: 0.7rem 0.75rem;
                 font-size: 0.9rem;
             }
+
             .cf-nav-link:hover,
             .cf-nav-drop-btn:hover,
             .cf-logout-btn:hover {
                 background: #e9eef5;
                 color: #0f172a;
             }
+
             .cf-nav-link.active {
                 background: #fee2e2;
                 border-color: #fecaca;
                 color: #991b1b;
             }
+
             .cf-nav-dropdown.open > .cf-nav-drop-btn,
             .cf-nav-dropdown.has-active > .cf-nav-drop-btn {
                 background: #fee2e2;
                 border-color: #fecaca;
                 color: #991b1b;
             }
-            .cf-nav-drop-btn { justify-content: space-between; }
+
+            .cf-nav-drop-btn {
+                justify-content: space-between;
+            }
 
             .cf-nav-menu {
                 position: static;
@@ -456,39 +590,34 @@
                 padding: 0.55rem;
                 background: #f1f5f9;
                 overflow-x: hidden;
+                transform: none !important;
+                max-height: none;
+                overflow-y: visible;
             }
-            .cf-nav-feature-grid { grid-template-columns: 1fr !important; }
-            .cf-fb-grid { grid-template-columns: 1fr; }
-            .cf-fb-menu { min-width: 0; width: 100%; }
-            #cf-nav-fb-menu .cf-nav-feature-grid { display: none; }
-            .cf-fb-mobile-groups { display: grid; width: 100%; gap: 0.55rem; }
-            .cf-nav-menu a {
-                font-size: 0.84rem;
-                white-space: normal;
-                overflow-wrap: anywhere;
-            }
-            .cf-nav-feature:hover { transform: none; }
-            .cf-nav-dropdown,
-            .cf-nav-menu,
-            .cf-nav-feature-grid,
-            .cf-nav-feature,
-            .cf-nav-feature-list,
-            .cf-nav-feature-sub { min-width: 0; max-width: 100%; }
-            .cf-nav-feature-grid,
-            .cf-nav-feature-list,
-            .cf-nav-feature,
-            .cf-nav-feature-sub {
+
+            #cf-nav-fb-menu {
+                left: auto;
+                right: auto;
                 width: 100%;
+                max-width: none;
             }
+
+            .cf-nav-feature-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .cf-nav-feature:hover {
+                transform: none;
+            }
+
+            .cf-nav-menu,
             .cf-nav-feature,
-            .cf-nav-feature-sub,
-            .cf-nav-feature-title,
-            .cf-nav-feature-desc,
-            .cf-nav-feature-sub-title,
-            .cf-nav-feature-sub-desc {
-                overflow-wrap: anywhere;
-                word-break: break-word;
+            .cf-nav-feature-list,
+            .cf-nav-feature-sub {
+                min-width: 0;
+                max-width: 100%;
             }
+
             .cf-logout-btn {
                 margin-left: 0;
                 margin-top: 0.15rem;
@@ -499,7 +628,10 @@
                 margin: 0 auto 1rem;
                 padding: 0.9rem 1rem;
             }
-            .cf-page-title { font-size: 1.15rem; }
+
+            .cf-page-title {
+                font-size: 1.15rem;
+            }
         }
     `;
 
@@ -509,55 +641,11 @@
     const nav = document.createElement('nav');
     nav.className = 'cf-topnav';
 
-    function normalizePath(value) {
-        try {
-            const parsed = new URL(value, window.location.href);
-            let normalized = (parsed.pathname || '').toLowerCase();
-            normalized = normalized.replace(/\\+/g, '/');
-            normalized = normalized.replace(/\/{2,}/g, '/');
-            if (normalized.length > 1 && normalized.endsWith('/')) {
-                normalized = normalized.slice(0, -1);
-            }
-            return normalized || '/';
-        } catch (_) {
-            return '/';
-        }
-    }
-
-    function extractHashRoutePath() {
-        const rawHash = String(window.location.hash || '').trim();
-        if (!rawHash) return '';
-
-        let decodedHash = rawHash;
-        try {
-            decodedHash = decodeURIComponent(rawHash);
-        } catch (_) {}
-
-        const withoutHash = decodedHash.replace(/^#/, '').trim();
-        if (!withoutHash) return '';
-
-        const match = withoutHash.match(/([./a-zA-Z0-9_-]*seccions\/[a-zA-Z0-9_-]+\.html|[./a-zA-Z0-9_-]+\.html)/i);
-        return match && match[1] ? match[1] : '';
-    }
-
-    function getCurrentRoutePath() {
-        const hashPath = extractHashRoutePath();
-        if (hashPath) return normalizePath(hashPath);
-        return normalizePath(window.location.href);
-    }
-
-    function isSamePath(currentPath, targetPath) {
-        if (currentPath === targetPath) return true;
-        if ((currentPath === '/' || currentPath === '') && targetPath.endsWith('/index.html')) return true;
-        if ((targetPath === '/' || targetPath === '') && currentPath.endsWith('/index.html')) return true;
-        return false;
-    }
-
     const futbolBaseMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-fb-dropdown">
             <button class="cf-nav-drop-btn" type="button" id="cf-nav-fb-btn">Futbol base <span class="cf-caret">▾</span></button>
-            <div class="cf-nav-menu cf-fb-menu" id="cf-nav-fb-menu">
-                <div class="cf-nav-feature-grid" style="grid-template-columns: repeat(2, minmax(260px, 1fr));">
+            <div class="cf-nav-menu" id="cf-nav-fb-menu">
+                <div class="cf-nav-feature-grid">
                     <div class="cf-nav-feature">
                         <span class="cf-nav-feature-title"><span class="icon">🛡️</span>Base Masculí</span>
                         <span class="cf-nav-feature-desc">Accés a totes les categories masculines de formació.</span>
@@ -631,35 +719,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="cf-fb-mobile-groups" id="cf-fb-mobile-groups">
-                    <details class="cf-fb-mobile-group" id="cf-fb-mobile-masc">
-                        <summary>🛡️ Base Masculí</summary>
-                        <div class="cf-fb-mobile-links">
-                            <a href="${links.minis}">Minis</a>
-                            <a href="${links.s7}">S7</a>
-                            <a href="${links.s8}">S8</a>
-                            <a href="${links.s9}">S9</a>
-                            <a href="${links.s10}">S10</a>
-                            <a href="${links.s11}">S11</a>
-                            <a href="${links.s12}">S12</a>
-                            <a href="${links.s13}">S13</a>
-                            <a href="${links.s14}">S14</a>
-                            <a href="${links.s16}">S16</a>
-                            <a href="${links.juvenilMasculi}">Juvenil Masculí</a>
-                        </div>
-                    </details>
-
-                    <details class="cf-fb-mobile-group" id="cf-fb-mobile-fem">
-                        <summary>🌸 Base Femení</summary>
-                        <div class="cf-fb-mobile-links">
-                            <a href="${links.aleviFemeni}">Aleví Femení</a>
-                            <a href="${links.infantilFemeni}">Infantil Femení</a>
-                            <a href="${links.cadetFemeni}">Cadet Femení</a>
-                            <a href="${links.juvenilFemeni}">Juvenil Femení</a>
-                        </div>
-                    </details>
-                </div>
             </div>
         </div>
     `;
@@ -667,8 +726,8 @@
     const seniorMenuHtml = `
         <div class="cf-nav-dropdown" id="cf-nav-senior-dropdown">
             <button class="cf-nav-drop-btn" type="button" id="cf-nav-senior-btn">Senior <span class="cf-caret">▾</span></button>
-            <div class="cf-nav-menu cf-fb-menu" id="cf-nav-senior-menu">
-                <div class="cf-nav-feature-grid" style="grid-template-columns: repeat(2, minmax(220px, 1fr));">
+            <div class="cf-nav-menu" id="cf-nav-senior-menu">
+                <div class="cf-nav-feature-grid">
                     <a class="cf-nav-feature" href="${links.primerEquip}">
                         <span class="cf-nav-feature-title"><span class="icon">⚽</span>Primer equip</span>
                         <span class="cf-nav-feature-desc">Planificació de plantilla, staff i seguiment esportiu del primer equip.</span>
@@ -687,8 +746,10 @@
             <img src="${links.logo}" alt="Escut CF Cardona" class="cf-brand-logo">
             <span>CF Cardona</span>
         </a>
+
         <button type="button" class="cf-mobile-open-btn" id="cf-mobile-open-btn" aria-expanded="false" aria-controls="cf-main-nav">Menú ☰</button>
         <button type="button" class="cf-mobile-backdrop" id="cf-mobile-backdrop" aria-label="Tancar menú"></button>
+
         <div class="cf-nav" id="cf-main-nav" aria-hidden="false">
             <div class="cf-mobile-drawer-head">
                 <span class="cf-mobile-drawer-title">Navegació</span>
@@ -707,7 +768,7 @@
                         </a>
                         <a class="cf-nav-feature" href="${links.comissio}">
                             <span class="cf-nav-feature-title"><span class="icon">👥</span>Comissió esportiva</span>
-                            <span class="cf-nav-feature-desc">Coordina decisions esportives, seguiment de rendiment i captació senior.</span>
+                            <span class="cf-nav-feature-desc">Coordina decisions esportives i seguiment de rendiment.</span>
                         </a>
                         <a class="cf-nav-feature" href="${links.captacioSenior}" id="cf-scouting-senior-entry">
                             <span class="cf-nav-feature-title"><span class="icon">🔍</span>Captació Senior</span>
@@ -776,18 +837,61 @@
     const mobileQuery = window.matchMedia('(max-width: 760px)');
     const homePath = normalizePath(links.home);
 
+    function normalizePath(value) {
+        try {
+            const parsed = new URL(value, window.location.href);
+            let normalized = (parsed.pathname || '/').toLowerCase();
+            normalized = normalized.replace(/\\+/g, '/');
+            normalized = normalized.replace(/\/{2,}/g, '/');
+            if (normalized.length > 1 && normalized.endsWith('/')) {
+                normalized = normalized.slice(0, -1);
+            }
+            return normalized || '/';
+        } catch (_) {
+            return '/';
+        }
+    }
+
+    function extractHashRoutePath() {
+        const rawHash = String(window.location.hash || '').trim();
+        if (!rawHash) return '';
+
+        let decodedHash = rawHash;
+        try {
+            decodedHash = decodeURIComponent(rawHash);
+        } catch (_) {}
+
+        const withoutHash = decodedHash.replace(/^#/, '').trim();
+        if (!withoutHash) return '';
+
+        const match = withoutHash.match(/([./a-zA-Z0-9_-]*seccions\/[a-zA-Z0-9_-]+\.html|[./a-zA-Z0-9_-]+\.html)/i);
+        return match && match[1] ? match[1] : '';
+    }
+
+    function getCurrentRoutePath() {
+        const hashPath = extractHashRoutePath();
+        if (hashPath) return normalizePath(hashPath);
+        return normalizePath(window.location.href);
+    }
+
+    function isSamePath(currentPath, targetPath) {
+        if (currentPath === targetPath) return true;
+        if ((currentPath === '/' || currentPath === '') && targetPath.endsWith('/index.html')) return true;
+        if ((targetPath === '/' || targetPath === '') && currentPath.endsWith('/index.html')) return true;
+        return false;
+    }
+
     function applyActiveStates() {
         const currentPath = getCurrentRoutePath();
         const allLinks = nav.querySelectorAll('a[href]');
         const hashPath = normalizePath(extractHashRoutePath() || '');
-        const hashInSections = hashPath.includes('/seccions/');
+        const inSections = currentPath.includes('/seccions/') || hashPath.includes('/seccions/');
 
         allLinks.forEach(function (anchor) {
             const targetPath = normalizePath(anchor.getAttribute('href'));
             let active = isSamePath(currentPath, targetPath);
 
             if (anchor.classList.contains('cf-nav-link-home')) {
-                const inSections = currentPath.includes('/seccions/') || hashInSections;
                 active = !inSections && isSamePath(currentPath, homePath);
             }
 
@@ -803,16 +907,6 @@
         if (seniorDrop) {
             seniorDrop.classList.toggle('has-active', !!seniorDrop.querySelector('a.active'));
         }
-
-        const fbMascDetails = document.getElementById('cf-fb-mobile-masc');
-        const fbFemDetails = document.getElementById('cf-fb-mobile-fem');
-        if (fbMascDetails && fbFemDetails) {
-            const mascHasActive = !!fbMascDetails.querySelector('a.active');
-            const femHasActive = !!fbFemDetails.querySelector('a.active');
-
-            if (mascHasActive) fbMascDetails.open = true;
-            if (femHasActive) fbFemDetails.open = true;
-        }
     }
 
     function closeAllDropdowns() {
@@ -821,11 +915,49 @@
         if (seniorDrop) seniorDrop.classList.remove('open');
     }
 
+    function positionDropdownMenu(targetDropdown) {
+        if (!targetDropdown || mobileQuery.matches) return;
+
+        const menu = targetDropdown.querySelector('.cf-nav-menu');
+        if (!menu) return;
+
+        if (targetDropdown === fbDrop) {
+            menu.style.left = '0';
+            menu.style.right = '0';
+            menu.style.transform = 'translateX(0)';
+            return;
+        }
+
+        menu.style.left = '0';
+        menu.style.right = 'auto';
+        menu.style.transform = 'translateX(0)';
+
+        const margin = 8;
+        const rect = menu.getBoundingClientRect();
+        let shift = 0;
+
+        if (rect.right > (window.innerWidth - margin)) {
+            shift -= (rect.right - (window.innerWidth - margin));
+        }
+        if ((rect.left + shift) < margin) {
+            shift += (margin - (rect.left + shift));
+        }
+
+        if (shift !== 0) {
+            menu.style.transform = `translateX(${Math.round(shift)}px)`;
+        }
+    }
+
     function toggleDropdown(targetDropdown) {
         if (!targetDropdown) return;
         const shouldOpen = !targetDropdown.classList.contains('open');
         closeAllDropdowns();
-        if (shouldOpen) targetDropdown.classList.add('open');
+        if (shouldOpen) {
+            targetDropdown.classList.add('open');
+            requestAnimationFrame(function () {
+                positionDropdownMenu(targetDropdown);
+            });
+        }
     }
 
     function setMobileMenuOpen(open) {
@@ -847,10 +979,19 @@
 
     function syncResponsiveMenuState() {
         if (mobileQuery.matches) {
-            if (mainNav) mainNav.setAttribute('aria-hidden', wrap.classList.contains('mobile-open') ? 'false' : 'true');
+            if (mainNav) {
+                mainNav.setAttribute('aria-hidden', wrap.classList.contains('mobile-open') ? 'false' : 'true');
+            }
             return;
         }
+
         setMobileMenuOpen(false);
+
+        [drop, fbDrop, seniorDrop].forEach(function (dropdownEl) {
+            if (dropdownEl && dropdownEl.classList.contains('open')) {
+                positionDropdownMenu(dropdownEl);
+            }
+        });
     }
 
     if (btn) {
@@ -860,14 +1001,14 @@
         });
     }
 
-    if (fbDrop && fbBtn) {
+    if (fbBtn) {
         fbBtn.addEventListener('click', function (event) {
             event.stopPropagation();
             toggleDropdown(fbDrop);
         });
     }
 
-    if (seniorDrop && seniorBtn) {
+    if (seniorBtn) {
         seniorBtn.addEventListener('click', function (event) {
             event.stopPropagation();
             toggleDropdown(seniorDrop);
@@ -913,8 +1054,6 @@
         setMobileMenuOpen(false);
     });
 
-    window.addEventListener('hashchange', applyActiveStates);
-
     if (mainNav) {
         mainNav.addEventListener('click', function (event) {
             const anchor = event.target && event.target.closest ? event.target.closest('a[href]') : null;
@@ -924,11 +1063,15 @@
         });
     }
 
+    window.addEventListener('hashchange', applyActiveStates);
+    window.addEventListener('resize', syncResponsiveMenuState);
+
     if (mobileQuery && typeof mobileQuery.addEventListener === 'function') {
         mobileQuery.addEventListener('change', syncResponsiveMenuState);
     } else if (mobileQuery && typeof mobileQuery.addListener === 'function') {
         mobileQuery.addListener(syncResponsiveMenuState);
     }
+
     applyActiveStates();
     syncResponsiveMenuState();
 
@@ -1004,17 +1147,8 @@
             const baseAllowed = hasAnyRole(roles, ['direccio', 'futbol_base']);
             const scoutingAllowed = hasAnyRole(roles, ['direccio', 'scouting']);
 
-            const seniorMenu = document.getElementById('cf-nav-senior-dropdown');
-            if (seniorMenu && !seniorAllowed) seniorMenu.style.display = 'none';
-
-            const baseMenu = document.getElementById('cf-nav-fb-dropdown');
-            if (baseMenu && !baseAllowed) baseMenu.style.display = 'none';
-
-            const seniorEntry = document.getElementById('cf-senior-entry');
-            if (seniorEntry && !seniorAllowed) seniorEntry.style.display = 'none';
-
-            const baseEntry = document.getElementById('cf-futbolbase-entry');
-            if (baseEntry && !baseAllowed) baseEntry.style.display = 'none';
+            if (seniorDrop && !seniorAllowed) seniorDrop.style.display = 'none';
+            if (fbDrop && !baseAllowed) fbDrop.style.display = 'none';
 
             const scoutingSeniorEntry = document.getElementById('cf-scouting-senior-entry');
             if (scoutingSeniorEntry && !scoutingAllowed) scoutingSeniorEntry.style.display = 'none';
