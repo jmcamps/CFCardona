@@ -91,9 +91,7 @@
         }
 
         .cf-mobile-open-btn,
-        .cf-mobile-backdrop,
-        .cf-mobile-drawer-head,
-        .cf-mobile-close-btn {
+        .cf-mobile-backdrop {
             display: none;
         }
 
@@ -452,8 +450,19 @@
             }
 
             .cf-topnav-wrap.mobile-open .cf-mobile-open-btn {
-                opacity: 0;
-                pointer-events: none;
+                position: fixed;
+                top: 0.95rem;
+                left: 0.95rem;
+                right: auto;
+                margin-left: 0;
+                z-index: 1210;
+                border-color: #cbd5e1;
+                background: #fff;
+                color: #0f172a;
+                font-weight: 800;
+                font-size: 0.82rem;
+                padding: 0.45rem 0.68rem;
+                border-radius: 0.65rem;
             }
 
             .cf-mobile-backdrop {
@@ -475,22 +484,25 @@
             .cf-nav {
                 position: fixed;
                 top: 0;
+                left: 0;
                 right: 0;
                 bottom: 0;
-                width: min(390px, 100vw);
+                width: 100vw;
                 max-width: 100vw;
                 height: 100dvh;
                 z-index: 1200;
                 background: #f1f5f9;
-                box-shadow: -12px 0 30px rgba(2,6,23,0.24);
+                border: none;
+                border-radius: 0;
+                box-shadow: 0 18px 36px rgba(2,6,23,0.24);
                 display: flex;
                 flex-direction: column;
                 align-items: stretch;
                 gap: 0.55rem;
-                padding: 0.95rem 0.9rem 0.95rem 1.05rem;
+                padding: 3.7rem 0.95rem 0.95rem;
                 overflow-y: auto;
                 overflow-x: hidden;
-                transform: translateX(104%);
+                transform: translateX(100%);
                 transition: transform 0.23s ease;
                 pointer-events: none;
                 flex-wrap: nowrap;
@@ -499,35 +511,6 @@
             .cf-topnav-wrap.mobile-open .cf-nav {
                 transform: translateX(0);
                 pointer-events: auto;
-            }
-
-            .cf-mobile-drawer-head {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 0.2rem;
-            }
-
-            .cf-mobile-drawer-title {
-                font-size: 0.9rem;
-                color: #0f172a;
-                font-weight: 800;
-                padding-left: 0.08rem;
-            }
-
-            .cf-mobile-close-btn {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 34px;
-                height: 34px;
-                border-radius: 999px;
-                border: 1px solid #cbd5e1;
-                background: #fff;
-                color: #0f172a;
-                font-size: 1rem;
-                font-weight: 800;
-                cursor: pointer;
             }
 
             .cf-nav-dropdown {
@@ -747,15 +730,10 @@
             <span>CF Cardona</span>
         </a>
 
-        <button type="button" class="cf-mobile-open-btn" id="cf-mobile-open-btn" aria-expanded="false" aria-controls="cf-main-nav">Menú ☰</button>
+        <button type="button" class="cf-mobile-open-btn" id="cf-mobile-open-btn" aria-expanded="false" aria-label="Obrir menú" aria-controls="cf-main-nav">Menú ☰</button>
         <button type="button" class="cf-mobile-backdrop" id="cf-mobile-backdrop" aria-label="Tancar menú"></button>
 
         <div class="cf-nav" id="cf-main-nav" aria-hidden="false">
-            <div class="cf-mobile-drawer-head">
-                <span class="cf-mobile-drawer-title">Navegació</span>
-                <button type="button" class="cf-mobile-close-btn" id="cf-mobile-close-btn" aria-label="Tancar menú">✕</button>
-            </div>
-
             <a class="cf-nav-link cf-nav-link-home" href="${links.home}">Inici</a>
 
             <div class="cf-nav-dropdown" id="cf-nav-dropdown">
@@ -833,7 +811,6 @@
     const mainNav = document.getElementById('cf-main-nav');
     const mobileOpenBtn = document.getElementById('cf-mobile-open-btn');
     const mobileBackdrop = document.getElementById('cf-mobile-backdrop');
-    const mobileCloseBtn = document.getElementById('cf-mobile-close-btn');
     const mobileQuery = window.matchMedia('(max-width: 760px)');
     const homePath = normalizePath(links.home);
 
@@ -886,13 +863,16 @@
         const allLinks = nav.querySelectorAll('a[href]');
         const hashPath = normalizePath(extractHashRoutePath() || '');
         const inSections = currentPath.includes('/seccions/') || hashPath.includes('/seccions/');
+        const hasOpenDropdown = [drop, fbDrop, seniorDrop].some(function (dropdownEl) {
+            return !!(dropdownEl && dropdownEl.classList.contains('open'));
+        });
 
         allLinks.forEach(function (anchor) {
             const targetPath = normalizePath(anchor.getAttribute('href'));
             let active = isSamePath(currentPath, targetPath);
 
             if (anchor.classList.contains('cf-nav-link-home')) {
-                active = !inSections && isSamePath(currentPath, homePath);
+                active = !inSections && isSamePath(currentPath, homePath) && !hasOpenDropdown;
             }
 
             anchor.classList.toggle('active', active);
@@ -910,9 +890,24 @@
     }
 
     function closeAllDropdowns() {
-        if (drop) drop.classList.remove('open');
-        if (fbDrop) fbDrop.classList.remove('open');
-        if (seniorDrop) seniorDrop.classList.remove('open');
+        let changed = false;
+
+        if (drop && drop.classList.contains('open')) {
+            drop.classList.remove('open');
+            changed = true;
+        }
+        if (fbDrop && fbDrop.classList.contains('open')) {
+            fbDrop.classList.remove('open');
+            changed = true;
+        }
+        if (seniorDrop && seniorDrop.classList.contains('open')) {
+            seniorDrop.classList.remove('open');
+            changed = true;
+        }
+
+        if (changed) {
+            applyActiveStates();
+        }
     }
 
     function positionDropdownMenu(targetDropdown) {
@@ -958,6 +953,15 @@
                 positionDropdownMenu(targetDropdown);
             });
         }
+        applyActiveStates();
+    }
+
+    function syncMobileOpenButton(open) {
+        if (!mobileOpenBtn) return;
+        mobileOpenBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        mobileOpenBtn.setAttribute('aria-label', open ? 'Tancar menú' : 'Obrir menú');
+        mobileOpenBtn.title = open ? 'Tancar menú' : 'Obrir menú';
+        mobileOpenBtn.textContent = open ? 'Tancar »' : 'Menú ☰';
     }
 
     function setMobileMenuOpen(open) {
@@ -966,14 +970,14 @@
             wrap.classList.remove('mobile-open');
             document.body.classList.remove('cf-nav-open');
             if (mainNav) mainNav.setAttribute('aria-hidden', 'false');
-            if (mobileOpenBtn) mobileOpenBtn.setAttribute('aria-expanded', 'false');
+            syncMobileOpenButton(false);
             return;
         }
 
         wrap.classList.toggle('mobile-open', open);
         document.body.classList.toggle('cf-nav-open', open);
         if (mainNav) mainNav.setAttribute('aria-hidden', open ? 'false' : 'true');
-        if (mobileOpenBtn) mobileOpenBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        syncMobileOpenButton(open);
         if (!open) closeAllDropdowns();
     }
 
@@ -1016,14 +1020,9 @@
     }
 
     if (mobileOpenBtn) {
-        mobileOpenBtn.addEventListener('click', function () {
-            setMobileMenuOpen(true);
-        });
-    }
-
-    if (mobileCloseBtn) {
-        mobileCloseBtn.addEventListener('click', function () {
-            setMobileMenuOpen(false);
+        mobileOpenBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            setMobileMenuOpen(!wrap.classList.contains('mobile-open'));
         });
     }
 
@@ -1034,9 +1033,24 @@
     }
 
     document.addEventListener('click', function (event) {
-        if (drop && !drop.contains(event.target)) drop.classList.remove('open');
-        if (fbDrop && !fbDrop.contains(event.target)) fbDrop.classList.remove('open');
-        if (seniorDrop && !seniorDrop.contains(event.target)) seniorDrop.classList.remove('open');
+        let changed = false;
+
+        if (drop && !drop.contains(event.target) && drop.classList.contains('open')) {
+            drop.classList.remove('open');
+            changed = true;
+        }
+        if (fbDrop && !fbDrop.contains(event.target) && fbDrop.classList.contains('open')) {
+            fbDrop.classList.remove('open');
+            changed = true;
+        }
+        if (seniorDrop && !seniorDrop.contains(event.target) && seniorDrop.classList.contains('open')) {
+            seniorDrop.classList.remove('open');
+            changed = true;
+        }
+
+        if (changed) {
+            applyActiveStates();
+        }
 
         if (!mobileQuery.matches || !wrap.classList.contains('mobile-open')) return;
         if (!mainNav || !mobileOpenBtn) return;
