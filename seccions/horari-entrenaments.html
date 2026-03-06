@@ -430,10 +430,12 @@
                                 </tr>
                                 ${group.items.map((s) => `
                                     <tr class="${!s.team_id ? 'row-no-team' : ''}">
-                                        <td data-label="Hora" style="display:flex; gap:0.4rem; align-items:center;">
-                                            <input type="time" value="${esc(s.inici || '')}" onchange="updateHorariGlobal('${s.id}', 'inici', this.value)">
-                                            <span>-</span>
-                                            <input type="time" value="${esc(s.fi || '')}" onchange="updateHorariGlobal('${s.id}', 'fi', this.value)">
+                                        <td data-label="Hora">
+                                            <div class="time-range">
+                                                <input type="time" value="${esc(s.inici || '')}" onchange="updateHorariGlobal('${s.id}', 'inici', this.value)">
+                                                <span>-</span>
+                                                <input type="time" value="${esc(s.fi || '')}" onchange="updateHorariGlobal('${s.id}', 'fi', this.value)">
+                                            </div>
                                         </td>
                                         <td data-label="Equip">
                                             <select onchange="updateHorariTeam('${s.id}', this.value)">
@@ -486,10 +488,12 @@
                                             ${DIES.map(d => `<option value="${esc(d)}" ${d===s.dia?'selected':''}>${esc(d)}</option>`).join('')}
                                         </select>
                                     </td>
-                                    <td data-label="Hora" style="display:flex; gap:0.4rem; align-items:center;">
-                                        <input type="time" value="${esc(s.inici || '')}" onchange="updateHorariGlobal('${s.id}', 'inici', this.value)">
-                                        <span>-</span>
-                                        <input type="time" value="${esc(s.fi || '')}" onchange="updateHorariGlobal('${s.id}', 'fi', this.value)">
+                                    <td data-label="Hora">
+                                        <div class="time-range">
+                                            <input type="time" value="${esc(s.inici || '')}" onchange="updateHorariGlobal('${s.id}', 'inici', this.value)">
+                                            <span>-</span>
+                                            <input type="time" value="${esc(s.fi || '')}" onchange="updateHorariGlobal('${s.id}', 'fi', this.value)">
+                                        </div>
                                     </td>
                                     <td data-label="Camp">
                                         <select ${!s.team_id ? 'disabled' : ''} onchange="updateHorariGlobal('${s.id}', 'camp', this.value)">
@@ -531,6 +535,17 @@
         .row-no-team td { background: #f0fdf4; }
         .franja-group + .franja-group .franja-header-row td { border-top: 14px solid #f8fafc; }
         .franja-header-row td { background: #fff5f5; color: var(--primary); font-weight: 800; font-size: 0.78rem; border-bottom: 1px solid #fecaca; }
+        .time-range {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            width: 100%;
+            min-width: 0;
+        }
+        .time-range input[type=time] {
+            min-width: 0;
+            width: 100%;
+        }
 
         .mobile-card-table { width: 100%; }
 
@@ -600,10 +615,23 @@
                 color: #64748b;
                 min-width: 42%;
             }
-            .mobile-card-table td input[type=time],
-            .mobile-card-table td select {
+            .mobile-card-table td > input[type=time],
+            .mobile-card-table td > select {
                 flex: 1;
                 margin-left: auto;
+            }
+            .mobile-card-table td .time-range {
+                width: min(100%, 12.5rem);
+                margin-left: auto;
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                gap: 0.35rem;
+                align-items: center;
+                min-width: 0;
+            }
+            .mobile-card-table td .time-range input[type=time] {
+                min-width: 0;
+                width: 100%;
             }
         }
     </style>
