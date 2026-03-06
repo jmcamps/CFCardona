@@ -108,6 +108,12 @@
         .cf-nav-link:hover,
         .cf-nav-drop-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .cf-nav-link.active { background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.3); color: #fff; }
+        .cf-nav-dropdown.open > .cf-nav-drop-btn,
+        .cf-nav-dropdown.has-active > .cf-nav-drop-btn {
+            background: rgba(239,68,68,0.22);
+            border-color: rgba(239,68,68,0.3);
+            color: #fff;
+        }
 
         .cf-nav-dropdown { position: relative; }
         .cf-nav-drop-btn {
@@ -173,6 +179,11 @@
             border-radius: 0.55rem;
         }
         .cf-nav-menu a:hover { background: #f1f5f9; color: #d91d1d; }
+        .cf-nav-menu a.active {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
         .cf-nav-dropdown.open .cf-nav-menu { display: block; }
 
         .cf-logout-btn {
@@ -294,11 +305,11 @@
                 right: 0;
                 left: auto;
                 bottom: 0;
-                width: min(360px, calc(100vw - 0.8rem));
-                max-width: 92vw;
+                width: min(380px, 100vw);
+                max-width: 100vw;
                 height: 100dvh;
                 z-index: 1200;
-                background: #f8fafc;
+                background: #f1f5f9;
                 box-shadow: -12px 0 30px rgba(2,6,23,0.24);
                 display: flex;
                 flex-direction: column;
@@ -306,6 +317,7 @@
                 gap: 0.55rem;
                 padding: 0.9rem;
                 overflow-y: auto;
+                overflow-x: hidden;
                 transform: translateX(104%);
                 transition: transform 0.23s ease;
                 pointer-events: none;
@@ -347,14 +359,26 @@
             .cf-logout-btn {
                 width: 100%;
                 text-align: left;
-                color: #0f172a;
-                border: 1px solid #e2e8f0;
+                color: #1f2937;
+                border: 1px solid #d1dbe6;
                 background: #fff;
                 border-radius: 0.7rem;
                 padding: 0.7rem 0.75rem;
                 font-size: 0.9rem;
             }
+            .cf-nav-link:hover,
+            .cf-nav-drop-btn:hover,
+            .cf-logout-btn:hover {
+                background: #e9eef5;
+                color: #0f172a;
+            }
             .cf-nav-link.active {
+                background: #fee2e2;
+                border-color: #fecaca;
+                color: #991b1b;
+            }
+            .cf-nav-dropdown.open > .cf-nav-drop-btn,
+            .cf-nav-dropdown.has-active > .cf-nav-drop-btn {
                 background: #fee2e2;
                 border-color: #fecaca;
                 color: #991b1b;
@@ -373,12 +397,33 @@
                 box-shadow: none;
                 border-radius: 0.75rem;
                 padding: 0.55rem;
+                background: #f1f5f9;
+                overflow-x: hidden;
             }
             .cf-nav-feature-grid { grid-template-columns: 1fr !important; }
             .cf-fb-grid { grid-template-columns: 1fr; }
-            .cf-fb-menu { min-width: 0; }
-            .cf-nav-menu a { font-size: 0.84rem; }
+            .cf-fb-menu { min-width: 0; width: 100%; }
+            .cf-nav-menu a {
+                font-size: 0.84rem;
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
             .cf-nav-feature:hover { transform: none; }
+            .cf-nav-dropdown,
+            .cf-nav-menu,
+            .cf-nav-feature-grid,
+            .cf-nav-feature,
+            .cf-nav-feature-list,
+            .cf-nav-feature-sub { min-width: 0; max-width: 100%; }
+            .cf-nav-feature,
+            .cf-nav-feature-sub,
+            .cf-nav-feature-title,
+            .cf-nav-feature-desc,
+            .cf-nav-feature-sub-title,
+            .cf-nav-feature-sub-desc {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
             .cf-logout-btn {
                 margin-left: 0;
                 margin-top: 0.15rem;
