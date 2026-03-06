@@ -134,7 +134,7 @@
                     <p>Per franges: camp en 4 zones (Espais 1-4) o en 2 zones (F11), amb l'equip sobre cada secció.</p>
                 </div>
                 <div class="actions">
-                    <a class="btn" href="horari-entrenaments.html">Gestionar horaris</a>
+                    <a class="btn" id="manageHorarisBtn" href="horari-entrenaments.html">Gestionar horaris</a>
                     <button class="btn primary" id="refreshBtn" type="button">Actualitzar dades</button>
                     <span id="refreshStatus" class="refresh-status"></span>
                 </div>
@@ -159,6 +159,70 @@
         let teams = [];
         let horarios = [];
         let activeDay = DIES[0];
+
+        function normalizeRole(value) {
+            const raw = String(value || '').trim().toLowerCase();
+            if (!raw) return '';
+
+            const compact = raw
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[\s-]+/g, '_');
+
+            if (compact === 'administrator' || compact === 'superadmin') return 'admin';
+            if (compact === 'management' || compact === 'direccion') return 'direccio';
+            if (compact === 'base') return 'futbol_base';
+            if (compact === 'read' || compact === 'readonly' || compact === 'lectura') return 'viewer';
+            return compact;
+        }
+
+        function normalizeRoleList(rawRoles) {
+            if (Array.isArray(rawRoles)) {
+                return [...new Set(rawRoles.map(normalizeRole).filter(Boolean))];
+            }
+
+            if (typeof rawRoles === 'string') {
+                return [...new Set(rawRoles.split(',').map(function (part) {
+                    return normalizeRole(part);
+                }).filter(Boolean))];
+            }
+
+            if (rawRoles && typeof rawRoles === 'object' && Array.isArray(rawRoles.roles)) {
+                return [...new Set(rawRoles.roles.map(normalizeRole).filter(Boolean))];
+            }
+
+            return [];
+        }
+
+        function canManageHoraris(rawRoles) {
+            const roles = normalizeRoleList(rawRoles);
+            if (!roles.length) return false;
+            return roles.includes('admin') || roles.includes('direccio') || roles.includes('senior') || roles.includes('futbol_base');
+        }
+
+        async function applyActionsVisibilityByRole() {
+            const manageBtn = document.getElementById('manageHorarisBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const refreshStatus = document.getElementById('refreshStatus');
+
+            try {
+                const res = await fetch('/api/auth/session', { credentials: 'same-origin' });
+                if (!res.ok) return;
+
+                const data = await res.json();
+                const roles = data && data.user ? data.user.roles : [];
+                const canManage = canManageHoraris(roles);
+
+                if (!canManage) {
+                    if (manageBtn) manageBtn.style.display = 'none';
+                    if (refreshBtn) refreshBtn.style.display = 'none';
+                    if (refreshStatus) {
+                        refreshStatus.style.display = 'none';
+                        refreshStatus.textContent = '';
+                    }
+                }
+            } catch (_) {}
+        }
 
         function esc(value) {
             return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -404,8 +468,15 @@
             }
         }
 
-        document.getElementById('refreshBtn').addEventListener('click', loadData);
-        loadData();
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', loadData);
+        }
+
+        (async function initPage() {
+            await applyActionsVisibilityByRole();
+            loadData();
+        })();
     </script>
 </body>
 </html>

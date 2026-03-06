@@ -813,6 +813,55 @@
     const mobileBackdrop = document.getElementById('cf-mobile-backdrop');
     const mobileQuery = window.matchMedia('(max-width: 760px)');
     const homePath = normalizePath(links.home);
+    const READONLY_HIDE_SELECTOR = [
+        '.btn-remove',
+        '.btn-delete-small',
+        '.delete-x',
+        '[data-action="delete"]',
+        '[data-comment-index]',
+        '#btn-save',
+        '#btn-save-global',
+        '#playerForm button[type="submit"]',
+        '#btnNewPlayer',
+        '#btnAddComment',
+        '#btnCancelForm',
+        '#manageHorarisBtn',
+        '#refreshBtn',
+        '#refreshStatus',
+        '.btn-save-main',
+        '.add-obs-form',
+        '.add-form-box',
+        '.horari-form',
+        '.section-head-link[href*="horari-entrenaments.html"]',
+        'a[href*="horari-entrenaments.html"]',
+        'a[href*="mode=create"]',
+        'a[href*="jugador-detall.html?mode=create"]'
+    ].join(',');
+    const READONLY_LOCK_SELECTOR = [
+        '.card input',
+        '.card select',
+        '.card textarea',
+        '.horari-table input',
+        '.horari-table select',
+        '.plantilla-table input',
+        '.plantilla-table select',
+        '.plantilla-table textarea',
+        '.players-table input[type="checkbox"]',
+        '#player-form input',
+        '#player-form select',
+        '#player-form textarea',
+        '#playerForm input:not(#filterName)',
+        '#playerForm select:not(#filterPos):not(#filterClub)',
+        '#playerForm textarea',
+        '.scouting-detail-card input',
+        '.scouting-detail-card select',
+        '.scouting-detail-card textarea',
+        '.scouting-form-grid input',
+        '.scouting-form-grid select',
+        '.scouting-form-grid textarea'
+    ].join(',');
+    let readOnlyObserver = null;
+    let readOnlyFetchGuardApplied = false;
 
     function normalizePath(value) {
         try {
@@ -1109,6 +1158,222 @@
             .join('');
     }
 
+    function isReadMethod(method) {
+        const normalizedMethod = String(method || 'GET').toUpperCase();
+        return normalizedMethod === 'GET' || normalizedMethod === 'HEAD' || normalizedMethod === 'OPTIONS';
+    }
+
+    function ensureReadOnlyStyle() {
+        if (document.getElementById('cf-readonly-style')) return;
+
+        const readOnlyStyle = document.createElement('style');
+        readOnlyStyle.id = 'cf-readonly-style';
+        readOnlyStyle.textContent = `
+            body.cf-readonly .cf-readonly-neutral-btn {
+                pointer-events: none !important;
+                cursor: default !important;
+                text-decoration: none !important;
+                color: inherit !important;
+            }
+
+            body.cf-readonly .cf-readonly-locked,
+            body.cf-readonly .cf-readonly-locked:disabled,
+            body.cf-readonly .cf-readonly-locked[readonly] {
+                background: #f8fafc !important;
+                color: #475569 !important;
+                cursor: not-allowed !important;
+            }
+        `;
+
+        document.head.appendChild(readOnlyStyle);
+    }
+
+    function hideReadOnlyElement(element) {
+        if (!element || element.dataset.cfReadonlyHidden === '1') return;
+        element.dataset.cfReadonlyHidden = '1';
+        element.style.setProperty('display', 'none', 'important');
+        element.setAttribute('aria-hidden', 'true');
+    }
+
+    function lockReadOnlyControl(control) {
+        if (!control || control.dataset.cfReadonlyLocked === '1') return;
+        const tagName = String(control.tagName || '').toUpperCase();
+        const inputType = String(control.type || '').toLowerCase();
+
+        if (tagName === 'INPUT') {
+            if (inputType === 'hidden') return;
+            if (inputType === 'checkbox' || inputType === 'radio' || inputType === 'file' || inputType === 'button' || inputType === 'submit' || inputType === 'reset' || inputType === 'date' || inputType === 'time' || inputType === 'datetime-local' || inputType === 'number' || inputType === 'range' || inputType === 'color') {
+                control.disabled = true;
+            } else {
+                control.readOnly = true;
+                control.tabIndex = -1;
+            }
+        } else if (tagName === 'TEXTAREA') {
+            control.readOnly = true;
+            control.tabIndex = -1;
+        } else if (tagName === 'SELECT' || tagName === 'BUTTON') {
+            control.disabled = true;
+        }
+
+        control.dataset.cfReadonlyLocked = '1';
+        control.classList.add('cf-readonly-locked');
+        control.setAttribute('aria-disabled', 'true');
+    }
+
+    function shouldHideOnclickAction(handlerText) {
+        const handler = String(handlerText || '').toLowerCase();
+        if (!handler) return false;
+
+        return handler.includes('addplayer(') ||
+            handler.includes('addpartit(') ||
+            handler.includes('addobs(') ||
+            handler.includes('addhorariglobal(') ||
+            handler.includes('addcandidate(') ||
+            handler.includes('addcontact(') ||
+            handler.includes('addscoutingplayer(') ||
+            handler.includes('removeplayer(') ||
+            handler.includes('removepartit(') ||
+            handler.includes('removeobs(') ||
+            handler.includes('removehorariglobal(') ||
+            handler.includes('removecandidate(') ||
+            handler.includes('deleteplayer(') ||
+            handler.includes('deletecontact(') ||
+            handler.includes('showaddform(');
+    }
+
+    function shouldLockInlineChange(handlerText) {
+        const handler = String(handlerText || '').toLowerCase();
+        if (!handler) return false;
+
+        return handler.includes('update') ||
+            handler.includes('save') ||
+            handler.includes('delete') ||
+            handler.includes('remove') ||
+            handler.includes('add');
+    }
+
+    function hideReadOnlyActionColumns() {
+        document.querySelectorAll('table').forEach(function (tableEl) {
+            const headerRows = tableEl.querySelectorAll('thead tr');
+            if (!headerRows.length) return;
+            const detailLinkSelector = 'a[href*="playerId="], a[href*="jugador-detall.html?playerId="], a.btn-edit';
+
+            const hiddenIndexes = [];
+            headerRows.forEach(function (rowEl) {
+                Array.from(rowEl.cells || []).forEach(function (cellEl, index) {
+                    const label = stripAccents(cellEl.textContent || '').trim().toLowerCase();
+                    if (!label) return;
+                    if (label === 'x' || label === '✕' || label.includes('accio')) {
+                        hiddenIndexes.push(index);
+                    }
+                });
+            });
+
+            [...new Set(hiddenIndexes)].forEach(function (index) {
+                const hasDetailNavigation = Array.from(tableEl.querySelectorAll('tr')).some(function (rowEl) {
+                    const targetCell = rowEl.cells && rowEl.cells[index] ? rowEl.cells[index] : null;
+                    return !!(targetCell && targetCell.querySelector(detailLinkSelector));
+                });
+
+                if (hasDetailNavigation) {
+                    return;
+                }
+
+                tableEl.querySelectorAll('tr').forEach(function (rowEl) {
+                    const targetCell = rowEl.cells && rowEl.cells[index] ? rowEl.cells[index] : null;
+                    if (targetCell) {
+                        targetCell.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            });
+        });
+    }
+
+    function applyReadOnlyDomGuards() {
+        if (!document.body || !document.body.classList.contains('cf-readonly')) return;
+
+        document.querySelectorAll(READONLY_HIDE_SELECTOR).forEach(function (element) {
+            hideReadOnlyElement(element);
+        });
+
+        document.querySelectorAll('[onclick]').forEach(function (element) {
+            const handlerText = element.getAttribute('onclick') || '';
+            if (shouldHideOnclickAction(handlerText)) {
+                hideReadOnlyElement(element);
+            }
+        });
+
+        document.querySelectorAll('[onchange],[oninput]').forEach(function (control) {
+            const inlineHandler = `${control.getAttribute('onchange') || ''} ${control.getAttribute('oninput') || ''}`;
+            if (shouldLockInlineChange(inlineHandler)) {
+                lockReadOnlyControl(control);
+            }
+        });
+
+        document.querySelectorAll('button[data-action="edit"], .name-link[data-action="edit"]').forEach(function (buttonEl) {
+            const isCaptacioDetailTrigger = buttonEl.classList.contains('name-link') && buttonEl.hasAttribute('data-id');
+            if (isCaptacioDetailTrigger) {
+                return;
+            }
+
+            if (buttonEl.dataset.cfReadonlyNeutralized === '1') return;
+            buttonEl.dataset.cfReadonlyNeutralized = '1';
+            buttonEl.removeAttribute('data-action');
+            buttonEl.setAttribute('tabindex', '-1');
+            buttonEl.classList.add('cf-readonly-neutral-btn');
+        });
+
+        document.querySelectorAll(READONLY_LOCK_SELECTOR).forEach(function (control) {
+            lockReadOnlyControl(control);
+        });
+
+        hideReadOnlyActionColumns();
+    }
+
+    function applyReadOnlyFetchGuard() {
+        if (readOnlyFetchGuardApplied || typeof window.fetch !== 'function') return;
+
+        const nativeFetch = window.fetch.bind(window);
+        readOnlyFetchGuardApplied = true;
+
+        window.fetch = function (input, init) {
+            const requestUrl = typeof input === 'string'
+                ? input
+                : (input && typeof input === 'object' && input.url ? String(input.url) : '');
+            const requestMethod = String(
+                (init && init.method) ||
+                (input && typeof input === 'object' && input.method) ||
+                'GET'
+            ).toUpperCase();
+
+            const logoutCall = /\/api\/auth\/logout(?:\?|$)/i.test(requestUrl);
+            if (!isReadMethod(requestMethod) && !logoutCall) {
+                return Promise.resolve(new Response(
+                    JSON.stringify({ error: 'Read-only mode' }),
+                    { status: 403, headers: { 'Content-Type': 'application/json' } }
+                ));
+            }
+
+            return nativeFetch(input, init);
+        };
+    }
+
+    function enableReadOnlyMode() {
+        if (!document.body) return;
+
+        document.body.classList.add('cf-readonly');
+        ensureReadOnlyStyle();
+        applyReadOnlyFetchGuard();
+        applyReadOnlyDomGuards();
+
+        if (!readOnlyObserver && typeof MutationObserver === 'function') {
+            readOnlyObserver = new MutationObserver(function () {
+                applyReadOnlyDomGuards();
+            });
+            readOnlyObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    }
+
     function normalizeRole(role) {
         const raw = stripAccents(role).trim().toLowerCase();
         if (!raw) return '';
@@ -1119,6 +1384,7 @@
         if (compact === 'administrator' || compact === 'superadmin') return 'admin';
         if (compact === 'management' || compact === 'direccion') return 'direccio';
         if (compact === 'base') return 'futbol_base';
+        if (compact === 'read' || compact === 'readonly' || compact === 'lectura') return 'viewer';
         return compact;
     }
 
@@ -1149,6 +1415,11 @@
         });
     }
 
+    function isViewerOnly(roles) {
+        const normalizedRoles = normalizeRoleList(roles);
+        return normalizedRoles.length === 0 || (normalizedRoles.length === 1 && normalizedRoles[0] === 'viewer');
+    }
+
     (async function applyRoleVisibility() {
         try {
             const res = await fetch(`${base}/api/auth/session`, { credentials: 'same-origin' });
@@ -1156,6 +1427,11 @@
 
             const data = await res.json();
             const roles = data && data.user ? normalizeRoleList(data.user.roles) : [];
+
+            if (isViewerOnly(roles)) {
+                enableReadOnlyMode();
+                return;
+            }
 
             const seniorAllowed = hasAnyRole(roles, ['direccio', 'senior']);
             const baseAllowed = hasAnyRole(roles, ['direccio', 'futbol_base']);

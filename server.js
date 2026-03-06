@@ -378,7 +378,7 @@ function isAuthorized(userRoles, pathname, method) {
         return true;
     }
 
-    if (rule.readOnlyAllowed && isReadMethod(method) && userRoles.includes(ROLES.VIEWER) && (!rule.requiredRoles || rule.requiredRoles.length === 0)) {
+    if (rule.readOnlyAllowed && isReadMethod(method) && Array.isArray(userRoles) && userRoles.includes(ROLES.VIEWER)) {
         return true;
     }
 

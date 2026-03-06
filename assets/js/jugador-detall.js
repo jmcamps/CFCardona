@@ -2,6 +2,7 @@ const API_JUGADORS = '/api/jugadors';
 const API_POSICIONS = '/api/posicions';
 const API_ROLS = '/api/rols';
 const API_JUGADORS_SEGUIMENT = '/api/jugadors-seguiment';
+const API_AUTH_SESSION = '/api/auth/session';
 const DEFAULT_POSITIONS_LIST = ['Porter', 'Lateral Dret', 'Lateral Esquerre', 'Central', 'Pivot Defensiu', 'Interior', 'Mitja Punta', 'Extrem Dret', 'Extrem Esquerre', 'Davanter Centre'];
 
 let currentPlayerName = '';
@@ -14,6 +15,7 @@ let currentPlayerData = null;
 let positionsCatalog = [...DEFAULT_POSITIONS_LIST];
 let rolesCatalog = [];
 let captacioCandidates = [];
+let isReadOnlyUser = false;
 
 const headerName = document.getElementById('header-name');
 const emptyState = document.getElementById('empty-state');
@@ -24,6 +26,61 @@ const breadcrumbTeamLink = document.getElementById('breadcrumb-team-link');
 const convListEl = document.getElementById('conv_list');
 const obsListEl = document.getElementById('obs_list');
 const captacioSuggestionsEl = document.getElementById('captacio_suggestions');
+
+function normalizeRole(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return '';
+
+    const compact = raw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\s-]+/g, '_');
+
+    if (compact === 'administrator' || compact === 'superadmin') return 'admin';
+    if (compact === 'management' || compact === 'direccion') return 'direccio';
+    if (compact === 'base') return 'futbol_base';
+    if (compact === 'read' || compact === 'readonly' || compact === 'lectura') return 'viewer';
+    return compact;
+}
+
+function normalizeRoleList(rawRoles) {
+    if (Array.isArray(rawRoles)) {
+        return [...new Set(rawRoles.map(normalizeRole).filter(Boolean))];
+    }
+
+    if (typeof rawRoles === 'string') {
+        return [...new Set(rawRoles.split(',').map(function (part) {
+            return normalizeRole(part);
+        }).filter(Boolean))];
+    }
+
+    if (rawRoles && typeof rawRoles === 'object' && Array.isArray(rawRoles.roles)) {
+        return [...new Set(rawRoles.roles.map(normalizeRole).filter(Boolean))];
+    }
+
+    return [];
+}
+
+function isViewerOnly(roles) {
+    const normalized = normalizeRoleList(roles);
+    return normalized.length === 0 || (normalized.length === 1 && normalized[0] === 'viewer');
+}
+
+async function detectReadOnlyUser() {
+    try {
+        const response = await fetch(API_AUTH_SESSION, { credentials: 'same-origin' });
+        if (!response.ok) return;
+        const payload = await response.json();
+        const roles = payload && payload.user ? payload.user.roles : [];
+        isReadOnlyUser = isViewerOnly(roles);
+    } catch (_) {}
+}
+
+function applyReadOnlyDetailUi() {
+    if (!isReadOnlyUser || !btnSave) return;
+    btnSave.style.display = 'none';
+    btnSave.disabled = true;
+}
 
 function getTeamNavConfig(equipId) {
     const normalized = Number(equipId) || 1;
@@ -402,6 +459,8 @@ function buildPlayerPayload() {
 }
 
 async function savePlayerData(options = {}) {
+    if (isReadOnlyUser) return;
+
     const { silentValidation = false } = options;
     const payload = buildPlayerPayload();
 
@@ -491,6 +550,7 @@ async function savePlayerData(options = {}) {
 }
 
 async function init() {
+    await detectReadOnlyUser();
     await loadRolesCatalog();
     initRoleSelects();
     await loadPositionsCatalog();
@@ -515,8 +575,9 @@ async function init() {
         headerName.innerText = '📋 Alta Nou Jugador';
         emptyState.style.display = 'none';
         playerForm.style.display = 'block';
-        btnSave.style.display = 'inline-block';
+        btnSave.style.display = isReadOnlyUser ? 'none' : 'inline-block';
         btnSave.innerText = 'CREAR JUGADOR';
+        applyReadOnlyDetailUi();
 
         const nomDisplay = document.getElementById('nom_display');
         if (nomDisplay) nomDisplay.value = '';
@@ -554,7 +615,8 @@ async function init() {
 
     emptyState.style.display = 'none';
     playerForm.style.display = 'block';
-    btnSave.style.display = 'inline-block';
+    btnSave.style.display = isReadOnlyUser ? 'none' : 'inline-block';
+    applyReadOnlyDetailUi();
 
     loadPlayerData();
 }
@@ -562,6 +624,7 @@ async function init() {
 btnSave.addEventListener('click', () => savePlayerData({ silentValidation: false }));
 playerForm.addEventListener('change', () => {
     renderCaptacioSuggestions();
+    if (isReadOnlyUser) return;
     // autosave suau
     savePlayerData({ silentValidation: true });
 });
