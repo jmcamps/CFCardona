@@ -73,6 +73,9 @@
         .btn-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--primary);color:white;text-decoration:none;padding:0.75rem 1.5rem;border-radius:0.5rem;font-weight:700;font-size:0.9rem;transition:all 0.2s;}
         .btn-link:hover{background:#b91c1c;transform:translateY(-2px);box-shadow:0 4px 12px rgba(217,29,29,0.2);}
         .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
+        .context-highlight{background:#fef2f2;border:1px solid #fee2e2;padding:1.5rem;border-radius:0.75rem;margin-bottom:1.5rem;}
+        .membres-list{display:grid;gap:0.75rem;}
+        .membre-item{padding:0.9rem 1rem;border:1px solid var(--border);border-radius:0.65rem;background:#f8fafc;}
         
         /* Scouting Styles */
         .scouting-container { display: flex; gap: 2rem; align-items: flex-start; }
@@ -108,6 +111,16 @@
         .tree-node{display:inline-flex;align-items:center;justify-content:center;padding:0.6rem 1.4rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;text-decoration:none;color:var(--primary);background:white;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(217,29,29,0.1);transition:all 0.2s;white-space:nowrap;}
         .tree-node:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(217,29,29,0.2);background:#fff5f5;}
         .tree-node.root{background:#fee2e2;}
+        @media(max-width:760px){
+            body{padding:0.9rem;overflow-x:hidden;}
+            .card{padding:1rem;border-radius:0.85rem;margin:0 auto 1rem;}
+            .card h2{font-size:1rem;margin-bottom:1rem;}
+            .context-highlight,
+            .link-card{padding:1rem;}
+            .btn-link{width:100%;justify-content:center;text-align:center;}
+            .obs-header{align-items:flex-start;gap:0.6rem;}
+            .obs-form-row{grid-template-columns:1fr;}
+        }
         @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
     </style>
 </head>
@@ -115,7 +128,7 @@
 <div class="card">
         <h2>&#x1F3DF; Context i Trajectòria Senior</h2>
         <div style="color:#334155; line-height:1.75;">
-        <div style="background:#fef2f2; border:1px solid #fee2e2; padding:1.5rem; border-radius:0.75rem; margin-bottom:1.5rem;">
+        <div class="context-highlight">
             <p style="margin-bottom:1rem;">El primer equip ha viscut <strong>dos ascensos seguits</strong> les temporades 2023/2024 a segona catalana i la temporada 2024/2025 a primera catalana.</p>
             <p style="margin-bottom:1rem;">El primer equip té per objectiu la temporada 2025/2026 mantenir la categoria de primera catalana.</p>
             <p style="margin-bottom:1rem;">El filial té per objectiu la temporada 2025/2026 aconseguir l’ascens a tercera catalana.</p>
@@ -139,12 +152,12 @@
     </div>
     <div class="card">
         <h2>&#x1F465; Membres</h2>
-        <div style="display:grid; gap:0.75rem;">
-            <div style="padding:0.9rem 1rem; border:1px solid var(--border); border-radius:0.65rem; background:#f8fafc;"><strong>Josep Maria Camps</strong> — Vicepresident esportiu</div>
-            <div style="padding:0.9rem 1rem; border:1px solid var(--border); border-radius:0.65rem; background:#f8fafc;"><strong>TODO</strong> — Entrenador del primer equip</div>
-            <div style="padding:0.9rem 1rem; border:1px solid var(--border); border-radius:0.65rem; background:#f8fafc;"><strong>Artur Boix</strong> — Analista extern</div>
-            <div style="padding:0.9rem 1rem; border:1px solid var(--border); border-radius:0.65rem; background:#f8fafc;"><strong>Climent Ratera</strong> — Analista extern</div>
-            <div style="padding:0.9rem 1rem; border:1px solid var(--border); border-radius:0.65rem; background:#f8fafc;"><strong>Valentí López</strong> — Analista tàctic</div>
+        <div class="membres-list">
+            <div class="membre-item"><strong>Josep Maria Camps</strong> — Vicepresident esportiu</div>
+            <div class="membre-item"><strong>TODO</strong> — Entrenador del primer equip</div>
+            <div class="membre-item"><strong>Artur Boix</strong> — Analista extern</div>
+            <div class="membre-item"><strong>Climent Ratera</strong> — Analista extern</div>
+            <div class="membre-item"><strong>Valentí López</strong> — Analista tàctic</div>
         </div>
     </div>
     <div class="card">
