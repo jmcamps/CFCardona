@@ -68,7 +68,64 @@
         .btn-edit{margin-right:0.5rem;vertical-align:middle;font-size:0.75rem;padding:0.4rem 0.8rem;}
         .btn-remove{background:none;border:none;color:var(--primary);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;}
         .empty-msg{color:#94a3b8;font-size:0.85rem;padding:0.5rem;}
+        .table-wrap{overflow-x:auto;}
+        .actions-end{margin-top:1rem;display:flex;justify-content:flex-end;}
+        .section-head{display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
+        .section-head h2{margin-bottom:0;border-bottom:none;padding-bottom:0;}
+        .section-head-link{font-size:0.75rem;padding:0.4rem 0.8rem;}
+        .mobile-card-table{width:100%;}
         
+        @media(max-width:760px){
+            body{padding:0.9rem;overflow-x:hidden;}
+            .card{padding:1rem;border-radius:0.85rem;margin-bottom:1rem;}
+            .card h2{font-size:1rem;margin-bottom:1rem;}
+            .section-head{flex-direction:column;align-items:stretch;margin-bottom:1rem;}
+            .section-head-link,
+            .actions-end .fed-link{width:100%;justify-content:center;text-align:center;}
+            .partit-item{flex-direction:column;gap:0.7rem;}
+            .partit-item .btn-remove{align-self:flex-end;}
+            .obs-header{align-items:flex-start;gap:0.6rem;}
+            .table-wrap{overflow:visible;}
+            .plantilla-group{overflow:visible;}
+
+            .mobile-card-table{border-collapse:separate;border-spacing:0;}
+            .mobile-card-table thead{display:none;}
+            .mobile-card-table tbody{display:grid;gap:0.65rem;}
+            .mobile-card-table tr{display:block;background:#fff;border:1px solid var(--border);border-radius:0.75rem;padding:0.35rem 0.7rem;}
+            .mobile-card-table td{display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;border-bottom:1px dashed #e2e8f0;padding:0.48rem 0;}
+            .mobile-card-table td:last-child{border-bottom:none;}
+            .mobile-card-table td::before{
+                content:attr(data-label);
+                font-size:0.68rem;
+                font-weight:800;
+                text-transform:uppercase;
+                letter-spacing:0.04em;
+                color:#64748b;
+                min-width:42%;
+            }
+            .mobile-card-table td input[type=text],
+            .mobile-card-table td input[type=tel],
+            .mobile-card-table td input[type=date],
+            .mobile-card-table td input[type=time],
+            .mobile-card-table td input[type=number],
+            .mobile-card-table td input[type=url],
+            .mobile-card-table td select{
+                flex:1;
+                margin-left:auto;
+            }
+            .mobile-card-table td input[type=checkbox]{margin-left:auto;}
+            .mobile-card-table .plantilla-actions{
+                width:auto;
+                text-align:left;
+                white-space:normal;
+                display:flex;
+                justify-content:flex-end;
+                align-items:center;
+                gap:0.4rem;
+            }
+            .mobile-card-table .plantilla-actions .fed-link{width:auto;justify-content:center;}
+        }
+
         @media(max-width:640px){
             .comp-grid,.form-row-4,.form-row-3{grid-template-columns:1fr;}
             .horari-form-row{grid-template-columns:1fr 1fr;}
@@ -79,8 +136,8 @@
 <body>
 <div class="card">
         <h2>&#x1F91D; Staff</h2>
-        <div style="overflow-x:auto;">
-            <table class="plantilla-table">
+        <div class="table-wrap">
+            <table class="plantilla-table mobile-card-table">
                 <thead>
                     <tr>
                         <th>Rol</th>
@@ -90,34 +147,34 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="dia-badge">Primer Entrenador</td>
-                        <td><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Primer Entrenador</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Segon Entrenador</td>
-                        <td><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Segon Entrenador</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Preparador Físic</td>
-                        <td><input type="text" id="s_preparador_fisic_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_preparador_fisic_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Preparador Físic</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_preparador_fisic_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_preparador_fisic_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Delegat</td>
-                        <td><input type="text" id="s_delegat_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_delegat_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Delegat</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_delegat_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_delegat_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Fisioterapeuta</td>
-                        <td><input type="text" id="s_fisioterapeuta_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_fisioterapeuta_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Fisioterapeuta</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_fisioterapeuta_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_fisioterapeuta_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                     <tr>
-                        <td class="dia-badge">Analista Tàctic</td>
-                        <td><input type="text" id="s_analista_tactic_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td><input type="tel" id="s_analista_tactic_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Rol" class="dia-badge">Analista Tàctic</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_analista_tactic_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_analista_tactic_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
                 </tbody>
             </table>
@@ -126,14 +183,14 @@
     <div class="card">
         <h2 id="plantilla_title">&#x1F4CB; Plantilla de Jugadors (0)</h2>
         <div id="player-groups" class="plantilla-groups"></div>
-        <div style="margin-top:1rem; display:flex; justify-content:flex-end;">
+        <div class="actions-end">
             <a href="jugador-detall.html?mode=create&equipId=2" class="fed-link" style="font-size:0.75rem; padding:0.45rem 0.9rem;">+ AFEGIR JUGADOR</a>
         </div>
     </div>
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:2px solid #fee2e2; padding-bottom:0.75rem;">
-            <h2 style="margin-bottom:0; border-bottom:none; padding-bottom:0;">&#x1F5D3; Horari d'Entrenaments</h2>
-            <a href="horari-entrenaments.html" class="fed-link" style="font-size:0.75rem; padding:0.4rem 0.8rem;">GESTIONAR HORARIS</a>
+        <div class="section-head">
+            <h2>&#x1F5D3; Horari d'Entrenaments</h2>
+            <a href="horari-entrenaments.html" class="fed-link section-head-link">GESTIONAR HORARIS</a>
         </div>
         <div id="horari_list" class="empty-msg">Sense sessions registrades.</div>
     </div>
@@ -296,9 +353,9 @@
                         const posicioText = getPlayerPositionsList(player).join(', ') || 'N/D';
                         return `
                             <tr>
-                                <td>${esc(player.nom || 'N/A')}</td>
-                                <td>${esc(posicioText)}</td>
-                                <td class="plantilla-actions">
+                                <td data-label="Jugador">${esc(player.nom || 'N/A')}</td>
+                                <td data-label="Posició">${esc(posicioText)}</td>
+                                <td data-label="Accions" class="plantilla-actions">
                                     <a href="jugador-detall.html?playerId=${playerId}" class="fed-link btn-edit">VEURE DETALLS</a>
                                     <button class="btn-remove" onclick="removePlayer(${Number(player.id)||0})" title="Eliminar jugador">&#x00D7;</button>
                                 </td>
@@ -310,7 +367,7 @@
                 return `
                     <div class="plantilla-group">
                         <div class="plantilla-group-title">${group.label} (${list.length})</div>
-                        <table class="plantilla-table">
+                        <table class="plantilla-table mobile-card-table">
                             <thead>
                                 <tr>
                                     <th>Jugador</th>
@@ -481,8 +538,8 @@
                 return (a.inici || '').localeCompare(b.inici || '');
             });
 
-            el.innerHTML = '<table class="horari-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
-                + sessions.map((h) => '<tr><td class="dia-badge">' + h.dia + '</td><td>' + (h.inici || '-') + '</td><td>' + (h.fi || '-') + '</td><td>' + (esc(h.vestidor) || '-') + '</td><td>' + (esc(h.camp) || '-') + '</td></tr>').join('')
+            el.innerHTML = '<table class="horari-table mobile-card-table"><thead><tr><th>Dia</th><th>Inici</th><th>Fi</th><th>Vestidor</th><th>Camp</th></tr></thead><tbody>'
+                + sessions.map((h) => '<tr><td data-label="Dia" class="dia-badge">' + h.dia + '</td><td data-label="Inici">' + (h.inici || '-') + '</td><td data-label="Fi">' + (h.fi || '-') + '</td><td data-label="Vestidor">' + (esc(h.vestidor) || '-') + '</td><td data-label="Camp">' + (esc(h.camp) || '-') + '</td></tr>').join('')
                 + '</tbody></table>';
         }
 
