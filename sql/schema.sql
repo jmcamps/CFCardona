@@ -92,6 +92,7 @@ create table if not exists staff (
   equip_id bigint references equip(id) on delete set null,
   nom text not null,
   telefon text,
+  carnet boolean not null default false,
   rol_id bigint references rol(id) on delete set null
 );
 

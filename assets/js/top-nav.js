@@ -862,6 +862,9 @@
     ].join(',');
     let readOnlyObserver = null;
     let readOnlyFetchGuardApplied = false;
+    let staffCarnetFetchEnhancerApplied = false;
+    let staffCarnetEquipIdPromise = null;
+    let staffCarnetConfigCache = null;
 
     function normalizePath(value) {
         try {
@@ -876,6 +879,258 @@
         } catch (_) {
             return '/';
         }
+    }
+
+    function normalizeBooleanValue(value) {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'number') return value !== 0;
+
+        const text = String(value ?? '').trim().toLowerCase();
+        if (!text) return false;
+        if (['true', 't', '1', 'yes', 'si', 'sí'].includes(text)) return true;
+        if (['false', 'f', '0', 'no'].includes(text)) return false;
+        return !!value;
+    }
+
+    function normalizeLookupName(value) {
+        return stripAccents(value)
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, ' ');
+    }
+
+    function getStaffTables() {
+        return Array.from(document.querySelectorAll('table')).filter(function (tableEl) {
+            return !!(
+                tableEl.querySelector('input[id^="s_"][id$="_nom"]') &&
+                tableEl.querySelector('input[id^="s_"][id$="_tel"]')
+            );
+        });
+    }
+
+    function collectStaffCarnetPayload() {
+        const payload = {};
+
+        document.querySelectorAll('input[type="checkbox"][data-cf-staff-carnet="1"]').forEach(function (checkboxEl) {
+            if (!checkboxEl.id) return;
+            payload[checkboxEl.id] = !!checkboxEl.checked;
+        });
+
+        return payload;
+    }
+
+    function applyStaffCarnetValues(config) {
+        if (!config || typeof config !== 'object') return;
+        staffCarnetConfigCache = config;
+
+        Object.keys(config).forEach(function (fieldName) {
+            const key = String(fieldName || '');
+            if (!/^s_[a-z0-9_]+_carnet$/i.test(key)) return;
+
+            const checkboxEl = document.getElementById(key);
+            if (!checkboxEl || checkboxEl.type !== 'checkbox') return;
+            checkboxEl.checked = normalizeBooleanValue(config[key]);
+        });
+    }
+
+    function injectStaffCarnetColumn() {
+        getStaffTables().forEach(function (tableEl) {
+            const headerRow = tableEl.querySelector('thead tr');
+            if (headerRow) {
+                const hasCarnetHeader = Array.from(headerRow.querySelectorAll('th')).some(function (thEl) {
+                    return stripAccents(thEl.textContent || '').trim().toLowerCase() === 'carnet';
+                });
+
+                if (!hasCarnetHeader) {
+                    const carnetHeader = document.createElement('th');
+                    carnetHeader.textContent = 'Carnet';
+                    carnetHeader.style.textAlign = 'center';
+                    headerRow.appendChild(carnetHeader);
+                }
+            }
+
+            tableEl.querySelectorAll('tbody tr').forEach(function (rowEl) {
+                const nomInput = rowEl.querySelector('input[id^="s_"][id$="_nom"]');
+                if (!nomInput || !nomInput.id) return;
+
+                const fieldBase = nomInput.id.replace(/_nom$/i, '');
+                if (!fieldBase) return;
+
+                const carnetId = `${fieldBase}_carnet`;
+                const existingCheckbox = document.getElementById(carnetId);
+                if (existingCheckbox && existingCheckbox.type === 'checkbox') {
+                    existingCheckbox.setAttribute('data-cf-staff-carnet', '1');
+                    if (staffCarnetConfigCache && Object.prototype.hasOwnProperty.call(staffCarnetConfigCache, carnetId)) {
+                        existingCheckbox.checked = normalizeBooleanValue(staffCarnetConfigCache[carnetId]);
+                    }
+                    return;
+                }
+
+                const carnetCell = document.createElement('td');
+                carnetCell.setAttribute('data-label', 'Carnet');
+                carnetCell.style.textAlign = 'center';
+
+                const carnetCheckbox = document.createElement('input');
+                carnetCheckbox.type = 'checkbox';
+                carnetCheckbox.id = carnetId;
+                carnetCheckbox.setAttribute('data-cf-staff-carnet', '1');
+                if (staffCarnetConfigCache && Object.prototype.hasOwnProperty.call(staffCarnetConfigCache, carnetId)) {
+                    carnetCheckbox.checked = normalizeBooleanValue(staffCarnetConfigCache[carnetId]);
+                }
+
+                carnetCheckbox.addEventListener('change', function () {
+                    if (typeof window.saveAll === 'function') {
+                        window.saveAll(true);
+                    }
+                });
+
+                carnetCell.appendChild(carnetCheckbox);
+                rowEl.appendChild(carnetCell);
+            });
+        });
+    }
+
+    function getRequestUrl(input) {
+        if (typeof input === 'string') return input;
+        if (input && typeof input === 'object' && input.url) return String(input.url);
+        return '';
+    }
+
+    function getRequestMethod(input, init) {
+        return String(
+            (init && init.method) ||
+            (input && typeof input === 'object' && input.method) ||
+            'GET'
+        ).toUpperCase();
+    }
+
+    function isEquipConfigRequest(requestUrl) {
+        return /\/api\/equip-config(?:\?|$)/i.test(String(requestUrl || ''));
+    }
+
+    function withAugmentedEquipConfigBody(init) {
+        const options = init && typeof init === 'object' ? init : {};
+        if (typeof options.body !== 'string') return init;
+
+        let parsedBody;
+        try {
+            parsedBody = JSON.parse(options.body);
+        } catch (_) {
+            return init;
+        }
+
+        if (!parsedBody || typeof parsedBody !== 'object') return init;
+
+        const carnetPayload = collectStaffCarnetPayload();
+        if (!Object.keys(carnetPayload).length) return init;
+
+        return Object.assign({}, options, {
+            body: JSON.stringify(Object.assign({}, parsedBody, carnetPayload))
+        });
+    }
+
+    function applyStaffCarnetFetchEnhancer() {
+        if (staffCarnetFetchEnhancerApplied || typeof window.fetch !== 'function') return;
+
+        const nativeFetch = window.fetch.bind(window);
+        staffCarnetFetchEnhancerApplied = true;
+
+        window.fetch = function (input, init) {
+            const requestUrl = getRequestUrl(input);
+            const requestMethod = getRequestMethod(input, init);
+            const isEquipConfig = isEquipConfigRequest(requestUrl);
+            let nextInit = init;
+
+            if (isEquipConfig && requestMethod === 'POST') {
+                nextInit = withAugmentedEquipConfigBody(init);
+            }
+
+            const requestPromise = nativeFetch(input, nextInit);
+
+            if (!isEquipConfig || !isReadMethod(requestMethod)) {
+                return requestPromise;
+            }
+
+            return requestPromise.then(function (response) {
+                if (!response || !response.ok) return response;
+
+                response.clone().json().then(function (config) {
+                    applyStaffCarnetValues(config);
+                }).catch(function () {});
+
+                return response;
+            });
+        };
+    }
+
+    async function resolveStaffCarnetEquipId() {
+        if (staffCarnetEquipIdPromise) {
+            return staffCarnetEquipIdPromise;
+        }
+
+        staffCarnetEquipIdPromise = (async function () {
+            const staffTables = getStaffTables();
+            if (!staffTables.length || !teamTitle) return null;
+
+            const expectedNames = [teamTitle]
+                .map(normalizeLookupName)
+                .filter(Boolean);
+            if (!expectedNames.length) return null;
+
+            try {
+                const response = await fetch(`${base}/api/equips`, { credentials: 'same-origin' });
+                if (!response.ok) return null;
+
+                const equips = await response.json();
+                if (!Array.isArray(equips)) return null;
+
+                let match = equips.find(function (equip) {
+                    const normalized = normalizeLookupName(equip && (equip.name || equip.nom || ''));
+                    return expectedNames.includes(normalized);
+                });
+
+                if (!match) {
+                    match = equips.find(function (equip) {
+                        const normalized = normalizeLookupName(equip && (equip.name || equip.nom || ''));
+                        return expectedNames.some(function (expected) {
+                            return normalized.includes(expected) || expected.includes(normalized);
+                        });
+                    });
+                }
+
+                const rawId = match ? (match.id ?? match.equip_id ?? '') : '';
+                const normalizedId = String(rawId || '').trim();
+                return normalizedId || null;
+            } catch (_) {
+                return null;
+            }
+        })();
+
+        return staffCarnetEquipIdPromise;
+    }
+
+    async function syncStaffCarnetFromServer() {
+        if (!getStaffTables().length) return;
+
+        const equipId = await resolveStaffCarnetEquipId();
+        if (!equipId) return;
+
+        try {
+            const response = await fetch(`${base}/api/equip-config?equipId=${encodeURIComponent(equipId)}`, {
+                credentials: 'same-origin'
+            });
+            if (!response.ok) return;
+
+            const config = await response.json();
+            applyStaffCarnetValues(config);
+            injectStaffCarnetColumn();
+        } catch (_) {}
+    }
+
+    function initStaffCarnetFeature() {
+        injectStaffCarnetColumn();
+        applyStaffCarnetFetchEnhancer();
+        syncStaffCarnetFromServer();
     }
 
     function extractHashRoutePath() {
@@ -1137,6 +1392,7 @@
 
     applyActiveStates();
     syncResponsiveMenuState();
+    initStaffCarnetFeature();
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async function () {

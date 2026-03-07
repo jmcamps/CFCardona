@@ -962,6 +962,119 @@ async function readRolsCatalog() {
     return fallback.map((nom, idx) => ({ id: String(idx + 1), nom }));
 }
 
+const STAFF_ROLE_MAPPINGS = [
+    { roleName: 'Primer Entrenador', fieldBase: 's_primer_entrenador' },
+    { roleName: 'Segon Entrenador', fieldBase: 's_segon_entrenador' },
+    { roleName: 'Tercer Entrenador', fieldBase: 's_tercer_entrenador' },
+    { roleName: 'Preparador Físic', fieldBase: 's_preparador_fisic' },
+    { roleName: 'Delegat', fieldBase: 's_delegat' },
+    { roleName: 'Fisioterapeuta', fieldBase: 's_fisioterapeuta' },
+    { roleName: 'Analista Tàctic', fieldBase: 's_analista_tactic' }
+];
+
+const STAFF_ROLE_FIELD_BASE_BY_NAME = STAFF_ROLE_MAPPINGS.reduce((acc, item) => {
+    const normalized = normalizeStaffKeySegment(item.roleName);
+    if (normalized) {
+        acc[normalized] = item.fieldBase;
+    }
+    return acc;
+}, {});
+
+const STAFF_ROLE_NAME_BY_FIELD_BASE = STAFF_ROLE_MAPPINGS.reduce((acc, item) => {
+    acc[item.fieldBase] = item.roleName;
+    return acc;
+}, {});
+
+const DEFAULT_STAFF_FIELD_BASES = STAFF_ROLE_MAPPINGS.map(item => item.fieldBase);
+
+function normalizeStaffKeySegment(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .replace(/_+/g, '_');
+}
+
+function staffRoleNameToFieldBase(roleName) {
+    const normalizedRole = normalizeStaffKeySegment(roleName);
+    if (!normalizedRole) return '';
+    return STAFF_ROLE_FIELD_BASE_BY_NAME[normalizedRole] || `s_${normalizedRole}`;
+}
+
+function staffFieldBaseToRoleName(fieldBase) {
+    const normalizedBase = String(fieldBase || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/^_+|_+$/g, '');
+    const withPrefix = normalizedBase.startsWith('s_') ? normalizedBase : `s_${normalizedBase}`;
+
+    if (STAFF_ROLE_NAME_BY_FIELD_BASE[withPrefix]) {
+        return STAFF_ROLE_NAME_BY_FIELD_BASE[withPrefix];
+    }
+
+    const words = withPrefix
+        .replace(/^s_/, '')
+        .split('_')
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1));
+
+    return words.join(' ').trim() || 'Staff';
+}
+
+function extractStaffEntriesFromPayload(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const byBase = {};
+
+    Object.entries(source).forEach(([rawKey, rawValue]) => {
+        const key = String(rawKey || '').trim().toLowerCase();
+        const match = key.match(/^(s_[a-z0-9_]+)_(nom|tel|carnet)$/);
+        if (!match) return;
+
+        const fieldBase = match[1];
+        const fieldType = match[2];
+        if (!byBase[fieldBase]) {
+            byBase[fieldBase] = {
+                fieldBase,
+                nom: '',
+                tel: '',
+                carnet: false
+            };
+        }
+
+        if (fieldType === 'nom') {
+            byBase[fieldBase].nom = String(rawValue || '').trim();
+            return;
+        }
+
+        if (fieldType === 'tel') {
+            byBase[fieldBase].tel = String(rawValue || '').trim();
+            return;
+        }
+
+        byBase[fieldBase].carnet = normalizeBoolean(rawValue);
+    });
+
+    return Object.values(byBase);
+}
+
+function buildDefaultStaffConfig(compConfig = {}) {
+    const baseConfig = {
+        comp_categoria: String(compConfig.comp_categoria || ''),
+        comp_temporada: String(compConfig.comp_temporada || ''),
+        comp_url: String(compConfig.comp_url || '')
+    };
+
+    DEFAULT_STAFF_FIELD_BASES.forEach((fieldBase) => {
+        baseConfig[`${fieldBase}_nom`] = '';
+        baseConfig[`${fieldBase}_tel`] = '';
+        baseConfig[`${fieldBase}_carnet`] = false;
+    });
+
+    return baseConfig;
+}
+
 async function readEquipConfig(equipId) {
     const id = Number(equipId);
     if (!Number.isInteger(id) || id <= 0) {
@@ -975,48 +1088,66 @@ async function readEquipConfig(equipId) {
         );
         const equip = Array.isArray(equipRows) && equipRows[0] ? equipRows[0] : {};
 
-        const staffRows = await supabaseRestRequest(
-            'GET',
-            `/rest/v1/staff?equip_id=eq.${id}&select=nom,telefon,rol:rol_id(nom)`
-        );
+        let includeCarnetColumn = true;
+        let staffRows = [];
 
-        const byRole = (Array.isArray(staffRows) ? staffRows : []).reduce((acc, row) => {
-            const roleName = row && row.rol && row.rol.nom ? String(row.rol.nom) : '';
-            if (roleName) {
-                acc[roleName] = {
-                    nom: row.nom || '',
-                    tel: row.telefon || ''
-                };
+        try {
+            staffRows = await supabaseRestRequest(
+                'GET',
+                `/rest/v1/staff?equip_id=eq.${id}&select=nom,telefon,carnet,rol:rol_id(nom)`
+            );
+        } catch (err) {
+            if (!isMissingSupabaseColumnError(err, 'carnet')) {
+                throw err;
             }
-            return acc;
-        }, {});
 
-        return {
+            includeCarnetColumn = false;
+            staffRows = await supabaseRestRequest(
+                'GET',
+                `/rest/v1/staff?equip_id=eq.${id}&select=nom,telefon,rol:rol_id(nom)`
+            );
+        }
+
+        const config = buildDefaultStaffConfig({
             comp_categoria: equip.comp_categoria || '',
             comp_temporada: equip.comp_temporada || '',
-            comp_url: equip.comp_url || '',
-            s_primer_entrenador_nom: byRole['Primer Entrenador']?.nom || '',
-            s_primer_entrenador_tel: byRole['Primer Entrenador']?.tel || '',
-            s_segon_entrenador_nom: byRole['Segon Entrenador']?.nom || '',
-            s_segon_entrenador_tel: byRole['Segon Entrenador']?.tel || '',
-            s_tercer_entrenador_nom: byRole['Tercer Entrenador']?.nom || '',
-            s_tercer_entrenador_tel: byRole['Tercer Entrenador']?.tel || ''
-        };
+            comp_url: equip.comp_url || ''
+        });
+
+        (Array.isArray(staffRows) ? staffRows : []).forEach((row) => {
+            const roleName = row && row.rol && row.rol.nom ? String(row.rol.nom) : '';
+            const fieldBase = staffRoleNameToFieldBase(roleName);
+            if (!fieldBase) return;
+
+            config[`${fieldBase}_nom`] = String(row.nom || '');
+            config[`${fieldBase}_tel`] = String(row.telefon || '');
+            config[`${fieldBase}_carnet`] = includeCarnetColumn ? normalizeBoolean(row.carnet) : false;
+        });
+
+        return config;
     }
 
     const data = await readDatabase();
     const section = data.seccio_s13 || {};
-    return {
+    const config = buildDefaultStaffConfig({
         comp_categoria: section.comp_categoria || '',
         comp_temporada: section.comp_temporada || '',
-        comp_url: section.comp_url || '',
-        s_primer_entrenador_nom: section.s_primer_entrenador_nom || '',
-        s_primer_entrenador_tel: section.s_primer_entrenador_tel || '',
-        s_segon_entrenador_nom: section.s_segon_entrenador_nom || '',
-        s_segon_entrenador_tel: section.s_segon_entrenador_tel || '',
-        s_tercer_entrenador_nom: section.s_tercer_entrenador_nom || '',
-        s_tercer_entrenador_tel: section.s_tercer_entrenador_tel || ''
-    };
+        comp_url: section.comp_url || ''
+    });
+
+    Object.entries(section).forEach(([rawKey, rawValue]) => {
+        const key = String(rawKey || '').trim().toLowerCase();
+        if (!/^s_[a-z0-9_]+_(nom|tel|carnet)$/.test(key)) return;
+
+        if (key.endsWith('_carnet')) {
+            config[key] = normalizeBoolean(rawValue);
+            return;
+        }
+
+        config[key] = String(rawValue || '');
+    });
+
+    return config;
 }
 
 async function writeEquipConfig(equipId, payload) {
@@ -1025,17 +1156,13 @@ async function writeEquipConfig(equipId, payload) {
         throw new Error('equipId invàlid');
     }
 
+    const source = payload && typeof payload === 'object' ? payload : {};
     const config = {
-        comp_categoria: String(payload?.comp_categoria || '').trim(),
-        comp_temporada: String(payload?.comp_temporada || '').trim(),
-        comp_url: String(payload?.comp_url || '').trim(),
-        s_primer_entrenador_nom: String(payload?.s_primer_entrenador_nom || '').trim(),
-        s_primer_entrenador_tel: String(payload?.s_primer_entrenador_tel || '').trim(),
-        s_segon_entrenador_nom: String(payload?.s_segon_entrenador_nom || '').trim(),
-        s_segon_entrenador_tel: String(payload?.s_segon_entrenador_tel || '').trim(),
-        s_tercer_entrenador_nom: String(payload?.s_tercer_entrenador_nom || '').trim(),
-        s_tercer_entrenador_tel: String(payload?.s_tercer_entrenador_tel || '').trim()
+        comp_categoria: String(source.comp_categoria || '').trim(),
+        comp_temporada: String(source.comp_temporada || '').trim(),
+        comp_url: String(source.comp_url || '').trim()
     };
+    const staffEntries = extractStaffEntriesFromPayload(source);
 
     if (USE_SUPABASE) {
         await supabaseRestRequest(
@@ -1048,21 +1175,33 @@ async function writeEquipConfig(equipId, payload) {
             }
         );
 
-        const staffRoles = [
-            { role: 'Primer Entrenador', nom: config.s_primer_entrenador_nom, tel: config.s_primer_entrenador_tel },
-            { role: 'Segon Entrenador', nom: config.s_segon_entrenador_nom, tel: config.s_segon_entrenador_tel },
-            { role: 'Tercer Entrenador', nom: config.s_tercer_entrenador_nom, tel: config.s_tercer_entrenador_tel }
-        ];
-
-        for (const item of staffRoles) {
-            const rolId = await ensureRolIdByName(item.role);
+        for (const item of staffEntries) {
+            const roleName = staffFieldBaseToRoleName(item.fieldBase);
+            const rolId = await ensureRolIdByName(roleName);
             await supabaseRestRequest('DELETE', `/rest/v1/staff?equip_id=eq.${id}&rol_id=eq.${rolId}`);
-            if (item.nom || item.tel) {
-                await supabaseRestRequest(
-                    'POST',
-                    '/rest/v1/staff',
-                    [{ equip_id: id, nom: item.nom || item.role, telefon: item.tel || null, rol_id: rolId }]
-                );
+
+            if (item.nom || item.tel || item.carnet) {
+                const rowWithCarnet = [{
+                    equip_id: id,
+                    nom: item.nom || roleName,
+                    telefon: item.tel || null,
+                    carnet: item.carnet,
+                    rol_id: rolId
+                }];
+
+                try {
+                    await supabaseRestRequest('POST', '/rest/v1/staff', rowWithCarnet);
+                } catch (err) {
+                    if (!isMissingSupabaseColumnError(err, 'carnet')) {
+                        throw err;
+                    }
+
+                    await supabaseRestRequest(
+                        'POST',
+                        '/rest/v1/staff',
+                        [{ equip_id: id, nom: item.nom || roleName, telefon: item.tel || null, rol_id: rolId }]
+                    );
+                }
             }
         }
 
@@ -1074,12 +1213,13 @@ async function writeEquipConfig(equipId, payload) {
     data.seccio_s13.comp_categoria = config.comp_categoria;
     data.seccio_s13.comp_temporada = config.comp_temporada;
     data.seccio_s13.comp_url = config.comp_url;
-    data.seccio_s13.s_primer_entrenador_nom = config.s_primer_entrenador_nom;
-    data.seccio_s13.s_primer_entrenador_tel = config.s_primer_entrenador_tel;
-    data.seccio_s13.s_segon_entrenador_nom = config.s_segon_entrenador_nom;
-    data.seccio_s13.s_segon_entrenador_tel = config.s_segon_entrenador_tel;
-    data.seccio_s13.s_tercer_entrenador_nom = config.s_tercer_entrenador_nom;
-    data.seccio_s13.s_tercer_entrenador_tel = config.s_tercer_entrenador_tel;
+
+    staffEntries.forEach((entry) => {
+        data.seccio_s13[`${entry.fieldBase}_nom`] = entry.nom;
+        data.seccio_s13[`${entry.fieldBase}_tel`] = entry.tel;
+        data.seccio_s13[`${entry.fieldBase}_carnet`] = entry.carnet;
+    });
+
     await writeDatabase(data);
 }
 
