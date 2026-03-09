@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestió Staff Club | CF Cardona</title>
+    <script src="../assets/js/top-nav.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
+        .card{background:#fff;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
+        .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
+        .table-wrap{border:1px solid var(--border);border-radius:0.8rem;overflow:auto;background:#fff;}
+        .players-table{width:100%;border-collapse:collapse;min-width:760px;}
+        .players-table th,.players-table td{border-bottom:1px solid #e2e8f0;text-align:left;padding:0.72rem 0.75rem;vertical-align:middle;font-size:0.82rem;white-space:normal;}
+        .players-table th{background:#fee2e2;color:var(--primary);font-weight:700;font-size:0.78rem;}
+        .players-table tr:last-child td{border-bottom:0;}
+        .players-table tbody tr:hover{background:#fff5f5;}
+        .players-table tbody tr.group-row:hover{background:transparent;}
+        .players-table .group-title{background:#f8fafc;color:#334155;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;font-size:0.76rem;padding:0.58rem 0.75rem;}
+        .players-table tr.group-row.group-gap td{border-top:14px solid #f8fafc;}
+        .add-form-box{margin-top:1rem;background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1rem;}
+        .add-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#475569;margin-bottom:0.8rem;}
+        .form-grid{display:grid;grid-template-columns:2fr 1.2fr 0.8fr 0.8fr;gap:0.75rem;align-items:end;}
+        .member-filter-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:0.75rem;align-items:end;}
+        label{display:block;font-weight:700;font-size:0.8rem;color:#475569;margin-bottom:0.35rem;text-transform:uppercase;letter-spacing:0.05em;}
+        input[type=text],select{width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:#fff;}
+        input[type=text]:focus,select:focus{border-color:var(--primary);}
+        .checkbox-wrap{display:flex;gap:0.45rem;align-items:center;height:2.3rem;padding:0 0.1rem;}
+        .checkbox-wrap input{width:1.05rem;height:1.05rem;}
+        .actions-end{margin-top:0.9rem;display:flex;justify-content:flex-end;gap:0.6rem;}
+        .btn{border:none;border-radius:0.5rem;padding:0.58rem 0.92rem;font-weight:700;font-size:0.82rem;cursor:pointer;}
+        .btn-primary{background:var(--primary);color:#fff;}
+        .btn-primary:hover{background:#b91c1c;}
+        .btn-secondary{background:#e2e8f0;color:#0f172a;}
+        .btn-secondary:hover{background:#cbd5e1;}
+        .delete-x{border:none;background:none;color:var(--primary);cursor:pointer;font-size:1rem;font-weight:800;line-height:1;padding:0;}
+        .delete-x:hover{color:#991b1b;}
+        .name-cell{font-weight:700;}
+        .name-link{
+            color:#b91c1c;
+            text-decoration:none;
+            font-weight:800;
+            cursor:pointer;
+            border:none;
+            background:none;
+            font-size:0.82rem;
+            padding:0.2rem 0.35rem;
+            border-radius:0.45rem;
+            transition:background 0.15s,color 0.15s;
+            text-align:left;
+            white-space:normal;
+            display:inline-block;
+        }
+        .name-link:hover{color:#991b1b;background:#fff1f2;}
+        .empty-msg{color:#64748b;font-size:0.85rem;padding:1rem;text-align:center;}
+        .pill{display:inline-flex;align-items:center;border-radius:999px;padding:0.2rem 0.55rem;font-size:0.72rem;font-weight:800;}
+        .pill-yes{background:#dcfce7;color:#166534;}
+        .pill-no{background:#fee2e2;color:#b91c1c;}
+
+        @media (max-width: 760px){
+            body{padding:1rem;}
+            .card{padding:1rem;}
+            .form-grid,.member-filter-grid{grid-template-columns:1fr;}
+            .actions-end{justify-content:stretch;}
+            .actions-end .btn{width:100%;}
+
+            .table-wrap{overflow:visible;}
+            .players-table{min-width:0;}
+            .players-table thead{display:none;}
+            .players-table .group-title{font-size:0.72rem;padding:0.52rem 0.65rem;}
+
+            .players-table tbody tr{
+                display:grid;
+                gap:0.15rem;
+                border:1px solid #e2e8f0;
+                border-radius:0.65rem;
+                padding:0.45rem 0.55rem;
+                margin:0.5rem;
+            }
+            .players-table tbody tr td{
+                border-bottom:none;
+                display:flex;
+                align-items:flex-start;
+                justify-content:space-between;
+                gap:0.75rem;
+                padding:0.3rem 0;
+                font-size:0.82rem;
+            }
+            .players-table tbody tr td::before{
+                content:attr(data-label);
+                font-size:0.68rem;
+                font-weight:800;
+                color:#64748b;
+                text-transform:uppercase;
+                letter-spacing:0.04em;
+                flex:0 0 auto;
+            }
+            .players-table tbody tr td:last-child{justify-content:flex-end;}
+            .players-table tbody tr td:last-child::before{margin-right:auto;}
+            .name-cell .name-link{padding:0;font-size:0.9rem;}
+
+            .players-table tbody tr.group-row{
+                display:table-row;
+                border:none;
+                border-radius:0;
+                padding:0;
+                margin:0;
+            }
+            .players-table tbody tr.group-row td{
+                display:table-cell;
+                padding:0;
+            }
+            .players-table tbody tr.group-row td::before{content:none;}
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>👥 Membres del staff del club</h2>
+        <div class="add-form-box" style="margin-top:0;margin-bottom:1rem;">
+            <div class="add-form-title">Buscador membres staff</div>
+            <div class="member-filter-grid">
+                <div>
+                    <label>Nom</label>
+                    <input type="text" id="f_nom" placeholder="Cercar per nom...">
+                </div>
+                <div>
+                    <label>Equip</label>
+                    <select id="f_equip"></select>
+                </div>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="players-table">
+                <thead>
+                    <tr>
+                        <th>Nom i cognoms</th>
+                        <th>Telèfon</th>
+                        <th>Rol</th>
+                        <th style="text-align:center;">Carnet</th>
+                        <th style="text-align:center;">Actiu</th>
+                        <th style="width:60px;">Acció</th>
+                    </tr>
+                </thead>
+                <tbody id="members_tbody"></tbody>
+            </table>
+        </div>
+
+        <div class="add-form-box">
+            <div class="add-form-title" id="member_form_title">Alta membre staff</div>
+            <div class="form-grid">
+                <div>
+                    <label>Nom i cognoms</label>
+                    <input type="text" id="m_nom" placeholder="Nom del membre...">
+                </div>
+                <div>
+                    <label>Telèfon</label>
+                    <input type="text" id="m_telefon" placeholder="Telèfon...">
+                </div>
+                <div>
+                    <label>Carnet</label>
+                    <div class="checkbox-wrap"><input type="checkbox" id="m_carnet"></div>
+                </div>
+                <div>
+                    <label>Actiu</label>
+                    <div class="checkbox-wrap"><input type="checkbox" id="m_actiu" checked></div>
+                </div>
+            </div>
+            <div class="actions-end">
+                <button class="btn btn-secondary" id="btn_cancel_member" onclick="cancelEditMember()">Cancel·lar</button>
+                <button class="btn btn-primary" id="btn_save_member" onclick="saveMember()">Desar membre</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_MEMBERS = '/api/staff-club/members';
+        const API_ASSIGNMENTS = '/api/staff-club/assignments';
+        const API_EQUIPS = '/api/equips';
+        const API_ROLS = '/api/rols';
+
+        let members = [];
+        let assignments = [];
+        let equips = [];
+        let rols = [];
+        let editingMemberId = null;
+
+        function esc(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        async function requestJson(url, options) {
+            const res = await fetch(url, options);
+            if (!res.ok) {
+                const msg = await res.text();
+                throw new Error(msg || `HTTP ${res.status}`);
+            }
+            const text = await res.text();
+            return text ? JSON.parse(text) : null;
+        }
+
+        function getEquipNameById(id) {
+            const match = equips.find(e => String(e.id) === String(id));
+            return match ? (match.name || match.nom || `Equip ${id}`) : `Equip ${id}`;
+        }
+
+        function getMemberById(id) {
+            return members.find(m => String(m.id) === String(id)) || null;
+        }
+
+        function compareRoleIds(a, b) {
+            const rawA = String(a || '').trim();
+            const rawB = String(b || '').trim();
+            const numA = Number(rawA);
+            const numB = Number(rawB);
+            const isNumA = Number.isInteger(numA);
+            const isNumB = Number.isInteger(numB);
+
+            if (isNumA && isNumB) return numA - numB;
+            if (isNumA) return -1;
+            if (isNumB) return 1;
+
+            return rawA.localeCompare(rawB, undefined, { numeric: true, sensitivity: 'base' });
+        }
+
+        function getRolNameById(id) {
+            const roleId = String(id || '').trim();
+            if (!roleId) return '-';
+
+            const match = rols.find(r => String(r && r.id || '').trim() === roleId);
+            return match ? String(match.nom || match.name || `Rol ${roleId}`) : `Rol ${roleId}`;
+        }
+
+        function formatRoleList(roleIds) {
+            const ids = (Array.isArray(roleIds) ? roleIds : [])
+                .map(id => String(id || '').trim())
+                .filter(Boolean)
+                .sort(compareRoleIds);
+
+            if (!ids.length) return '-';
+            return ids.map(getRolNameById).join(', ');
+        }
+
+        function compareEquipsById(a, b) {
+            const rawA = String((a && a.id) || '').trim();
+            const rawB = String((b && b.id) || '').trim();
+            const numA = Number(rawA);
+            const numB = Number(rawB);
+            const isNumA = Number.isInteger(numA);
+            const isNumB = Number.isInteger(numB);
+
+            if (isNumA && isNumB) return numA - numB;
+            if (isNumA) return -1;
+            if (isNumB) return 1;
+
+            return rawA.localeCompare(rawB, undefined, { numeric: true, sensitivity: 'base' });
+        }
+
+        function normalizeText(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function buildMemberTeamMap() {
+            const map = new Map();
+            assignments.forEach(assignment => {
+                const memberId = String(assignment && assignment.staff_membre_id ? assignment.staff_membre_id : '').trim();
+                const equipId = String(assignment && assignment.equip_id ? assignment.equip_id : '').trim();
+                const rolId = String(assignment && assignment.rol_id ? assignment.rol_id : '').trim();
+                if (!memberId || !equipId || !rolId) return;
+
+                if (!map.has(memberId)) {
+                    map.set(memberId, new Map());
+                }
+
+                const teamMap = map.get(memberId);
+                if (!teamMap.has(equipId)) {
+                    teamMap.set(equipId, new Set());
+                }
+                teamMap.get(equipId).add(rolId);
+            });
+            return map;
+        }
+
+        function getMemberRolesForEquip(memberTeamMap, memberId, equipId) {
+            const memberKey = String(memberId || '').trim();
+            const teamKey = String(equipId || '').trim();
+            const teamMap = memberTeamMap.get(memberKey);
+            if (!teamMap || !teamMap.has(teamKey)) return [];
+
+            return Array.from(teamMap.get(teamKey)).sort(compareRoleIds);
+        }
+
+        function getMemberRowMarkup(member, roleIds = []) {
+            const carnetBadge = member.carnet
+                ? '<span class="pill pill-yes">Sí</span>'
+                : '<span class="pill pill-no">No</span>';
+            const activeBadge = member.actiu
+                ? '<span class="pill pill-yes">Actiu</span>'
+                : '<span class="pill pill-no">Inactiu</span>';
+            const roleLabel = formatRoleList(roleIds);
+
+            return `
+                <tr>
+                    <td data-label="Nom i cognoms" class="name-cell"><button type="button" class="name-link" data-action="edit" data-member-id="${esc(member.id)}">${esc(member.nom)}</button></td>
+                    <td data-label="Telèfon">${esc(member.telefon || '-')}</td>
+                    <td data-label="Rol">${esc(roleLabel)}</td>
+                    <td data-label="Carnet" style="text-align:center;">${carnetBadge}</td>
+                    <td data-label="Actiu" style="text-align:center;">${activeBadge}</td>
+                    <td data-label="Acció" style="text-align:right;"><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-member-id="${esc(member.id)}">✕</button></td>
+                </tr>
+            `;
+        }
+
+        function renderMemberFilters() {
+            const equipFilter = document.getElementById('f_equip');
+            if (!equipFilter) return;
+
+            const currentValue = String(equipFilter.value || '');
+            const sortedEquips = [...equips].sort(compareEquipsById);
+
+            equipFilter.innerHTML = `
+                <option value="">Tots els equips</option>
+                <option value="__UNASSIGNED__">SENSE ASSIGNAR</option>
+                ${sortedEquips.map(e => `<option value="${esc(e.id)}">${esc(e.name || e.nom || e.id)}</option>`).join('')}
+            `;
+
+            const hasCurrent = Array.from(equipFilter.options).some(option => option.value === currentValue);
+            equipFilter.value = hasCurrent ? currentValue : '';
+        }
+
+        function resetMemberForm() {
+            editingMemberId = null;
+            document.getElementById('member_form_title').textContent = 'Alta membre staff';
+            document.getElementById('m_nom').value = '';
+            document.getElementById('m_telefon').value = '';
+            document.getElementById('m_carnet').checked = false;
+            document.getElementById('m_actiu').checked = true;
+            document.getElementById('btn_cancel_member').style.display = 'none';
+            document.getElementById('btn_save_member').textContent = 'Desar membre';
+        }
+
+        function renderMembers() {
+            const tbody = document.getElementById('members_tbody');
+            if (!members.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No hi ha membres de staff registrats.</td></tr>';
+                return;
+            }
+
+            const nameFilter = normalizeText(document.getElementById('f_nom') ? document.getElementById('f_nom').value : '');
+            const teamFilter = String(document.getElementById('f_equip') ? document.getElementById('f_equip').value : '');
+            const memberTeamMap = buildMemberTeamMap();
+
+            const filteredMembers = members.filter(member => {
+                const normalizedName = normalizeText(member.nom);
+                if (nameFilter && !normalizedName.includes(nameFilter)) return false;
+
+                if (!teamFilter) return true;
+
+                const teamMap = memberTeamMap.get(String(member.id)) || new Map();
+                if (teamFilter === '__UNASSIGNED__') {
+                    return teamMap.size === 0;
+                }
+
+                return teamMap.has(teamFilter);
+            });
+
+            if (!filteredMembers.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Cap membre coincideix amb els filtres seleccionats.</td></tr>';
+                return;
+            }
+
+            const groups = [];
+
+            if (!teamFilter || teamFilter === '__UNASSIGNED__') {
+                const unassigned = filteredMembers.filter(member => {
+                    const teamMap = memberTeamMap.get(String(member.id)) || new Map();
+                    return teamMap.size === 0;
+                });
+
+                if (unassigned.length) {
+                    groups.push({
+                        title: 'SENSE ASSIGNAR',
+                        members: unassigned.map(member => ({ member, roleIds: [] }))
+                    });
+                }
+            }
+
+            if (teamFilter && teamFilter !== '__UNASSIGNED__') {
+                const teamMembers = filteredMembers
+                    .map(member => {
+                        const roleIds = getMemberRolesForEquip(memberTeamMap, member.id, teamFilter);
+                        if (!roleIds.length) return null;
+                        return { member, roleIds };
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => {
+                        const roleCompare = compareRoleIds(a.roleIds[0], b.roleIds[0]);
+                        if (roleCompare !== 0) return roleCompare;
+                        return String(a.member.nom || '').localeCompare(String(b.member.nom || ''));
+                    });
+
+                if (teamMembers.length) {
+                    groups.push({
+                        title: getEquipNameById(teamFilter),
+                        members: teamMembers
+                    });
+                }
+            } else if (!teamFilter) {
+                const sortedEquips = [...equips].sort(compareEquipsById);
+
+                sortedEquips.forEach(equip => {
+                    const equipId = String(equip.id || '');
+                    const teamMembers = filteredMembers
+                        .map(member => {
+                            const roleIds = getMemberRolesForEquip(memberTeamMap, member.id, equipId);
+                            if (!roleIds.length) return null;
+                            return { member, roleIds };
+                        })
+                        .filter(Boolean)
+                        .sort((a, b) => {
+                            const roleCompare = compareRoleIds(a.roleIds[0], b.roleIds[0]);
+                            if (roleCompare !== 0) return roleCompare;
+                            return String(a.member.nom || '').localeCompare(String(b.member.nom || ''));
+                        });
+
+                    if (teamMembers.length) {
+                        groups.push({
+                            title: String(equip.name || equip.nom || `Equip ${equipId}`),
+                            members: teamMembers
+                        });
+                    }
+                });
+            }
+
+            if (!groups.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Cap membre coincideix amb els filtres seleccionats.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = groups.map((group, index) => `
+                <tr class="group-row ${index > 0 ? 'group-gap' : ''}">
+                    <td colspan="6" class="group-title">${esc(group.title)} (${group.members.length})</td>
+                </tr>
+                ${group.members.map(item => getMemberRowMarkup(item.member, item.roleIds)).join('')}
+            `).join('');
+        }
+
+        window.editMember = function(memberId) {
+            const member = getMemberById(memberId);
+            if (!member) return;
+
+            editingMemberId = String(member.id);
+            document.getElementById('member_form_title').textContent = 'Modificar membre staff';
+            document.getElementById('m_nom').value = member.nom || '';
+            document.getElementById('m_telefon').value = member.telefon || '';
+            document.getElementById('m_carnet').checked = !!member.carnet;
+            document.getElementById('m_actiu').checked = member.actiu !== false;
+            document.getElementById('btn_cancel_member').style.display = '';
+            document.getElementById('btn_save_member').textContent = 'Actualitzar membre';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.cancelEditMember = function() {
+            resetMemberForm();
+        };
+
+        window.saveMember = async function() {
+            const payload = {
+                id: editingMemberId,
+                nom: document.getElementById('m_nom').value.trim(),
+                telefon: document.getElementById('m_telefon').value.trim(),
+                carnet: document.getElementById('m_carnet').checked,
+                actiu: document.getElementById('m_actiu').checked
+            };
+
+            if (!payload.nom) {
+                alert('Introdueix el nom del membre de staff.');
+                return;
+            }
+
+            try {
+                if (editingMemberId) {
+                    await requestJson(API_MEMBERS, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    await requestJson(API_MEMBERS, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                await loadAll();
+                resetMemberForm();
+            } catch (error) {
+                alert('No s\'ha pogut desar el membre de staff.');
+                console.error(error);
+            }
+        };
+
+        window.deleteMember = async function(memberId) {
+            if (!confirm('Segur que vols eliminar aquest membre del staff?')) return;
+
+            try {
+                await requestJson(`${API_MEMBERS}?id=${encodeURIComponent(memberId)}`, {
+                    method: 'DELETE'
+                });
+                await loadAll();
+                if (String(editingMemberId) === String(memberId)) {
+                    resetMemberForm();
+                }
+            } catch (error) {
+                alert('No s\'ha pogut eliminar el membre de staff.');
+                console.error(error);
+            }
+        };
+
+        async function loadAll() {
+            try {
+                const [membersData, assignmentsData, equipsData, rolsData] = await Promise.all([
+                    requestJson(API_MEMBERS),
+                    requestJson(API_ASSIGNMENTS),
+                    requestJson(API_EQUIPS),
+                    requestJson(API_ROLS)
+                ]);
+
+                members = Array.isArray(membersData) ? membersData : [];
+                assignments = Array.isArray(assignmentsData) ? assignmentsData : [];
+                equips = Array.isArray(equipsData) ? equipsData : [];
+                rols = Array.isArray(rolsData) ? rolsData : [];
+
+                renderMemberFilters();
+                renderMembers();
+            } catch (error) {
+                console.error('Error carregant dades de staff club:', error);
+                alert('No s\'han pogut carregar les dades de staff club.');
+            }
+        }
+
+        document.getElementById('members_tbody').addEventListener('click', function(event) {
+            const button = event.target.closest('button[data-action][data-member-id]');
+            if (!button) return;
+
+            const action = String(button.dataset.action || '');
+            const memberId = String(button.dataset.memberId || '');
+            if (!action || !memberId) return;
+
+            if (action === 'edit') {
+                window.editMember(memberId);
+                return;
+            }
+
+            if (action === 'delete') {
+                window.deleteMember(memberId);
+            }
+        });
+
+        document.getElementById('f_nom').addEventListener('input', renderMembers);
+        document.getElementById('f_equip').addEventListener('change', renderMembers);
+
+        resetMemberForm();
+        loadAll();
+    </script>
+</body>
+</html>

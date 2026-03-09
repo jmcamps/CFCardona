@@ -199,18 +199,27 @@
                 <tbody>
                     <tr>
                         <td data-label="Rol" class="dia-badge">Primer Entrenador</td>
-                        <td data-label="Nom i cognoms"><input type="text" id="s_primer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td data-label="Telèfon"><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Nom i cognoms">
+                            <input type="hidden" id="s_primer_entrenador_nom">
+                            <select id="s_primer_entrenador_member" onchange="onStaffMemberSelect('s_primer_entrenador','Primer Entrenador')"></select>
+                        </td>
+                        <td data-label="Telèfon"><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." readonly></td>
                     </tr>
                     <tr>
                         <td data-label="Rol" class="dia-badge">Segon Entrenador</td>
-                        <td data-label="Nom i cognoms"><input type="text" id="s_segon_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td data-label="Telèfon"><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Nom i cognoms">
+                            <input type="hidden" id="s_segon_entrenador_nom">
+                            <select id="s_segon_entrenador_member" onchange="onStaffMemberSelect('s_segon_entrenador','Segon Entrenador')"></select>
+                        </td>
+                        <td data-label="Telèfon"><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." readonly></td>
                     </tr>
                     <tr>
                         <td data-label="Rol" class="dia-badge">Tercer Entrenador</td>
-                        <td data-label="Nom i cognoms"><input type="text" id="s_tercer_entrenador_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
-                        <td data-label="Telèfon"><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                        <td data-label="Nom i cognoms">
+                            <input type="hidden" id="s_tercer_entrenador_nom">
+                            <select id="s_tercer_entrenador_member" onchange="onStaffMemberSelect('s_tercer_entrenador','Tercer Entrenador')"></select>
+                        </td>
+                        <td data-label="Telèfon"><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." readonly></td>
                     </tr>
                 </tbody>
             </table>
@@ -311,6 +320,9 @@
         const API_JUGADORS_SEGUIMENT='/api/jugadors-seguiment';
         const API_EQUIP_CONFIG='/api/equip-config';
         const API_HORARIOS='/api/horarios';
+        const API_ROLS='/api/rols';
+        const API_STAFF_CLUB_MEMBERS='/api/staff-club/members';
+        const API_STAFF_CLUB_ASSIGNMENTS='/api/staff-club/assignments';
         const EQUIP_ID=10;
         const S13_TARGET_YEAR=2014;
         const S13_TARGET_GENDER='Masculí';
@@ -318,7 +330,18 @@
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
         let db={},observacions=[],horaris=[],partits=[],plantilla=[],captacioSuggestions=[];
-        const SF=["s_primer_entrenador_nom","s_primer_entrenador_tel","s_segon_entrenador_nom","s_segon_entrenador_tel","s_tercer_entrenador_nom","s_tercer_entrenador_tel"];
+        const STAFF_ROLE_ROWS=[
+            {fieldBase:'s_primer_entrenador', roleName:'Primer Entrenador'},
+            {fieldBase:'s_segon_entrenador', roleName:'Segon Entrenador'},
+            {fieldBase:'s_tercer_entrenador', roleName:'Tercer Entrenador'}
+        ];
+        const STAFF_FIELDS=STAFF_ROLE_ROWS.flatMap(item=>[
+            `${item.fieldBase}_nom`,
+            `${item.fieldBase}_tel`
+        ]);
+        let staffClubMembers=[];
+        let staffClubAssignments=[];
+        let staffRoleIdsByName={};
         const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
         const TEAMS=[
             {id:'seccio_primer-equip', name:'Primer Equip'},
@@ -428,6 +451,284 @@
                 .trim();
         }
 
+        function normalizeStaffLookup(value){
+            return String(value||'')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'')
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g,' ');
+        }
+
+        function escapeHtml(value){
+            return String(value||'')
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;');
+        }
+
+        function getStaffRoleMeta(fieldBase){
+            return STAFF_ROLE_ROWS.find(item=>item.fieldBase===fieldBase)||null;
+        }
+
+        function getStaffRoleId(roleName){
+            return String(staffRoleIdsByName[normalizeStaffLookup(roleName)]||'').trim();
+        }
+
+        function getStaffMemberById(memberId){
+            const targetId=String(memberId||'').trim();
+            return staffClubMembers.find(member=>String(member&&member.id||'').trim()===targetId)||null;
+        }
+
+        function setStaffCarnetValue(fieldBase, value){
+            const checkboxId=`${fieldBase}_carnet`;
+            const apply=()=>{
+                const checkbox=document.getElementById(checkboxId);
+                if(!checkbox || checkbox.type!=='checkbox') return false;
+                checkbox.checked=!!value;
+                return true;
+            };
+            if(apply()) return;
+            setTimeout(apply, 60);
+            setTimeout(apply, 220);
+        }
+
+        function setStaffUiValues(fieldBase, values={}){
+            const nomInput=document.getElementById(`${fieldBase}_nom`);
+            const telInput=document.getElementById(`${fieldBase}_tel`);
+            if(nomInput) nomInput.value=String(values.nom||'');
+            if(telInput) telInput.value=String(values.tel||'');
+            setStaffCarnetValue(fieldBase, toBool(values.carnet));
+        }
+
+        function ensureLegacyStaffOption(selectEl, label){
+            if(!selectEl) return;
+            const text=String(label||'').trim();
+            if(!text) return;
+            const optionText=`${text} (actual)`;
+            const existing=Array.from(selectEl.options).find(option=>option.value==='__legacy__');
+            if(existing){
+                existing.textContent=optionText;
+                return;
+            }
+            const option=document.createElement('option');
+            option.value='__legacy__';
+            option.textContent=optionText;
+            selectEl.appendChild(option);
+        }
+
+        function renderStaffMemberSelect(fieldBase){
+            const selectEl=document.getElementById(`${fieldBase}_member`);
+            if(!selectEl) return;
+
+            const hiddenNomEl=document.getElementById(`${fieldBase}_nom`);
+            const currentNom=String(hiddenNomEl && hiddenNomEl.value || '').trim();
+
+            const sortedMembers=[...staffClubMembers]
+                .filter(member=>member && member.id!==undefined && member.id!==null)
+                .sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||'')));
+
+            const options=[`<option value="">— Sense assignar —</option>`];
+            sortedMembers.forEach(member=>{
+                const status=member.actiu===false?' (inactiu)':'';
+                options.push(`<option value="${escapeHtml(member.id)}">${escapeHtml(member.nom||'Sense nom')}${escapeHtml(status)}</option>`);
+            });
+
+            selectEl.innerHTML=options.join('');
+            if(currentNom){
+                ensureLegacyStaffOption(selectEl, currentNom);
+            }
+        }
+
+        async function ensureStaffRoleMap(){
+            if(Object.keys(staffRoleIdsByName).length) return;
+            if(IS_FILE) return;
+            try{
+                const res=await fetch(API_ROLS);
+                if(!res.ok) return;
+                const rows=await res.json();
+                const map={};
+                (Array.isArray(rows)?rows:[]).forEach(row=>{
+                    const key=normalizeStaffLookup(row&&row.nom||'');
+                    if(!key) return;
+                    map[key]=String(row.id||'').trim();
+                });
+                staffRoleIdsByName=map;
+            }catch(_){}
+        }
+
+        async function loadStaffAssignmentSelectors(){
+            STAFF_ROLE_ROWS.forEach(item=>renderStaffMemberSelect(item.fieldBase));
+
+            if(IS_FILE){
+                STAFF_ROLE_ROWS.forEach(item=>{
+                    const selectEl=document.getElementById(`${item.fieldBase}_member`);
+                    const nom=String((document.getElementById(`${item.fieldBase}_nom`)||{}).value||'').trim();
+                    if(!selectEl) return;
+                    if(nom){
+                        ensureLegacyStaffOption(selectEl, nom);
+                        selectEl.value='__legacy__';
+                    }else{
+                        selectEl.value='';
+                    }
+                });
+                return;
+            }
+
+            try{
+                const [membersRes, assignmentsRes, rolsRes]=await Promise.all([
+                    fetch(API_STAFF_CLUB_MEMBERS),
+                    fetch(API_STAFF_CLUB_ASSIGNMENTS),
+                    fetch(API_ROLS)
+                ]);
+
+                staffClubMembers=membersRes.ok?await membersRes.json():[];
+                if(!Array.isArray(staffClubMembers)) staffClubMembers=[];
+
+                staffClubAssignments=assignmentsRes.ok?await assignmentsRes.json():[];
+                if(!Array.isArray(staffClubAssignments)) staffClubAssignments=[];
+
+                const rols=rolsRes.ok?await rolsRes.json():[];
+                const roleMap={};
+                (Array.isArray(rols)?rols:[]).forEach(row=>{
+                    const key=normalizeStaffLookup(row&&row.nom||'');
+                    if(!key) return;
+                    roleMap[key]=String(row.id||'').trim();
+                });
+                staffRoleIdsByName=roleMap;
+
+                STAFF_ROLE_ROWS.forEach(item=>{
+                    renderStaffMemberSelect(item.fieldBase);
+                    const selectEl=document.getElementById(`${item.fieldBase}_member`);
+                    if(!selectEl) return;
+
+                    const roleId=getStaffRoleId(item.roleName);
+                    const assignment=staffClubAssignments.find(row=>
+                        String(row&&row.equip_id||'').trim()===String(EQUIP_ID) &&
+                        String(row&&row.rol_id||'').trim()===String(roleId)
+                    );
+
+                    let member=null;
+                    if(assignment){
+                        member=getStaffMemberById(assignment.staff_membre_id);
+                    }
+
+                    if(!member){
+                        const currentNom=String((document.getElementById(`${item.fieldBase}_nom`)||{}).value||'').trim();
+                        const currentTel=String((document.getElementById(`${item.fieldBase}_tel`)||{}).value||'').trim();
+                        member=staffClubMembers.find(row=>
+                            normalizeStaffLookup(row&&row.nom||'')===normalizeStaffLookup(currentNom) &&
+                            normalizeStaffLookup(row&&row.telefon||'')===normalizeStaffLookup(currentTel)
+                        )||null;
+                    }
+
+                    if(member){
+                        selectEl.value=String(member.id);
+                        setStaffUiValues(item.fieldBase, {
+                            nom: member.nom || '',
+                            tel: member.telefon || '',
+                            carnet: member.carnet
+                        });
+                        return;
+                    }
+
+                    const legacyNom=String((document.getElementById(`${item.fieldBase}_nom`)||{}).value||'').trim();
+                    if(legacyNom){
+                        ensureLegacyStaffOption(selectEl, legacyNom);
+                        selectEl.value='__legacy__';
+                    }else{
+                        selectEl.value='';
+                    }
+                });
+            }catch(e){
+                console.warn('Error carregant membres/assignacions de staff:', e);
+            }
+        }
+
+        window.onStaffMemberSelect=async function(fieldBase, roleName){
+            const selectEl=document.getElementById(`${fieldBase}_member`);
+            if(!selectEl) return;
+
+            const selectedValue=String(selectEl.value||'').trim();
+
+            if(selectedValue && selectedValue!=='__legacy__'){
+                const member=getStaffMemberById(selectedValue);
+                if(member){
+                    setStaffUiValues(fieldBase, {
+                        nom: member.nom || '',
+                        tel: member.telefon || '',
+                        carnet: member.carnet
+                    });
+                }
+
+                if(!IS_FILE){
+                    let assignedOk=true;
+                    try{
+                        const res=await fetch(API_STAFF_CLUB_ASSIGNMENTS,{
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body:JSON.stringify({
+                                equip_id:EQUIP_ID,
+                                rol_nom:roleName,
+                                staff_membre_id:selectedValue
+                            })
+                        });
+                        if(!res.ok){
+                            const errorText=await res.text();
+                            throw new Error(errorText||`HTTP ${res.status}`);
+                        }
+                    }catch(e){
+                        assignedOk=false;
+                        alert('No s\'ha pogut assignar el membre de staff.');
+                        await loadStaffAssignmentSelectors();
+                    }
+                    if(!assignedOk){
+                        renderPlantilla();
+                        return;
+                    }
+                }
+
+                renderPlantilla();
+                await saveAll(true);
+                return;
+            }
+
+            if(selectedValue===''){
+                setStaffUiValues(fieldBase, {nom:'', tel:'', carnet:false});
+                if(!IS_FILE){
+                    let removedOk=true;
+                    try{
+                        await ensureStaffRoleMap();
+                        const roleId=getStaffRoleId(roleName);
+                        if(roleId){
+                            const res=await fetch(`${API_STAFF_CLUB_ASSIGNMENTS}?equipId=${encodeURIComponent(EQUIP_ID)}&rolId=${encodeURIComponent(roleId)}`, {
+                                method:'DELETE'
+                            });
+                            if(!res.ok){
+                                const errorText=await res.text();
+                                throw new Error(errorText||`HTTP ${res.status}`);
+                            }
+                        }
+                    }catch(e){
+                        removedOk=false;
+                        alert('No s\'ha pogut desassignar el membre de staff.');
+                        await loadStaffAssignmentSelectors();
+                    }
+                    if(!removedOk){
+                        renderPlantilla();
+                        return;
+                    }
+                }
+
+                renderPlantilla();
+                await saveAll(true);
+                return;
+            }
+
+            renderPlantilla();
+            await saveAll(true);
+        };
+
         async function loadCaptacioSuggestions(){
             captacioSuggestions=[];
             try{
@@ -479,6 +780,10 @@
                 const d=db[KEY]||{};
                 if(document.getElementById('descripcio')) document.getElementById('descripcio').value=d.descripcio||'';
 
+                STAFF_ROLE_ROWS.forEach(item=>{
+                    setStaffUiValues(item.fieldBase, {nom:'', tel:'', carnet:false});
+                });
+
                 if(!IS_FILE){
                     const rc=await fetch(`${API_EQUIP_CONFIG}?equipId=${EQUIP_ID}`);
                     if(!rc.ok){
@@ -486,16 +791,30 @@
                         throw new Error(`GET equip-config ${rc.status}: ${errorText}`);
                     }
                     const cfg=await rc.json();
-                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=cfg[f]||'';});
+                    STAFF_ROLE_ROWS.forEach(item=>{
+                        setStaffUiValues(item.fieldBase, {
+                            nom: cfg[`${item.fieldBase}_nom`] || '',
+                            tel: cfg[`${item.fieldBase}_tel`] || '',
+                            carnet: cfg[`${item.fieldBase}_carnet`]
+                        });
+                    });
                     ['comp_categoria','comp_temporada','comp_url'].forEach(f=>{
                         const el=document.getElementById(f); if(el) el.value=cfg[f]||'';
                     });
                 }else{
-                    SF.forEach(f=>{const el=document.getElementById(f);if(el)el.value=d[f]||'';});
+                    STAFF_ROLE_ROWS.forEach(item=>{
+                        setStaffUiValues(item.fieldBase, {
+                            nom: d[`${item.fieldBase}_nom`] || '',
+                            tel: d[`${item.fieldBase}_tel`] || '',
+                            carnet: d[`${item.fieldBase}_carnet`]
+                        });
+                    });
                     ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
                         const el=document.getElementById(f); if(el) el.value=d[f]||'';
                     });
                 }
+
+                await loadStaffAssignmentSelectors();
 
                 partits=d.partits||[]; observacions=d.observacions||[];
                 if(!IS_FILE){
@@ -547,7 +866,13 @@
             db[KEY]={horaris,partits,observacions};
             if(document.getElementById('descripcio')) db[KEY].descripcio=document.getElementById('descripcio').value;
             if(IS_FILE){
-                SF.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
+                STAFF_FIELDS.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
+                STAFF_ROLE_ROWS.forEach(item=>{
+                    const carnetEl=document.getElementById(`${item.fieldBase}_carnet`);
+                    if(carnetEl && carnetEl.type==='checkbox'){
+                        db[KEY][`${item.fieldBase}_carnet`]=!!carnetEl.checked;
+                    }
+                });
                 ['comp_categoria','comp_temporada','comp_url','coord_nom','coord_tel'].forEach(f=>{
                     const el=document.getElementById(f); if(el) db[KEY][f]=el.value;
                 });
@@ -558,16 +883,20 @@
             }
             try{
                 const equipPayload={
-                    s_primer_entrenador_nom:(document.getElementById('s_primer_entrenador_nom')||{}).value||'',
-                    s_primer_entrenador_tel:(document.getElementById('s_primer_entrenador_tel')||{}).value||'',
-                    s_segon_entrenador_nom:(document.getElementById('s_segon_entrenador_nom')||{}).value||'',
-                    s_segon_entrenador_tel:(document.getElementById('s_segon_entrenador_tel')||{}).value||'',
-                    s_tercer_entrenador_nom:(document.getElementById('s_tercer_entrenador_nom')||{}).value||'',
-                    s_tercer_entrenador_tel:(document.getElementById('s_tercer_entrenador_tel')||{}).value||'',
+                    __preserve_staff_assignments:true,
                     comp_categoria:(document.getElementById('comp_categoria')||{}).value||'',
                     comp_temporada:(document.getElementById('comp_temporada')||{}).value||'',
                     comp_url:(document.getElementById('comp_url')||{}).value||''
                 };
+
+                STAFF_ROLE_ROWS.forEach(item=>{
+                    equipPayload[`${item.fieldBase}_nom`]=(document.getElementById(`${item.fieldBase}_nom`)||{}).value||'';
+                    equipPayload[`${item.fieldBase}_tel`]=(document.getElementById(`${item.fieldBase}_tel`)||{}).value||'';
+                    const carnetEl=document.getElementById(`${item.fieldBase}_carnet`);
+                    if(carnetEl && carnetEl.type==='checkbox'){
+                        equipPayload[`${item.fieldBase}_carnet`]=!!carnetEl.checked;
+                    }
+                });
 
                 const [rPlayers, rEquip] = await Promise.all([
                     fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)}),

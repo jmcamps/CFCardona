@@ -4,6 +4,8 @@ drop table if exists comunicacions cascade;
 drop table if exists comentari cascade;
 drop table if exists amistos cascade;
 drop table if exists horari_entrenaments cascade;
+drop table if exists equip_staff_assignacio cascade;
+drop table if exists staff_membre cascade;
 drop table if exists staff cascade;
 drop table if exists jugador cascade;
 drop table if exists jugador_en_seguiment cascade;

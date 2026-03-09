@@ -128,6 +128,7 @@ const IS_PUBLISHABLE_KEY = String(SUPABASE_SERVICE_ROLE_KEY || '').startsWith('s
 const USE_SUPABASE = HAS_SUPABASE_CONFIG;
 const AUTH_REQUIRED = USE_SUPABASE;
 const SUPABASE_SECCIONS_TABLE = 'seccions_data';
+const STAFF_CLUB_SCOPE = 'seccio_staff_club';
 const supabaseBaseUrl = USE_SUPABASE ? new URL(SUPABASE_URL) : null;
 const sessionCache = new Map();
 const ROLES = {
@@ -340,6 +341,10 @@ function getAuthorizationRule(pathname, method) {
         return { requiredRoles: [ROLES.SCOUTING, ROLES.DIRECCIO], readOnlyAllowed: true };
     }
 
+    if (p.startsWith('/api/staff-club')) {
+        return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
     if (p.startsWith('/api/equips') || p.startsWith('/api/equip-config') || p.startsWith('/api/jugadors') || p.startsWith('/api/rols') || p.startsWith('/api/posicions')) {
         return { requiredRoles: [ROLES.SENIOR, ROLES.FUTBOL_BASE, ROLES.DIRECCIO], readOnlyAllowed: true };
     }
@@ -353,6 +358,10 @@ function getAuthorizationRule(pathname, method) {
     }
 
     if (p.startsWith('/api/')) {
+        return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/seccions/staff-club')) {
         return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: true };
     }
 
@@ -962,6 +971,464 @@ async function readRolsCatalog() {
     return fallback.map((nom, idx) => ({ id: String(idx + 1), nom }));
 }
 
+let hasStaffMembreTableCache = null;
+let hasEquipStaffAssignacioTableCache = null;
+
+function normalizePositiveInteger(value) {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed <= 0) return null;
+    return parsed;
+}
+
+function normalizeStaffMemberInput(payload, options = {}) {
+    const requireName = !!(options && options.requireName);
+    const source = payload && typeof payload === 'object' ? payload : {};
+
+    const nom = String(source.nom || '').trim();
+    if (requireName && !nom) {
+        throw new Error('nom obligatori');
+    }
+
+    const member = {
+        nom,
+        telefon: String(source.telefon ?? source.tel ?? '').trim(),
+        carnet: normalizeBoolean(source.carnet),
+        actiu: source.actiu === undefined ? true : normalizeBoolean(source.actiu)
+    };
+
+    return member;
+}
+
+function normalizeFallbackStaffMembers(rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    return list
+        .map((row) => {
+            const idText = String(row && row.id !== undefined ? row.id : '').trim();
+            const nom = String(row && row.nom ? row.nom : '').trim();
+            if (!idText || !nom) return null;
+
+            return {
+                id: idText,
+                nom,
+                telefon: String(row && row.telefon ? row.telefon : '').trim(),
+                carnet: normalizeBoolean(row && row.carnet),
+                actiu: row && row.actiu === undefined ? true : normalizeBoolean(row && row.actiu)
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => String(a.nom || '').localeCompare(String(b.nom || '')));
+}
+
+function normalizeFallbackStaffAssignments(rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    return list
+        .map((row) => {
+            const equipId = normalizePositiveInteger(row && (row.equip_id ?? row.equipId));
+            const rolId = normalizePositiveInteger(row && (row.rol_id ?? row.rolId));
+            const staffMembreId = normalizePositiveInteger(row && (row.staff_membre_id ?? row.staffMemberId));
+            if (!equipId || !rolId || !staffMembreId) return null;
+
+            return {
+                id: String(row && row.id !== undefined ? row.id : `${equipId}-${rolId}`),
+                equip_id: equipId,
+                rol_id: rolId,
+                staff_membre_id: staffMembreId
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => {
+            if (a.equip_id !== b.equip_id) return a.equip_id - b.equip_id;
+            return a.rol_id - b.rol_id;
+        });
+}
+
+async function hasStaffMembreTable() {
+    if (!USE_SUPABASE) return false;
+    if (hasStaffMembreTableCache !== null) return hasStaffMembreTableCache;
+
+    try {
+        await supabaseRestRequest('GET', '/rest/v1/staff_membre?select=id&limit=1');
+        hasStaffMembreTableCache = true;
+        return true;
+    } catch (err) {
+        if (isMissingSupabaseTableError(err, 'staff_membre')) {
+            hasStaffMembreTableCache = false;
+            return false;
+        }
+        throw err;
+    }
+}
+
+async function hasEquipStaffAssignacioTable() {
+    if (!USE_SUPABASE) return false;
+    if (hasEquipStaffAssignacioTableCache !== null) return hasEquipStaffAssignacioTableCache;
+
+    try {
+        await supabaseRestRequest('GET', '/rest/v1/equip_staff_assignacio?select=id&limit=1');
+        hasEquipStaffAssignacioTableCache = true;
+        return true;
+    } catch (err) {
+        if (isMissingSupabaseTableError(err, 'equip_staff_assignacio')) {
+            hasEquipStaffAssignacioTableCache = false;
+            return false;
+        }
+        throw err;
+    }
+}
+
+async function readStaffClubFallbackState() {
+    const data = await readDatabase();
+    const rawScope = data && data[STAFF_CLUB_SCOPE] && typeof data[STAFF_CLUB_SCOPE] === 'object'
+        ? data[STAFF_CLUB_SCOPE]
+        : {};
+
+    return {
+        data,
+        state: {
+            members: normalizeFallbackStaffMembers(rawScope.members),
+            assignments: normalizeFallbackStaffAssignments(rawScope.assignments)
+        }
+    };
+}
+
+async function writeStaffClubFallbackState(data, state) {
+    if (!data || typeof data !== 'object') return;
+
+    data[STAFF_CLUB_SCOPE] = {
+        members: normalizeFallbackStaffMembers(state && state.members),
+        assignments: normalizeFallbackStaffAssignments(state && state.assignments)
+    };
+
+    await writeDatabase(data);
+}
+
+async function readClubStaffMembers() {
+    if (USE_SUPABASE && await hasStaffMembreTable()) {
+        const rows = await supabaseRestRequest(
+            'GET',
+            '/rest/v1/staff_membre?select=id,nom,telefon,carnet,actiu&order=nom.asc'
+        );
+
+        return (Array.isArray(rows) ? rows : [])
+            .map((row) => ({
+                id: String(row.id),
+                nom: String(row.nom || '').trim(),
+                telefon: String(row.telefon || '').trim(),
+                carnet: normalizeBoolean(row.carnet),
+                actiu: row.actiu === undefined ? true : normalizeBoolean(row.actiu)
+            }))
+            .filter((row) => row.id && row.nom);
+    }
+
+    const { state } = await readStaffClubFallbackState();
+    return state.members;
+}
+
+async function readClubStaffMemberById(memberId) {
+    const normalizedId = String(memberId || '').trim();
+    if (!normalizedId) return null;
+
+    const members = await readClubStaffMembers();
+    return members.find((member) => String(member.id) === normalizedId) || null;
+}
+
+async function createClubStaffMember(payload) {
+    const member = normalizeStaffMemberInput(payload, { requireName: true });
+
+    if (USE_SUPABASE && await hasStaffMembreTable()) {
+        const created = await supabaseRestRequest(
+            'POST',
+            '/rest/v1/staff_membre?select=id,nom,telefon,carnet,actiu',
+            [member],
+            'return=representation'
+        );
+
+        const row = Array.isArray(created) ? created[0] : null;
+        if (!row || row.id === undefined || row.id === null) {
+            throw new Error('No s\'ha pogut crear el membre de staff');
+        }
+
+        return {
+            id: String(row.id),
+            nom: String(row.nom || '').trim(),
+            telefon: String(row.telefon || '').trim(),
+            carnet: normalizeBoolean(row.carnet),
+            actiu: row.actiu === undefined ? true : normalizeBoolean(row.actiu)
+        };
+    }
+
+    const { data, state } = await readStaffClubFallbackState();
+    const localId = `local_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const inserted = {
+        id: localId,
+        nom: member.nom,
+        telefon: member.telefon,
+        carnet: member.carnet,
+        actiu: member.actiu
+    };
+
+    state.members.push(inserted);
+    await writeStaffClubFallbackState(data, state);
+    return inserted;
+}
+
+async function updateClubStaffMember(memberId, payload) {
+    const normalizedId = String(memberId || '').trim();
+    if (!normalizedId) {
+        throw new Error('id obligatori');
+    }
+
+    const memberPatch = normalizeStaffMemberInput(payload, { requireName: true });
+
+    if (USE_SUPABASE && await hasStaffMembreTable()) {
+        if (!/^\d+$/.test(normalizedId)) {
+            throw new Error('id de membre de staff invàlid');
+        }
+
+        await supabaseRestRequest(
+            'PATCH',
+            `/rest/v1/staff_membre?id=eq.${encodeURIComponent(normalizedId)}`,
+            memberPatch
+        );
+
+        return {
+            id: normalizedId,
+            nom: memberPatch.nom,
+            telefon: memberPatch.telefon,
+            carnet: memberPatch.carnet,
+            actiu: memberPatch.actiu
+        };
+    }
+
+    const { data, state } = await readStaffClubFallbackState();
+    const index = state.members.findIndex((row) => String(row.id) === normalizedId);
+    if (index === -1) {
+        throw new Error('Membre de staff no trobat');
+    }
+
+    state.members[index] = {
+        id: state.members[index].id,
+        nom: memberPatch.nom,
+        telefon: memberPatch.telefon,
+        carnet: memberPatch.carnet,
+        actiu: memberPatch.actiu
+    };
+
+    await writeStaffClubFallbackState(data, state);
+    return state.members[index];
+}
+
+async function clearClubStaffAssignmentByEquipRole(equipIdValue, rolIdValue) {
+    const equipId = normalizePositiveInteger(equipIdValue);
+    const rolId = normalizePositiveInteger(rolIdValue);
+    if (!equipId || !rolId) return;
+
+    if (USE_SUPABASE && await hasEquipStaffAssignacioTable()) {
+        await supabaseRestRequest(
+            'DELETE',
+            `/rest/v1/equip_staff_assignacio?equip_id=eq.${equipId}&rol_id=eq.${rolId}`
+        );
+        return;
+    }
+
+    const { data, state } = await readStaffClubFallbackState();
+    const nextAssignments = state.assignments.filter((row) => row.equip_id !== equipId || row.rol_id !== rolId);
+    if (nextAssignments.length === state.assignments.length) return;
+
+    state.assignments = nextAssignments;
+    await writeStaffClubFallbackState(data, state);
+}
+
+async function syncLegacyTeamStaffForRole(equipIdValue, rolIdValue, member) {
+    if (!USE_SUPABASE) return;
+
+    const equipId = normalizePositiveInteger(equipIdValue);
+    const rolId = normalizePositiveInteger(rolIdValue);
+    if (!equipId || !rolId) return;
+
+    await supabaseRestRequest('DELETE', `/rest/v1/staff?equip_id=eq.${equipId}&rol_id=eq.${rolId}`);
+    if (!member) return;
+
+    const insertRows = [{
+        equip_id: equipId,
+        nom: String(member.nom || '').trim() || 'Staff',
+        telefon: String(member.telefon || '').trim() || null,
+        carnet: normalizeBoolean(member.carnet),
+        rol_id: rolId
+    }];
+
+    try {
+        await supabaseRestRequest('POST', '/rest/v1/staff', insertRows);
+    } catch (err) {
+        if (!isMissingSupabaseColumnError(err, 'carnet')) {
+            throw err;
+        }
+        await supabaseRestRequest('POST', '/rest/v1/staff', [{
+            equip_id: equipId,
+            nom: String(member.nom || '').trim() || 'Staff',
+            telefon: String(member.telefon || '').trim() || null,
+            rol_id: rolId
+        }]);
+    }
+}
+
+async function deleteClubStaffMember(memberId) {
+    const normalizedId = String(memberId || '').trim();
+    if (!normalizedId) {
+        throw new Error('id obligatori');
+    }
+
+    let removedAssignments = [];
+
+    if (USE_SUPABASE && await hasEquipStaffAssignacioTable()) {
+        const existingAssignments = await supabaseRestRequest(
+            'GET',
+            `/rest/v1/equip_staff_assignacio?staff_membre_id=eq.${encodeURIComponent(normalizedId)}&select=equip_id,rol_id`
+        );
+        removedAssignments = (Array.isArray(existingAssignments) ? existingAssignments : [])
+            .map((row) => ({
+                equip_id: normalizePositiveInteger(row.equip_id),
+                rol_id: normalizePositiveInteger(row.rol_id)
+            }))
+            .filter((row) => row.equip_id && row.rol_id);
+
+        await supabaseRestRequest(
+            'DELETE',
+            `/rest/v1/equip_staff_assignacio?staff_membre_id=eq.${encodeURIComponent(normalizedId)}`
+        );
+    }
+
+    if (USE_SUPABASE && await hasStaffMembreTable()) {
+        if (!/^\d+$/.test(normalizedId)) {
+            throw new Error('id de membre de staff invàlid');
+        }
+
+        await supabaseRestRequest('DELETE', `/rest/v1/staff_membre?id=eq.${encodeURIComponent(normalizedId)}`);
+
+        for (const assignment of removedAssignments) {
+            await syncLegacyTeamStaffForRole(assignment.equip_id, assignment.rol_id, null);
+        }
+
+        return;
+    }
+
+    const { data, state } = await readStaffClubFallbackState();
+    const memberExists = state.members.some((row) => String(row.id) === normalizedId);
+    if (!memberExists) {
+        throw new Error('Membre de staff no trobat');
+    }
+
+    const nextMembers = state.members.filter((row) => String(row.id) !== normalizedId);
+    const removedFallbackAssignments = state.assignments.filter((row) => String(row.staff_membre_id) === normalizedId);
+    const nextAssignments = state.assignments.filter((row) => String(row.staff_membre_id) !== normalizedId);
+
+    state.members = nextMembers;
+    state.assignments = nextAssignments;
+    await writeStaffClubFallbackState(data, state);
+
+    for (const assignment of removedFallbackAssignments) {
+        await syncLegacyTeamStaffForRole(assignment.equip_id, assignment.rol_id, null);
+    }
+}
+
+async function readClubStaffAssignments() {
+    if (USE_SUPABASE && await hasEquipStaffAssignacioTable()) {
+        const rows = await supabaseRestRequest(
+            'GET',
+            '/rest/v1/equip_staff_assignacio?select=id,equip_id,rol_id,staff_membre_id&order=equip_id.asc,rol_id.asc'
+        );
+
+        return (Array.isArray(rows) ? rows : [])
+            .map((row) => ({
+                id: String(row.id),
+                equip_id: normalizePositiveInteger(row.equip_id),
+                rol_id: normalizePositiveInteger(row.rol_id),
+                staff_membre_id: normalizePositiveInteger(row.staff_membre_id)
+            }))
+            .filter((row) => row.equip_id && row.rol_id && row.staff_membre_id);
+    }
+
+    const { state } = await readStaffClubFallbackState();
+    return state.assignments;
+}
+
+async function setClubStaffAssignment(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const equipId = normalizePositiveInteger(source.equip_id ?? source.equipId);
+
+    let rolId = normalizePositiveInteger(source.rol_id ?? source.rolId);
+    if (!rolId) {
+        const roleName = String(source.rol_nom ?? source.roleName ?? source.rol ?? '').trim();
+        if (roleName) {
+            rolId = await ensureRolIdByName(roleName);
+        }
+    }
+
+    const staffMembreId = normalizePositiveInteger(source.staff_membre_id ?? source.staffMemberId ?? source.memberId);
+
+    if (!equipId || !rolId || !staffMembreId) {
+        throw new Error('equip_id, rol_id i staff_membre_id són obligatoris');
+    }
+
+    const member = await readClubStaffMemberById(staffMembreId);
+    if (!member) {
+        throw new Error('Membre de staff no trobat');
+    }
+
+    if (USE_SUPABASE && await hasEquipStaffAssignacioTable()) {
+        await supabaseRestRequest(
+            'POST',
+            '/rest/v1/equip_staff_assignacio?on_conflict=equip_id,rol_id',
+            [{ equip_id: equipId, rol_id: rolId, staff_membre_id: staffMembreId }],
+            'resolution=merge-duplicates'
+        );
+    } else {
+        const { data, state } = await readStaffClubFallbackState();
+        const nextAssignments = state.assignments.filter((row) => row.equip_id !== equipId || row.rol_id !== rolId);
+        nextAssignments.push({
+            id: `${equipId}-${rolId}`,
+            equip_id: equipId,
+            rol_id: rolId,
+            staff_membre_id: staffMembreId
+        });
+
+        state.assignments = nextAssignments;
+        await writeStaffClubFallbackState(data, state);
+    }
+
+    await syncLegacyTeamStaffForRole(equipId, rolId, member);
+
+    return {
+        equip_id: equipId,
+        rol_id: rolId,
+        staff_membre_id: staffMembreId
+    };
+}
+
+async function removeClubStaffAssignment(equipIdValue, rolIdValue) {
+    const equipId = normalizePositiveInteger(equipIdValue);
+    const rolId = normalizePositiveInteger(rolIdValue);
+    if (!equipId || !rolId) {
+        throw new Error('equipId i rolId obligatoris');
+    }
+
+    if (USE_SUPABASE && await hasEquipStaffAssignacioTable()) {
+        await supabaseRestRequest(
+            'DELETE',
+            `/rest/v1/equip_staff_assignacio?equip_id=eq.${equipId}&rol_id=eq.${rolId}`
+        );
+    } else {
+        const { data, state } = await readStaffClubFallbackState();
+        const nextAssignments = state.assignments.filter((row) => row.equip_id !== equipId || row.rol_id !== rolId);
+        if (nextAssignments.length !== state.assignments.length) {
+            state.assignments = nextAssignments;
+            await writeStaffClubFallbackState(data, state);
+        }
+    }
+
+    await syncLegacyTeamStaffForRole(equipId, rolId, null);
+}
+
 const STAFF_ROLE_MAPPINGS = [
     { roleName: 'Primer Entrenador', fieldBase: 's_primer_entrenador' },
     { roleName: 'Segon Entrenador', fieldBase: 's_segon_entrenador' },
@@ -1157,6 +1624,7 @@ async function writeEquipConfig(equipId, payload) {
     }
 
     const source = payload && typeof payload === 'object' ? payload : {};
+    const preserveStaffAssignments = normalizeBoolean(source.__preserve_staff_assignments);
     const config = {
         comp_categoria: String(source.comp_categoria || '').trim(),
         comp_temporada: String(source.comp_temporada || '').trim(),
@@ -1178,6 +1646,9 @@ async function writeEquipConfig(equipId, payload) {
         for (const item of staffEntries) {
             const roleName = staffFieldBaseToRoleName(item.fieldBase);
             const rolId = await ensureRolIdByName(roleName);
+            if (!preserveStaffAssignments) {
+                await clearClubStaffAssignmentByEquipRole(id, rolId);
+            }
             await supabaseRestRequest('DELETE', `/rest/v1/staff?equip_id=eq.${id}&rol_id=eq.${rolId}`);
 
             if (item.nom || item.tel || item.carnet) {
@@ -2822,6 +3293,193 @@ const server = http.createServer(async (req, res) => {
                 });
                 res.end(JSON.stringify({
                     error: "No s'ha pogut guardar la configuració d'equip",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/members' && req.method === 'GET') {
+        (async () => {
+            try {
+                const members = await readClubStaffMembers();
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify(members));
+            } catch (err) {
+                console.error('Error GET /api/staff-club/members:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'han pogut llegir els membres del staff',
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/members' && req.method === 'POST') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const created = await createClubStaffMember(parsed);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success', member: created }));
+            } catch (err) {
+                if (err instanceof SyntaxError) {
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'JSON invàlid' }));
+                    return;
+                }
+
+                console.error('Error POST /api/staff-club/members:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'ha pogut crear el membre del staff',
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/members' && req.method === 'PATCH') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const memberId = parsed && parsed.id !== undefined
+                    ? parsed.id
+                    : requestUrl.searchParams.get('id');
+
+                const updated = await updateClubStaffMember(memberId, parsed);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success', member: updated }));
+            } catch (err) {
+                if (err instanceof SyntaxError) {
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'JSON invàlid' }));
+                    return;
+                }
+
+                console.error('Error PATCH /api/staff-club/members:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'ha pogut actualitzar el membre del staff',
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/members' && req.method === 'DELETE') {
+        (async () => {
+            try {
+                const memberId = requestUrl.searchParams.get('id');
+                await deleteClubStaffMember(memberId);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success' }));
+            } catch (err) {
+                console.error('Error DELETE /api/staff-club/members:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'ha pogut eliminar el membre del staff',
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/assignments' && req.method === 'GET') {
+        (async () => {
+            try {
+                const assignments = await readClubStaffAssignments();
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify(assignments));
+            } catch (err) {
+                console.error('Error GET /api/staff-club/assignments:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'han pogut llegir les assignacions de staff',
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/assignments' && req.method === 'POST') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const assignment = await setClubStaffAssignment(parsed);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success', assignment }));
+            } catch (err) {
+                if (err instanceof SyntaxError) {
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'JSON invàlid' }));
+                    return;
+                }
+
+                console.error('Error POST /api/staff-club/assignments:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'ha pogut guardar l\'assignació de staff',
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/staff-club/assignments' && req.method === 'DELETE') {
+        (async () => {
+            try {
+                const equipId = requestUrl.searchParams.get('equipId');
+                const rolId = requestUrl.searchParams.get('rolId');
+                await removeClubStaffAssignment(equipId, rolId);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success' }));
+            } catch (err) {
+                console.error('Error DELETE /api/staff-club/assignments:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: 'No s\'ha pogut eliminar l\'assignació de staff',
                     details: err && err.message ? err.message : String(err)
                 }));
             }

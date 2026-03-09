@@ -10,6 +10,7 @@
         estructura: `${base}/index.html`,
         horaris: `${base}/seccions/horari-setmanal.html`,
         comissio: `${base}/seccions/comissio-esportiva.html`,
+        staffClub: `${base}/seccions/staff-club.html`,
         senior: `${base}/seccions/senior.html`,
         primerEquip: `${base}/seccions/primer-equip.html`,
         filial: `${base}/seccions/filial.html`,
@@ -748,6 +749,10 @@
                             <span class="cf-nav-feature-title"><span class="icon">👥</span>Comissió esportiva</span>
                             <span class="cf-nav-feature-desc">Coordina decisions esportives i seguiment de rendiment.</span>
                         </a>
+                        <a class="cf-nav-feature" href="${links.staffClub}" id="cf-staff-club-entry">
+                            <span class="cf-nav-feature-title"><span class="icon">🧩</span>Gestió staff club</span>
+                            <span class="cf-nav-feature-desc">Alta, baixa i assignació dels membres del staff als equips.</span>
+                        </a>
                         <a class="cf-nav-feature" href="${links.captacioSenior}" id="cf-scouting-senior-entry">
                             <span class="cf-nav-feature-title"><span class="icon">🔍</span>Captació Senior</span>
                             <span class="cf-nav-feature-desc">Cartera i seguiment de perfils per Primer Equip i Filial.</span>
@@ -789,7 +794,8 @@
         'alevi-femeni.html': 'Aleví Femení',
         'infantil-femeni.html': 'Infantil Femení',
         'cadet-femeni.html': 'Cadet Femení',
-        'juvenil-femeni.html': 'Juvenil Femení'
+        'juvenil-femeni.html': 'Juvenil Femení',
+        'staff-club.html': 'Gestió Staff Club'
     };
 
     const teamTitle = teamPageTitles[filename];
@@ -865,6 +871,22 @@
     let staffCarnetFetchEnhancerApplied = false;
     let staffCarnetEquipIdPromise = null;
     let staffCarnetConfigCache = null;
+    let staffClubMembersCache = null;
+    let staffClubMembersPromise = null;
+    let staffClubAssignmentsCache = null;
+    let staffClubAssignmentsPromise = null;
+    let staffClubRoleIdByNameCache = null;
+    let staffClubRoleIdByNamePromise = null;
+
+    const STAFF_ROLE_NAME_BY_FIELD_BASE = {
+        s_primer_entrenador: 'Primer Entrenador',
+        s_segon_entrenador: 'Segon Entrenador',
+        s_tercer_entrenador: 'Tercer Entrenador',
+        s_preparador_fisic: 'Preparador Físic',
+        s_delegat: 'Delegat',
+        s_fisioterapeuta: 'Fisioterapeuta',
+        s_analista_tactic: 'Analista Tàctic'
+    };
 
     function normalizePath(value) {
         try {
@@ -906,6 +928,244 @@
                 tableEl.querySelector('input[id^="s_"][id$="_tel"]')
             );
         });
+    }
+
+    function normalizeStaffFieldBase(value) {
+        const normalized = String(value || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '')
+            .replace(/^_+|_+$/g, '');
+        if (!normalized) return '';
+        return normalized.startsWith('s_') ? normalized : `s_${normalized}`;
+    }
+
+    function staffFieldBaseToRoleName(fieldBase) {
+        const normalizedBase = normalizeStaffFieldBase(fieldBase);
+        if (!normalizedBase) return 'Staff';
+
+        if (Object.prototype.hasOwnProperty.call(STAFF_ROLE_NAME_BY_FIELD_BASE, normalizedBase)) {
+            return STAFF_ROLE_NAME_BY_FIELD_BASE[normalizedBase];
+        }
+
+        const words = normalizedBase
+            .replace(/^s_/, '')
+            .split('_')
+            .filter(Boolean)
+            .map(function (word) {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            });
+
+        return words.join(' ').trim() || 'Staff';
+    }
+
+    function normalizePositiveIdText(value) {
+        const text = String(value ?? '').trim();
+        if (!text) return '';
+
+        const parsed = Number(text);
+        if (!Number.isInteger(parsed) || parsed <= 0) return '';
+        return String(parsed);
+    }
+
+    function getStaffMemberId(member) {
+        const rawId = member && (member.id ?? member.staff_membre_id ?? member.staffMemberId ?? member.memberId ?? '');
+        return String(rawId ?? '').trim();
+    }
+
+    function getStaffMemberName(member) {
+        return String(member && (member.nom ?? member.name ?? '') || '').trim();
+    }
+
+    function getStaffMemberPhone(member) {
+        return String(member && (member.telefon ?? member.tel ?? member.phone ?? '') || '').trim();
+    }
+
+    function getStaffMemberCarnet(member) {
+        return normalizeBooleanValue(member && member.carnet);
+    }
+
+    function normalizePhoneLookup(value) {
+        return String(value || '').replace(/\D+/g, '').trim();
+    }
+
+    function normalizeStaffMemberRows(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        return list
+            .map(function (row) {
+                const id = getStaffMemberId(row);
+                const nom = getStaffMemberName(row);
+                if (!id || !nom) return null;
+
+                return {
+                    id: id,
+                    nom: nom,
+                    telefon: getStaffMemberPhone(row),
+                    carnet: getStaffMemberCarnet(row),
+                    actiu: row && row.actiu === undefined ? true : normalizeBooleanValue(row.actiu)
+                };
+            })
+            .filter(Boolean)
+            .sort(function (a, b) {
+                const inactiveA = a.actiu === false ? 1 : 0;
+                const inactiveB = b.actiu === false ? 1 : 0;
+                if (inactiveA !== inactiveB) return inactiveA - inactiveB;
+                return String(a.nom || '').localeCompare(String(b.nom || ''));
+            });
+    }
+
+    function normalizeStaffAssignmentRows(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        return list
+            .map(function (row) {
+                const equipId = normalizePositiveIdText(row && (row.equip_id ?? row.equipId));
+                const rolId = normalizePositiveIdText(row && (row.rol_id ?? row.rolId));
+                const staffMemberId = normalizePositiveIdText(row && (row.staff_membre_id ?? row.staffMemberId ?? row.memberId));
+                if (!equipId || !rolId || !staffMemberId) return null;
+                return { equipId: equipId, rolId: rolId, staffMemberId: staffMemberId };
+            })
+            .filter(Boolean);
+    }
+
+    function normalizeRoleIdByName(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        const roleMap = {};
+
+        list.forEach(function (row) {
+            const roleName = String(row && (row.nom ?? row.name ?? row.rol ?? '') || '').trim();
+            const roleId = normalizePositiveIdText(row && (row.id ?? row.rol_id ?? row.rolId));
+            if (!roleName || !roleId) return;
+            roleMap[normalizeLookupName(roleName)] = roleId;
+        });
+
+        return roleMap;
+    }
+
+    function findStaffMemberById(members, memberId) {
+        const targetId = String(memberId || '').trim();
+        if (!targetId) return null;
+        return (Array.isArray(members) ? members : []).find(function (member) {
+            return getStaffMemberId(member) === targetId;
+        }) || null;
+    }
+
+    function findStaffMemberByLegacyValues(members, nom, tel) {
+        const list = Array.isArray(members) ? members : [];
+        const lookupNom = normalizeLookupName(nom || '');
+        const lookupTel = normalizePhoneLookup(tel || '');
+
+        if (!lookupNom && !lookupTel) return null;
+
+        return list.find(function (member) {
+            const memberNom = normalizeLookupName(getStaffMemberName(member));
+            const memberTel = normalizePhoneLookup(getStaffMemberPhone(member));
+
+            if (lookupNom && lookupTel) {
+                return memberNom === lookupNom && memberTel === lookupTel;
+            }
+            if (lookupNom) return memberNom === lookupNom;
+            return memberTel === lookupTel;
+        }) || null;
+    }
+
+    function setStaffFieldValues(fieldBase, values) {
+        const nomEl = document.getElementById(`${fieldBase}_nom`);
+        if (nomEl) {
+            nomEl.value = String(values && values.nom || '').trim();
+        }
+
+        const telEl = document.getElementById(`${fieldBase}_tel`);
+        if (telEl) {
+            telEl.value = String(values && values.tel || '').trim();
+        }
+
+        const carnetEl = document.getElementById(`${fieldBase}_carnet`);
+        if (carnetEl && carnetEl.type === 'checkbox') {
+            carnetEl.checked = normalizeBooleanValue(values && values.carnet);
+        }
+    }
+
+    function ensureLegacyStaffOption(selectEl, label) {
+        if (!selectEl) return;
+        const text = String(label || '').trim();
+        if (!text) return;
+
+        const optionText = `${text} (actual)`;
+        const existing = Array.from(selectEl.options).find(function (option) {
+            return option.value === '__legacy__';
+        });
+
+        if (existing) {
+            existing.textContent = optionText;
+            return;
+        }
+
+        const option = document.createElement('option');
+        option.value = '__legacy__';
+        option.textContent = optionText;
+        selectEl.appendChild(option);
+    }
+
+    function populateStaffMemberSelect(selectEl, members, legacyLabel) {
+        if (!selectEl) return;
+
+        const sortedMembers = normalizeStaffMemberRows(members);
+
+        selectEl.innerHTML = '';
+
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = '— Sense assignar —';
+        selectEl.appendChild(emptyOption);
+
+        sortedMembers.forEach(function (member) {
+            const option = document.createElement('option');
+            option.value = String(member.id);
+            option.textContent = `${member.nom}${member.actiu === false ? ' (inactiu)' : ''}`;
+            selectEl.appendChild(option);
+        });
+
+        ensureLegacyStaffOption(selectEl, legacyLabel);
+    }
+
+    function isPageManagedStaffSelect(selectEl) {
+        if (!selectEl || typeof selectEl.getAttribute !== 'function') return false;
+        const inlineHandler = String(selectEl.getAttribute('onchange') || '').trim();
+        return /onstaffmemberselect\s*\(/i.test(inlineHandler);
+    }
+
+    function ensureStaffMemberSelectorForRow(rowEl, fieldBase, nomInput) {
+        const selectId = `${fieldBase}_member`;
+        let selectEl = rowEl ? rowEl.querySelector(`select#${selectId}`) : null;
+
+        if (selectEl && isPageManagedStaffSelect(selectEl)) {
+            return null;
+        }
+
+        if (!selectEl) {
+            selectEl = document.createElement('select');
+            selectEl.id = selectId;
+            if (nomInput && nomInput.parentNode) {
+                nomInput.insertAdjacentElement('afterend', selectEl);
+            } else if (rowEl) {
+                rowEl.appendChild(selectEl);
+            }
+        }
+
+        if (nomInput) {
+            nomInput.type = 'hidden';
+            nomInput.setAttribute('data-cf-staff-hidden', '1');
+        }
+
+        selectEl.style.width = '100%';
+        selectEl.setAttribute('data-cf-staff-member', '1');
+        selectEl.dataset.fieldBase = fieldBase;
+
+        if (!selectEl.dataset.cfStaffMemberBound) {
+            selectEl.addEventListener('change', onStaffMemberSelectorChange);
+            selectEl.dataset.cfStaffMemberBound = '1';
+        }
+
+        return selectEl;
     }
 
     function collectStaffCarnetPayload() {
@@ -990,6 +1250,387 @@
         });
     }
 
+    async function loadStaffClubMembers(forceRefresh) {
+        if (forceRefresh) {
+            staffClubMembersCache = null;
+            staffClubMembersPromise = null;
+        }
+
+        if (Array.isArray(staffClubMembersCache)) {
+            return staffClubMembersCache;
+        }
+
+        if (!staffClubMembersPromise) {
+            staffClubMembersPromise = fetch(`${base}/api/staff-club/members`, {
+                credentials: 'same-origin'
+            }).then(async function (response) {
+                if (!response || !response.ok) return [];
+                const rows = await response.json();
+                return normalizeStaffMemberRows(rows);
+            }).catch(function () {
+                return [];
+            }).then(function (rows) {
+                staffClubMembersCache = Array.isArray(rows) ? rows : [];
+                staffClubMembersPromise = null;
+                return staffClubMembersCache;
+            });
+        }
+
+        return staffClubMembersPromise;
+    }
+
+    async function loadStaffClubAssignments(forceRefresh) {
+        if (forceRefresh) {
+            staffClubAssignmentsCache = null;
+            staffClubAssignmentsPromise = null;
+        }
+
+        if (Array.isArray(staffClubAssignmentsCache)) {
+            return staffClubAssignmentsCache;
+        }
+
+        if (!staffClubAssignmentsPromise) {
+            staffClubAssignmentsPromise = fetch(`${base}/api/staff-club/assignments`, {
+                credentials: 'same-origin'
+            }).then(async function (response) {
+                if (!response || !response.ok) return [];
+                const rows = await response.json();
+                return normalizeStaffAssignmentRows(rows);
+            }).catch(function () {
+                return [];
+            }).then(function (rows) {
+                staffClubAssignmentsCache = Array.isArray(rows) ? rows : [];
+                staffClubAssignmentsPromise = null;
+                return staffClubAssignmentsCache;
+            });
+        }
+
+        return staffClubAssignmentsPromise;
+    }
+
+    async function loadStaffRoleIdByName(forceRefresh) {
+        if (forceRefresh) {
+            staffClubRoleIdByNameCache = null;
+            staffClubRoleIdByNamePromise = null;
+        }
+
+        if (staffClubRoleIdByNameCache && typeof staffClubRoleIdByNameCache === 'object') {
+            return staffClubRoleIdByNameCache;
+        }
+
+        if (!staffClubRoleIdByNamePromise) {
+            staffClubRoleIdByNamePromise = fetch(`${base}/api/rols`, {
+                credentials: 'same-origin'
+            }).then(async function (response) {
+                if (!response || !response.ok) return {};
+                const rows = await response.json();
+                return normalizeRoleIdByName(rows);
+            }).catch(function () {
+                return {};
+            }).then(function (roleMap) {
+                staffClubRoleIdByNameCache = roleMap && typeof roleMap === 'object' ? roleMap : {};
+                staffClubRoleIdByNamePromise = null;
+                return staffClubRoleIdByNameCache;
+            });
+        }
+
+        return staffClubRoleIdByNamePromise;
+    }
+
+    function invalidateStaffAssignmentsCache() {
+        staffClubAssignmentsCache = null;
+        staffClubAssignmentsPromise = null;
+    }
+
+    function upsertStaffAssignmentCache(equipId, rolId, staffMemberId) {
+        if (!Array.isArray(staffClubAssignmentsCache)) return;
+
+        const normalizedEquipId = normalizePositiveIdText(equipId);
+        const normalizedRolId = normalizePositiveIdText(rolId);
+        const normalizedMemberId = normalizePositiveIdText(staffMemberId);
+        if (!normalizedEquipId || !normalizedRolId || !normalizedMemberId) {
+            invalidateStaffAssignmentsCache();
+            return;
+        }
+
+        const nextAssignments = staffClubAssignmentsCache.filter(function (item) {
+            return item.equipId !== normalizedEquipId || item.rolId !== normalizedRolId;
+        });
+
+        nextAssignments.push({
+            equipId: normalizedEquipId,
+            rolId: normalizedRolId,
+            staffMemberId: normalizedMemberId
+        });
+
+        staffClubAssignmentsCache = nextAssignments;
+    }
+
+    function removeStaffAssignmentFromCache(equipId, rolId) {
+        if (!Array.isArray(staffClubAssignmentsCache)) return;
+
+        const normalizedEquipId = normalizePositiveIdText(equipId);
+        const normalizedRolId = normalizePositiveIdText(rolId);
+        if (!normalizedEquipId || !normalizedRolId) {
+            invalidateStaffAssignmentsCache();
+            return;
+        }
+
+        staffClubAssignmentsCache = staffClubAssignmentsCache.filter(function (item) {
+            return item.equipId !== normalizedEquipId || item.rolId !== normalizedRolId;
+        });
+    }
+
+    async function saveStaffInputsSilently() {
+        if (typeof window.saveAll !== 'function') return;
+
+        try {
+            const result = window.saveAll(true);
+            if (result && typeof result.then === 'function') {
+                await result;
+            }
+        } catch (_) {}
+    }
+
+    async function onStaffMemberSelectorChange(event) {
+        const selectEl = event && event.target ? event.target : null;
+        if (!selectEl) return;
+        if (isPageManagedStaffSelect(selectEl)) return;
+        if (selectEl.dataset.cfStaffMemberBusy === '1') return;
+
+        const fieldBase = normalizeStaffFieldBase(
+            selectEl.dataset.fieldBase || String(selectEl.id || '').replace(/_member$/i, '')
+        );
+        if (!fieldBase) return;
+
+        const selectedValue = String(selectEl.value || '').trim();
+        const previousValue = String(selectEl.dataset.prevValue || '').trim();
+        const roleName = String(selectEl.dataset.roleName || staffFieldBaseToRoleName(fieldBase)).trim();
+
+        let equipId = String(selectEl.dataset.equipId || '').trim();
+        if (!equipId) {
+            equipId = String(await resolveStaffCarnetEquipId() || '').trim();
+            if (equipId) {
+                selectEl.dataset.equipId = equipId;
+            }
+        }
+
+        selectEl.dataset.cfStaffMemberBusy = '1';
+        selectEl.disabled = true;
+
+        try {
+            if (selectedValue && selectedValue !== '__legacy__') {
+                const members = await loadStaffClubMembers(false);
+                const selectedMember = findStaffMemberById(members, selectedValue);
+                if (!selectedMember) {
+                    throw new Error('Membre de staff no trobat');
+                }
+
+                setStaffFieldValues(fieldBase, {
+                    nom: getStaffMemberName(selectedMember),
+                    tel: getStaffMemberPhone(selectedMember),
+                    carnet: getStaffMemberCarnet(selectedMember)
+                });
+
+                if (equipId) {
+                    const assignmentResponse = await fetch(`${base}/api/staff-club/assignments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            equip_id: equipId,
+                            rol_nom: roleName,
+                            staff_membre_id: selectedValue
+                        })
+                    });
+
+                    if (!assignmentResponse.ok) {
+                        const errorText = await assignmentResponse.text();
+                        throw new Error(errorText || `HTTP ${assignmentResponse.status}`);
+                    }
+
+                    const payload = await assignmentResponse.json().catch(function () { return null; });
+                    const assignment = payload && payload.assignment ? payload.assignment : null;
+                    const assignedRolId = normalizePositiveIdText(assignment && assignment.rol_id);
+
+                    if (assignedRolId) {
+                        selectEl.dataset.assignedRolId = assignedRolId;
+                        upsertStaffAssignmentCache(equipId, assignedRolId, selectedValue);
+                    } else {
+                        invalidateStaffAssignmentsCache();
+                    }
+                }
+
+                selectEl.dataset.prevValue = selectedValue;
+                await saveStaffInputsSilently();
+                return;
+            }
+
+            if (!selectedValue) {
+                setStaffFieldValues(fieldBase, { nom: '', tel: '', carnet: false });
+
+                if (equipId) {
+                    let assignedRolId = normalizePositiveIdText(selectEl.dataset.assignedRolId || '');
+                    if (!assignedRolId) {
+                        const roleMap = await loadStaffRoleIdByName(false);
+                        assignedRolId = normalizePositiveIdText(roleMap && roleMap[normalizeLookupName(roleName)]);
+                    }
+
+                    if (assignedRolId) {
+                        const response = await fetch(`${base}/api/staff-club/assignments?equipId=${encodeURIComponent(equipId)}&rolId=${encodeURIComponent(assignedRolId)}`, {
+                            method: 'DELETE',
+                            credentials: 'same-origin'
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(errorText || `HTTP ${response.status}`);
+                        }
+
+                        removeStaffAssignmentFromCache(equipId, assignedRolId);
+                    } else {
+                        invalidateStaffAssignmentsCache();
+                    }
+                }
+
+                selectEl.dataset.assignedRolId = '';
+                selectEl.dataset.prevValue = '';
+                await saveStaffInputsSilently();
+                return;
+            }
+
+            selectEl.dataset.prevValue = selectedValue;
+            await saveStaffInputsSilently();
+        } catch (error) {
+            console.warn('Error actualitzant assignació de staff:', error && error.message ? error.message : error);
+            alert('No s\'ha pogut actualitzar l\'assignació de staff.');
+
+            const canRestorePrevious = previousValue && Array.from(selectEl.options).some(function (option) {
+                return option.value === previousValue;
+            });
+            selectEl.value = canRestorePrevious ? previousValue : '';
+            selectEl.dataset.prevValue = selectEl.value;
+
+            await syncStaffCarnetFromServer();
+        } finally {
+            selectEl.disabled = false;
+            selectEl.dataset.cfStaffMemberBusy = '';
+        }
+    }
+
+    async function syncStaffMemberSelectorsFromServer(options) {
+        if (!getStaffTables().length) return;
+
+        const sourceOptions = options && typeof options === 'object' ? options : {};
+        const forceRefresh = !!sourceOptions.forceRefresh;
+        const providedEquipId = String(sourceOptions.equipId || '').trim();
+
+        const rowStates = [];
+
+        getStaffTables().forEach(function (tableEl) {
+            tableEl.querySelectorAll('tbody tr').forEach(function (rowEl) {
+                const nomInput = rowEl.querySelector('input[id^="s_"][id$="_nom"]');
+                const telInput = rowEl.querySelector('input[id^="s_"][id$="_tel"]');
+                if (!nomInput || !nomInput.id || !telInput) return;
+
+                const fieldBase = normalizeStaffFieldBase(nomInput.id.replace(/_nom$/i, ''));
+                if (!fieldBase) return;
+
+                const selectEl = ensureStaffMemberSelectorForRow(rowEl, fieldBase, nomInput);
+                if (!selectEl) return;
+
+                rowStates.push({
+                    fieldBase: fieldBase,
+                    nomInput: nomInput,
+                    telInput: telInput,
+                    selectEl: selectEl
+                });
+            });
+        });
+
+        if (!rowStates.length) return;
+
+        const members = await loadStaffClubMembers(forceRefresh);
+        const membersById = new Map();
+        (Array.isArray(members) ? members : []).forEach(function (member) {
+            const memberId = getStaffMemberId(member);
+            if (!memberId) return;
+            membersById.set(memberId, member);
+        });
+
+        let normalizedEquipId = normalizePositiveIdText(providedEquipId);
+        if (!normalizedEquipId) {
+            normalizedEquipId = normalizePositiveIdText(await resolveStaffCarnetEquipId());
+        }
+
+        let assignments = [];
+        let roleMap = {};
+        if (normalizedEquipId) {
+            const loaded = await Promise.all([
+                loadStaffClubAssignments(forceRefresh),
+                loadStaffRoleIdByName(forceRefresh)
+            ]);
+
+            assignments = Array.isArray(loaded[0]) ? loaded[0] : [];
+            roleMap = loaded[1] && typeof loaded[1] === 'object' ? loaded[1] : {};
+        }
+
+        rowStates.forEach(function (rowState) {
+            const roleName = staffFieldBaseToRoleName(rowState.fieldBase);
+            const roleLookup = normalizeLookupName(roleName);
+            const roleId = normalizePositiveIdText(roleMap[roleLookup]);
+
+            const currentNom = String(rowState.nomInput.value || '').trim();
+            const currentTel = String(rowState.telInput.value || '').trim();
+
+            let assignedRoleId = roleId;
+            let selectedMember = null;
+
+            if (normalizedEquipId && roleId) {
+                const assignment = assignments.find(function (item) {
+                    return item.equipId === normalizedEquipId && item.rolId === roleId;
+                });
+
+                if (assignment) {
+                    assignedRoleId = assignment.rolId;
+                    selectedMember = membersById.get(assignment.staffMemberId) || null;
+                }
+            }
+
+            if (!selectedMember) {
+                selectedMember = findStaffMemberByLegacyValues(members, currentNom, currentTel);
+            }
+
+            populateStaffMemberSelect(rowState.selectEl, members, selectedMember ? '' : currentNom);
+
+            if (selectedMember) {
+                const selectedMemberId = getStaffMemberId(selectedMember);
+                const hasMemberOption = Array.from(rowState.selectEl.options).some(function (option) {
+                    return option.value === selectedMemberId;
+                });
+
+                rowState.selectEl.value = hasMemberOption ? selectedMemberId : '';
+
+                if (hasMemberOption) {
+                    setStaffFieldValues(rowState.fieldBase, {
+                        nom: getStaffMemberName(selectedMember),
+                        tel: getStaffMemberPhone(selectedMember),
+                        carnet: getStaffMemberCarnet(selectedMember)
+                    });
+                }
+            } else if (currentNom) {
+                rowState.selectEl.value = '__legacy__';
+            } else {
+                rowState.selectEl.value = '';
+            }
+
+            rowState.selectEl.dataset.equipId = normalizedEquipId;
+            rowState.selectEl.dataset.roleName = roleName;
+            rowState.selectEl.dataset.assignedRolId = assignedRoleId;
+            rowState.selectEl.dataset.prevValue = rowState.selectEl.value;
+        });
+    }
+
     function getRequestUrl(input) {
         if (typeof input === 'string') return input;
         if (input && typeof input === 'object' && input.url) return String(input.url);
@@ -1022,10 +1663,16 @@
         if (!parsedBody || typeof parsedBody !== 'object') return init;
 
         const carnetPayload = collectStaffCarnetPayload();
-        if (!Object.keys(carnetPayload).length) return init;
+        const shouldPreserveAssignments = getStaffTables().length > 0;
+        const augmentPayload = Object.assign(
+            {},
+            shouldPreserveAssignments ? { __preserve_staff_assignments: true } : {},
+            carnetPayload
+        );
+        if (!Object.keys(augmentPayload).length) return init;
 
         return Object.assign({}, options, {
-            body: JSON.stringify(Object.assign({}, parsedBody, carnetPayload))
+            body: JSON.stringify(Object.assign({}, parsedBody, augmentPayload))
         });
     }
 
@@ -1056,6 +1703,8 @@
 
                 response.clone().json().then(function (config) {
                     applyStaffCarnetValues(config);
+                    injectStaffCarnetColumn();
+                    syncStaffMemberSelectorsFromServer().catch(function () {});
                 }).catch(function () {});
 
                 return response;
@@ -1124,11 +1773,16 @@
             const config = await response.json();
             applyStaffCarnetValues(config);
             injectStaffCarnetColumn();
+            await syncStaffMemberSelectorsFromServer({
+                equipId: equipId,
+                forceRefresh: true
+            });
         } catch (_) {}
     }
 
     function initStaffCarnetFeature() {
         injectStaffCarnetColumn();
+        syncStaffMemberSelectorsFromServer().catch(function () {});
         applyStaffCarnetFetchEnhancer();
         syncStaffCarnetFromServer();
     }
@@ -1673,7 +2327,10 @@
 
     function isViewerOnly(roles) {
         const normalizedRoles = normalizeRoleList(roles);
-        return normalizedRoles.length === 0 || (normalizedRoles.length === 1 && normalizedRoles[0] === 'viewer');
+        if (!normalizedRoles.length) return false;
+        return normalizedRoles.every(function (roleName) {
+            return roleName === 'viewer';
+        });
     }
 
     (async function applyRoleVisibility() {
@@ -1682,25 +2339,32 @@
             if (!res.ok) return;
 
             const data = await res.json();
-            const roles = data && data.user ? normalizeRoleList(data.user.roles) : [];
+            const roles = normalizeRoleList(
+                (data && data.user && (data.user.roles ?? data.user.role)) ??
+                (data ? (data.roles ?? data.role) : [])
+            );
 
             if (isViewerOnly(roles)) {
                 enableReadOnlyMode();
                 return;
             }
 
+            const direccioAllowed = hasAnyRole(roles, ['direccio']);
             const seniorAllowed = hasAnyRole(roles, ['direccio', 'senior']);
             const baseAllowed = hasAnyRole(roles, ['direccio', 'futbol_base']);
             const scoutingAllowed = hasAnyRole(roles, ['direccio', 'scouting']);
 
-            if (seniorDrop && !seniorAllowed) seniorDrop.style.display = 'none';
-            if (fbDrop && !baseAllowed) fbDrop.style.display = 'none';
+            if (seniorDrop) seniorDrop.style.display = seniorAllowed ? '' : 'none';
+            if (fbDrop) fbDrop.style.display = baseAllowed ? '' : 'none';
+
+            const staffClubEntry = document.getElementById('cf-staff-club-entry');
+            if (staffClubEntry) staffClubEntry.style.display = direccioAllowed ? '' : 'none';
 
             const scoutingSeniorEntry = document.getElementById('cf-scouting-senior-entry');
-            if (scoutingSeniorEntry && !scoutingAllowed) scoutingSeniorEntry.style.display = 'none';
+            if (scoutingSeniorEntry) scoutingSeniorEntry.style.display = scoutingAllowed ? '' : 'none';
 
             const scoutingBaseEntry = document.getElementById('cf-scouting-base-entry');
-            if (scoutingBaseEntry && !scoutingAllowed) scoutingBaseEntry.style.display = 'none';
+            if (scoutingBaseEntry) scoutingBaseEntry.style.display = scoutingAllowed ? '' : 'none';
         } catch (_) {}
     })();
 })();
