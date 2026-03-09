@@ -143,6 +143,22 @@
                 width:100%;
                 margin-left:0;
             }
+            .mobile-card-table td[data-label="Nom i cognoms"] select{
+                width:100%;
+                margin-left:0;
+            }
+            .mobile-card-table td[data-label="Rol"]{
+                display:block;
+            }
+            .mobile-card-table td[data-label="Rol"]::before{
+                display:block;
+                min-width:0;
+                margin-bottom:0.35rem;
+            }
+            .mobile-card-table td[data-label="Rol"] select{
+                width:100%;
+                margin-left:0;
+            }
             .mobile-card-table td[data-label="Telèfon"]{
                 display:block;
             }
@@ -191,34 +207,34 @@
             <table class="plantilla-table mobile-card-table">
                 <thead>
                     <tr>
-                        <th>Rol</th>
                         <th>Nom i Cognoms</th>
+                        <th>Rol</th>
                         <th>Telèfon</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td data-label="Rol" class="dia-badge">Primer Entrenador</td>
                         <td data-label="Nom i cognoms">
                             <input type="hidden" id="s_primer_entrenador_nom">
-                            <select id="s_primer_entrenador_member" onchange="onStaffMemberSelect('s_primer_entrenador','Primer Entrenador')"></select>
+                            <select id="s_primer_entrenador_member" onchange="onStaffMemberSelect('s_primer_entrenador')"></select>
                         </td>
+                        <td data-label="Rol"><select id="s_primer_entrenador_role" onchange="onStaffRoleSelect('s_primer_entrenador')"></select></td>
                         <td data-label="Telèfon"><input type="tel" id="s_primer_entrenador_tel" placeholder="Telèfon..." readonly></td>
                     </tr>
                     <tr>
-                        <td data-label="Rol" class="dia-badge">Segon Entrenador</td>
                         <td data-label="Nom i cognoms">
                             <input type="hidden" id="s_segon_entrenador_nom">
-                            <select id="s_segon_entrenador_member" onchange="onStaffMemberSelect('s_segon_entrenador','Segon Entrenador')"></select>
+                            <select id="s_segon_entrenador_member" onchange="onStaffMemberSelect('s_segon_entrenador')"></select>
                         </td>
+                        <td data-label="Rol"><select id="s_segon_entrenador_role" onchange="onStaffRoleSelect('s_segon_entrenador')"></select></td>
                         <td data-label="Telèfon"><input type="tel" id="s_segon_entrenador_tel" placeholder="Telèfon..." readonly></td>
                     </tr>
                     <tr>
-                        <td data-label="Rol" class="dia-badge">Tercer Entrenador</td>
                         <td data-label="Nom i cognoms">
                             <input type="hidden" id="s_tercer_entrenador_nom">
-                            <select id="s_tercer_entrenador_member" onchange="onStaffMemberSelect('s_tercer_entrenador','Tercer Entrenador')"></select>
+                            <select id="s_tercer_entrenador_member" onchange="onStaffMemberSelect('s_tercer_entrenador')"></select>
                         </td>
+                        <td data-label="Rol"><select id="s_tercer_entrenador_role" onchange="onStaffRoleSelect('s_tercer_entrenador')"></select></td>
                         <td data-label="Telèfon"><input type="tel" id="s_tercer_entrenador_tel" placeholder="Telèfon..." readonly></td>
                     </tr>
                 </tbody>
@@ -341,7 +357,9 @@
         ]);
         let staffClubMembers=[];
         let staffClubAssignments=[];
+        let staffRolesCatalog=[];
         let staffRoleIdsByName={};
+        let staffRoleSelectionByFieldBase={};
         const DIES=['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
         const TEAMS=[
             {id:'seccio_primer-equip', name:'Primer Equip'},
@@ -460,6 +478,20 @@
                 .replace(/\s+/g,' ');
         }
 
+        function compareRoleIdValues(a,b){
+            const rawA=String(a||'').trim();
+            const rawB=String(b||'').trim();
+            const numA=Number(rawA);
+            const numB=Number(rawB);
+            const isNumA=Number.isInteger(numA);
+            const isNumB=Number.isInteger(numB);
+
+            if(isNumA&&isNumB) return numA-numB;
+            if(isNumA) return -1;
+            if(isNumB) return 1;
+            return rawA.localeCompare(rawB, undefined, {numeric:true, sensitivity:'base'});
+        }
+
         function escapeHtml(value){
             return String(value||'')
                 .replace(/&/g,'&amp;')
@@ -473,6 +505,69 @@
 
         function getStaffRoleId(roleName){
             return String(staffRoleIdsByName[normalizeStaffLookup(roleName)]||'').trim();
+        }
+
+        function getStoredStaffRoleId(fieldBase){
+            return String(staffRoleSelectionByFieldBase[fieldBase]||'').trim();
+        }
+
+        function setStoredStaffRoleId(fieldBase, roleId){
+            const normalizedRoleId=String(roleId||'').trim();
+            if(normalizedRoleId){
+                staffRoleSelectionByFieldBase[fieldBase]=normalizedRoleId;
+                return;
+            }
+            delete staffRoleSelectionByFieldBase[fieldBase];
+        }
+
+        function renderStaffRoleSelect(fieldBase, selectedRoleId='', fallbackRoleName=''){
+            const selectEl=document.getElementById(`${fieldBase}_role`);
+            if(!selectEl) return;
+
+            const normalizedSelected=String(selectedRoleId||'').trim();
+            const fallbackRoleId=getStaffRoleId(fallbackRoleName);
+            const desiredRoleId=normalizedSelected||fallbackRoleId;
+
+            const catalog=Array.isArray(staffRolesCatalog)?staffRolesCatalog:[];
+            const normalizedRoles=catalog
+                .map(role=>({
+                    id:String(role&&role.id||'').trim(),
+                    nom:String(role&&role.nom||'').trim()
+                }))
+                .filter(role=>role.id)
+                .sort((a,b)=>compareRoleIdValues(a.id,b.id));
+
+            const options=['<option value="">— Rol —</option>'];
+            normalizedRoles.forEach(role=>{
+                const label=role.nom||`Rol ${role.id}`;
+                options.push(`<option value="${escapeHtml(role.id)}">${escapeHtml(label)}</option>`);
+            });
+
+            selectEl.innerHTML=options.join('');
+            const hasDesiredRole=normalizedRoles.some(role=>role.id===desiredRoleId);
+            selectEl.value=hasDesiredRole?desiredRoleId:'';
+        }
+
+        function getSelectedStaffRoleId(fieldBase){
+            const selectEl=document.getElementById(`${fieldBase}_role`);
+            const selected=String(selectEl&&selectEl.value||'').trim();
+            if(selected) return selected;
+
+            const meta=getStaffRoleMeta(fieldBase);
+            return getStaffRoleId(meta&&meta.roleName||'');
+        }
+
+        async function deleteStaffAssignmentByRoleId(roleId){
+            const normalizedRoleId=String(roleId||'').trim();
+            if(!normalizedRoleId) return;
+
+            const res=await fetch(`${API_STAFF_CLUB_ASSIGNMENTS}?equipId=${encodeURIComponent(EQUIP_ID)}&rolId=${encodeURIComponent(normalizedRoleId)}`, {
+                method:'DELETE'
+            });
+            if(!res.ok){
+                const errorText=await res.text();
+                throw new Error(errorText||`HTTP ${res.status}`);
+            }
         }
 
         function getStaffMemberById(memberId){
@@ -558,12 +653,17 @@
         }
 
         async function loadStaffAssignmentSelectors(){
-            STAFF_ROLE_ROWS.forEach(item=>renderStaffMemberSelect(item.fieldBase));
+            STAFF_ROLE_ROWS.forEach(item=>{
+                const storedRoleId=getStoredStaffRoleId(item.fieldBase);
+                renderStaffMemberSelect(item.fieldBase);
+                renderStaffRoleSelect(item.fieldBase, storedRoleId, item.roleName);
+            });
 
             if(IS_FILE){
                 STAFF_ROLE_ROWS.forEach(item=>{
                     const selectEl=document.getElementById(`${item.fieldBase}_member`);
                     const nom=String((document.getElementById(`${item.fieldBase}_nom`)||{}).value||'').trim();
+                    const roleId=getSelectedStaffRoleId(item.fieldBase);
                     if(!selectEl) return;
                     if(nom){
                         ensureLegacyStaffOption(selectEl, nom);
@@ -571,6 +671,8 @@
                     }else{
                         selectEl.value='';
                     }
+                    selectEl.dataset.assignedRoleId=roleId;
+                    setStoredStaffRoleId(item.fieldBase, roleId);
                 });
                 return;
             }
@@ -589,6 +691,7 @@
                 if(!Array.isArray(staffClubAssignments)) staffClubAssignments=[];
 
                 const rols=rolsRes.ok?await rolsRes.json():[];
+                staffRolesCatalog=Array.isArray(rols)?rols:[];
                 const roleMap={};
                 (Array.isArray(rols)?rols:[]).forEach(row=>{
                     const key=normalizeStaffLookup(row&&row.nom||'');
@@ -599,13 +702,18 @@
 
                 STAFF_ROLE_ROWS.forEach(item=>{
                     renderStaffMemberSelect(item.fieldBase);
+                    const storedRoleId=getStoredStaffRoleId(item.fieldBase);
+                    const defaultRoleId=getStaffRoleId(item.roleName);
+                    const preferredRoleId=storedRoleId||defaultRoleId;
+                    renderStaffRoleSelect(item.fieldBase, preferredRoleId, item.roleName);
+
                     const selectEl=document.getElementById(`${item.fieldBase}_member`);
+                    const activeRoleId=getSelectedStaffRoleId(item.fieldBase);
                     if(!selectEl) return;
 
-                    const roleId=getStaffRoleId(item.roleName);
                     const assignment=staffClubAssignments.find(row=>
                         String(row&&row.equip_id||'').trim()===String(EQUIP_ID) &&
-                        String(row&&row.rol_id||'').trim()===String(roleId)
+                        String(row&&row.rol_id||'').trim()===String(activeRoleId)
                     );
 
                     let member=null;
@@ -624,6 +732,8 @@
 
                     if(member){
                         selectEl.value=String(member.id);
+                        selectEl.dataset.assignedRoleId=String(activeRoleId||'');
+                        setStoredStaffRoleId(item.fieldBase, activeRoleId);
                         setStaffUiValues(item.fieldBase, {
                             nom: member.nom || '',
                             tel: member.telefon || '',
@@ -639,17 +749,22 @@
                     }else{
                         selectEl.value='';
                     }
+                    selectEl.dataset.assignedRoleId='';
+                    setStoredStaffRoleId(item.fieldBase, activeRoleId);
                 });
             }catch(e){
                 console.warn('Error carregant membres/assignacions de staff:', e);
             }
         }
 
-        window.onStaffMemberSelect=async function(fieldBase, roleName){
+        window.onStaffMemberSelect=async function(fieldBase){
             const selectEl=document.getElementById(`${fieldBase}_member`);
             if(!selectEl) return;
 
             const selectedValue=String(selectEl.value||'').trim();
+            const selectedRoleId=getSelectedStaffRoleId(fieldBase);
+            const assignedRoleId=String(selectEl.dataset.assignedRoleId||'').trim();
+            setStoredStaffRoleId(fieldBase, selectedRoleId);
 
             if(selectedValue && selectedValue!=='__legacy__'){
                 const member=getStaffMemberById(selectedValue);
@@ -662,14 +777,24 @@
                 }
 
                 if(!IS_FILE){
+                    if(!selectedRoleId){
+                        alert('Selecciona un rol per assignar el membre de staff.');
+                        await loadStaffAssignmentSelectors();
+                        return;
+                    }
+
                     let assignedOk=true;
                     try{
+                        if(assignedRoleId && assignedRoleId!==selectedRoleId){
+                            await deleteStaffAssignmentByRoleId(assignedRoleId);
+                        }
+
                         const res=await fetch(API_STAFF_CLUB_ASSIGNMENTS,{
                             method:'POST',
                             headers:{'Content-Type':'application/json'},
                             body:JSON.stringify({
                                 equip_id:EQUIP_ID,
-                                rol_nom:roleName,
+                                rol_id:selectedRoleId,
                                 staff_membre_id:selectedValue
                             })
                         });
@@ -688,6 +813,8 @@
                     }
                 }
 
+                selectEl.dataset.assignedRoleId=String(selectedRoleId||'');
+
                 renderPlantilla();
                 await saveAll(true);
                 return;
@@ -698,16 +825,9 @@
                 if(!IS_FILE){
                     let removedOk=true;
                     try{
-                        await ensureStaffRoleMap();
-                        const roleId=getStaffRoleId(roleName);
-                        if(roleId){
-                            const res=await fetch(`${API_STAFF_CLUB_ASSIGNMENTS}?equipId=${encodeURIComponent(EQUIP_ID)}&rolId=${encodeURIComponent(roleId)}`, {
-                                method:'DELETE'
-                            });
-                            if(!res.ok){
-                                const errorText=await res.text();
-                                throw new Error(errorText||`HTTP ${res.status}`);
-                            }
+                        const roleToDelete=assignedRoleId||selectedRoleId;
+                        if(roleToDelete){
+                            await deleteStaffAssignmentByRoleId(roleToDelete);
                         }
                     }catch(e){
                         removedOk=false;
@@ -720,9 +840,64 @@
                     }
                 }
 
+                selectEl.dataset.assignedRoleId='';
+
                 renderPlantilla();
                 await saveAll(true);
                 return;
+            }
+
+            renderPlantilla();
+            await saveAll(true);
+        };
+
+        window.onStaffRoleSelect=async function(fieldBase){
+            const roleSelectEl=document.getElementById(`${fieldBase}_role`);
+            const memberSelectEl=document.getElementById(`${fieldBase}_member`);
+            if(!roleSelectEl || !memberSelectEl) return;
+
+            const selectedRoleId=String(roleSelectEl.value||'').trim();
+            const selectedMemberId=String(memberSelectEl.value||'').trim();
+            const assignedRoleId=String(memberSelectEl.dataset.assignedRoleId||'').trim();
+            const defaultRoleId=getStaffRoleId((getStaffRoleMeta(fieldBase)||{}).roleName||'');
+
+            if(selectedMemberId && selectedMemberId!=='__legacy__' && !selectedRoleId){
+                alert('Selecciona un rol per mantenir l\'assignació.');
+                roleSelectEl.value=assignedRoleId||defaultRoleId||'';
+                return;
+            }
+
+            setStoredStaffRoleId(fieldBase, selectedRoleId);
+
+            if(selectedMemberId && selectedMemberId!=='__legacy__' && !IS_FILE){
+                try{
+                    if(assignedRoleId && assignedRoleId!==selectedRoleId){
+                        await deleteStaffAssignmentByRoleId(assignedRoleId);
+                    }
+
+                    if(selectedRoleId){
+                        const res=await fetch(API_STAFF_CLUB_ASSIGNMENTS,{
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body:JSON.stringify({
+                                equip_id:EQUIP_ID,
+                                rol_id:selectedRoleId,
+                                staff_membre_id:selectedMemberId
+                            })
+                        });
+                        if(!res.ok){
+                            const errorText=await res.text();
+                            throw new Error(errorText||`HTTP ${res.status}`);
+                        }
+                        memberSelectEl.dataset.assignedRoleId=selectedRoleId;
+                    }else{
+                        memberSelectEl.dataset.assignedRoleId='';
+                    }
+                }catch(e){
+                    alert('No s\'ha pogut actualitzar el rol de l\'assignació.');
+                    await loadStaffAssignmentSelectors();
+                    return;
+                }
             }
 
             renderPlantilla();
@@ -779,6 +954,14 @@
                 }
                 const d=db[KEY]||{};
                 if(document.getElementById('descripcio')) document.getElementById('descripcio').value=d.descripcio||'';
+
+                staffRoleSelectionByFieldBase={};
+                STAFF_ROLE_ROWS.forEach(item=>{
+                    const savedRoleId=String(d[`${item.fieldBase}_rol_id`]||'').trim();
+                    if(savedRoleId){
+                        staffRoleSelectionByFieldBase[item.fieldBase]=savedRoleId;
+                    }
+                });
 
                 STAFF_ROLE_ROWS.forEach(item=>{
                     setStaffUiValues(item.fieldBase, {nom:'', tel:'', carnet:false});
@@ -865,6 +1048,13 @@
             renderPlantilla();
             db[KEY]={horaris,partits,observacions};
             if(document.getElementById('descripcio')) db[KEY].descripcio=document.getElementById('descripcio').value;
+
+            STAFF_ROLE_ROWS.forEach(item=>{
+                const selectedRoleId=getSelectedStaffRoleId(item.fieldBase);
+                db[KEY][`${item.fieldBase}_rol_id`]=selectedRoleId;
+                setStoredStaffRoleId(item.fieldBase, selectedRoleId);
+            });
+
             if(IS_FILE){
                 STAFF_FIELDS.forEach(f=>{const el=document.getElementById(f);if(el)db[KEY][f]=el.value;});
                 STAFF_ROLE_ROWS.forEach(item=>{

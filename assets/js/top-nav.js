@@ -875,6 +875,8 @@
     let staffClubMembersPromise = null;
     let staffClubAssignmentsCache = null;
     let staffClubAssignmentsPromise = null;
+    let staffClubRolesCatalogCache = null;
+    let staffClubRolesCatalogPromise = null;
     let staffClubRoleIdByNameCache = null;
     let staffClubRoleIdByNamePromise = null;
 
@@ -965,6 +967,38 @@
         const parsed = Number(text);
         if (!Number.isInteger(parsed) || parsed <= 0) return '';
         return String(parsed);
+    }
+
+    function compareRoleIdValues(a, b) {
+        const rawA = String(a || '').trim();
+        const rawB = String(b || '').trim();
+        const numA = Number(rawA);
+        const numB = Number(rawB);
+        const isNumA = Number.isInteger(numA);
+        const isNumB = Number.isInteger(numB);
+
+        if (isNumA && isNumB) return numA - numB;
+        if (isNumA) return -1;
+        if (isNumB) return 1;
+        return rawA.localeCompare(rawB, undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    function normalizeStaffRoleRows(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        return list
+            .map(function (row) {
+                const roleId = normalizePositiveIdText(row && (row.id ?? row.rol_id ?? row.rolId));
+                if (!roleId) return null;
+                const roleName = String(row && (row.nom ?? row.name ?? row.rol ?? '') || '').trim();
+                return {
+                    id: roleId,
+                    nom: roleName
+                };
+            })
+            .filter(Boolean)
+            .sort(function (a, b) {
+                return compareRoleIdValues(a.id, b.id);
+            });
     }
 
     function getStaffMemberId(member) {
@@ -1133,6 +1167,12 @@
         return /onstaffmemberselect\s*\(/i.test(inlineHandler);
     }
 
+    function isPageManagedStaffRoleSelect(selectEl) {
+        if (!selectEl || typeof selectEl.getAttribute !== 'function') return false;
+        const inlineHandler = String(selectEl.getAttribute('onchange') || '').trim();
+        return /onstaffroleselect\s*\(/i.test(inlineHandler);
+    }
+
     function ensureStaffMemberSelectorForRow(rowEl, fieldBase, nomInput) {
         const selectId = `${fieldBase}_member`;
         let selectEl = rowEl ? rowEl.querySelector(`select#${selectId}`) : null;
@@ -1163,6 +1203,74 @@
         if (!selectEl.dataset.cfStaffMemberBound) {
             selectEl.addEventListener('change', onStaffMemberSelectorChange);
             selectEl.dataset.cfStaffMemberBound = '1';
+        }
+
+        return selectEl;
+    }
+
+    function populateStaffRoleSelect(selectEl, rolesCatalog, preferredRoleId, fallbackRoleName) {
+        if (!selectEl) return;
+
+        const roles = normalizeStaffRoleRows(rolesCatalog);
+        const normalizedPreferredRoleId = normalizePositiveIdText(preferredRoleId);
+        const normalizedFallbackName = normalizeLookupName(fallbackRoleName || '');
+        const fallbackRole = roles.find(function (role) {
+            return normalizeLookupName(role.nom || '') === normalizedFallbackName;
+        });
+        const fallbackRoleId = normalizePositiveIdText(fallbackRole && fallbackRole.id);
+
+        selectEl.innerHTML = '';
+
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = '— Rol —';
+        selectEl.appendChild(emptyOption);
+
+        roles.forEach(function (role) {
+            const option = document.createElement('option');
+            option.value = role.id;
+            option.textContent = role.nom || `Rol ${role.id}`;
+            selectEl.appendChild(option);
+        });
+
+        const desiredRoleId = normalizedPreferredRoleId || fallbackRoleId;
+        const hasDesiredRole = Array.from(selectEl.options).some(function (option) {
+            return option.value === desiredRoleId;
+        });
+
+        selectEl.value = hasDesiredRole ? desiredRoleId : '';
+    }
+
+    function ensureStaffRoleSelectorForRow(rowEl, fieldBase, roleCell, roleName) {
+        const selectId = `${fieldBase}_role`;
+        let selectEl = rowEl ? rowEl.querySelector(`select#${selectId}`) : null;
+
+        if (selectEl && isPageManagedStaffRoleSelect(selectEl)) {
+            return null;
+        }
+
+        const targetRoleCell = roleCell || (rowEl ? rowEl.querySelector('td') : null);
+        if (!targetRoleCell) return selectEl;
+
+        if (!selectEl) {
+            selectEl = document.createElement('select');
+            selectEl.id = selectId;
+        }
+
+        if (!targetRoleCell.contains(selectEl)) {
+            targetRoleCell.textContent = '';
+            targetRoleCell.appendChild(selectEl);
+        }
+
+        targetRoleCell.setAttribute('data-label', 'Rol');
+        selectEl.style.width = '100%';
+        selectEl.setAttribute('data-cf-staff-role', '1');
+        selectEl.dataset.fieldBase = fieldBase;
+        selectEl.dataset.defaultRoleName = String(roleName || '').trim();
+
+        if (!selectEl.dataset.cfStaffRoleBound) {
+            selectEl.addEventListener('change', onStaffRoleSelectorChange);
+            selectEl.dataset.cfStaffRoleBound = '1';
         }
 
         return selectEl;
@@ -1308,6 +1416,35 @@
         return staffClubAssignmentsPromise;
     }
 
+    async function loadStaffRolesCatalog(forceRefresh) {
+        if (forceRefresh) {
+            staffClubRolesCatalogCache = null;
+            staffClubRolesCatalogPromise = null;
+        }
+
+        if (Array.isArray(staffClubRolesCatalogCache)) {
+            return staffClubRolesCatalogCache;
+        }
+
+        if (!staffClubRolesCatalogPromise) {
+            staffClubRolesCatalogPromise = fetch(`${base}/api/rols`, {
+                credentials: 'same-origin'
+            }).then(async function (response) {
+                if (!response || !response.ok) return [];
+                const rows = await response.json();
+                return normalizeStaffRoleRows(rows);
+            }).catch(function () {
+                return [];
+            }).then(function (roles) {
+                staffClubRolesCatalogCache = Array.isArray(roles) ? roles : [];
+                staffClubRolesCatalogPromise = null;
+                return staffClubRolesCatalogCache;
+            });
+        }
+
+        return staffClubRolesCatalogPromise;
+    }
+
     async function loadStaffRoleIdByName(forceRefresh) {
         if (forceRefresh) {
             staffClubRoleIdByNameCache = null;
@@ -1319,12 +1456,15 @@
         }
 
         if (!staffClubRoleIdByNamePromise) {
-            staffClubRoleIdByNamePromise = fetch(`${base}/api/rols`, {
-                credentials: 'same-origin'
-            }).then(async function (response) {
-                if (!response || !response.ok) return {};
-                const rows = await response.json();
-                return normalizeRoleIdByName(rows);
+            staffClubRoleIdByNamePromise = loadStaffRolesCatalog(forceRefresh).then(function (rolesCatalog) {
+                const roleMap = {};
+                (Array.isArray(rolesCatalog) ? rolesCatalog : []).forEach(function (role) {
+                    const roleName = String(role && role.nom || '').trim();
+                    const roleId = normalizePositiveIdText(role && role.id);
+                    if (!roleName || !roleId) return;
+                    roleMap[normalizeLookupName(roleName)] = roleId;
+                });
+                return roleMap;
             }).catch(function () {
                 return {};
             }).then(function (roleMap) {
@@ -1392,6 +1532,39 @@
         } catch (_) {}
     }
 
+    async function deleteStaffAssignmentByRoleId(equipId, roleId) {
+        const normalizedEquipId = normalizePositiveIdText(equipId);
+        const normalizedRoleId = normalizePositiveIdText(roleId);
+        if (!normalizedEquipId || !normalizedRoleId) return;
+
+        const response = await fetch(`${base}/api/staff-club/assignments?equipId=${encodeURIComponent(normalizedEquipId)}&rolId=${encodeURIComponent(normalizedRoleId)}`, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `HTTP ${response.status}`);
+        }
+
+        removeStaffAssignmentFromCache(normalizedEquipId, normalizedRoleId);
+    }
+
+    function getSelectedRoleIdForFieldBase(fieldBase, fallbackRoleName) {
+        const roleSelectEl = document.getElementById(`${fieldBase}_role`);
+        const selectedRoleId = normalizePositiveIdText(roleSelectEl && roleSelectEl.value);
+        if (selectedRoleId) return selectedRoleId;
+
+        const fallbackFromSelect = normalizePositiveIdText(roleSelectEl && roleSelectEl.dataset.fallbackRoleId);
+        if (fallbackFromSelect) return fallbackFromSelect;
+
+        const lookupName = normalizeLookupName(fallbackRoleName || staffFieldBaseToRoleName(fieldBase));
+        const fallbackFromMap = normalizePositiveIdText(
+            staffClubRoleIdByNameCache && staffClubRoleIdByNameCache[lookupName]
+        );
+        return fallbackFromMap;
+    }
+
     async function onStaffMemberSelectorChange(event) {
         const selectEl = event && event.target ? event.target : null;
         if (!selectEl) return;
@@ -1406,6 +1579,9 @@
         const selectedValue = String(selectEl.value || '').trim();
         const previousValue = String(selectEl.dataset.prevValue || '').trim();
         const roleName = String(selectEl.dataset.roleName || staffFieldBaseToRoleName(fieldBase)).trim();
+        const roleSelectEl = document.getElementById(`${fieldBase}_role`);
+        const selectedRoleId = getSelectedRoleIdForFieldBase(fieldBase, roleName);
+        const assignedRoleId = normalizePositiveIdText(selectEl.dataset.assignedRolId || '');
 
         let equipId = String(selectEl.dataset.equipId || '').trim();
         if (!equipId) {
@@ -1417,9 +1593,16 @@
 
         selectEl.dataset.cfStaffMemberBusy = '1';
         selectEl.disabled = true;
+        if (roleSelectEl) {
+            roleSelectEl.disabled = true;
+        }
 
         try {
             if (selectedValue && selectedValue !== '__legacy__') {
+                if (!selectedRoleId) {
+                    throw new Error('Cal seleccionar un rol per assignar aquest membre');
+                }
+
                 const members = await loadStaffClubMembers(false);
                 const selectedMember = findStaffMemberById(members, selectedValue);
                 if (!selectedMember) {
@@ -1433,13 +1616,17 @@
                 });
 
                 if (equipId) {
+                    if (assignedRoleId && assignedRoleId !== selectedRoleId) {
+                        await deleteStaffAssignmentByRoleId(equipId, assignedRoleId);
+                    }
+
                     const assignmentResponse = await fetch(`${base}/api/staff-club/assignments`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
                         body: JSON.stringify({
                             equip_id: equipId,
-                            rol_nom: roleName,
+                            rol_id: selectedRoleId,
                             staff_membre_id: selectedValue
                         })
                     });
@@ -1451,17 +1638,21 @@
 
                     const payload = await assignmentResponse.json().catch(function () { return null; });
                     const assignment = payload && payload.assignment ? payload.assignment : null;
-                    const assignedRolId = normalizePositiveIdText(assignment && assignment.rol_id);
+                    const assignedRolIdResponse = normalizePositiveIdText(assignment && assignment.rol_id);
+                    const nextAssignedRoleId = assignedRolIdResponse || selectedRoleId;
 
-                    if (assignedRolId) {
-                        selectEl.dataset.assignedRolId = assignedRolId;
-                        upsertStaffAssignmentCache(equipId, assignedRolId, selectedValue);
+                    if (nextAssignedRoleId) {
+                        selectEl.dataset.assignedRolId = nextAssignedRoleId;
+                        upsertStaffAssignmentCache(equipId, nextAssignedRoleId, selectedValue);
                     } else {
                         invalidateStaffAssignmentsCache();
                     }
                 }
 
                 selectEl.dataset.prevValue = selectedValue;
+                if (roleSelectEl) {
+                    roleSelectEl.dataset.prevRoleId = String(roleSelectEl.value || '');
+                }
                 await saveStaffInputsSilently();
                 return;
             }
@@ -1470,24 +1661,9 @@
                 setStaffFieldValues(fieldBase, { nom: '', tel: '', carnet: false });
 
                 if (equipId) {
-                    let assignedRolId = normalizePositiveIdText(selectEl.dataset.assignedRolId || '');
-                    if (!assignedRolId) {
-                        const roleMap = await loadStaffRoleIdByName(false);
-                        assignedRolId = normalizePositiveIdText(roleMap && roleMap[normalizeLookupName(roleName)]);
-                    }
-
-                    if (assignedRolId) {
-                        const response = await fetch(`${base}/api/staff-club/assignments?equipId=${encodeURIComponent(equipId)}&rolId=${encodeURIComponent(assignedRolId)}`, {
-                            method: 'DELETE',
-                            credentials: 'same-origin'
-                        });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(errorText || `HTTP ${response.status}`);
-                        }
-
-                        removeStaffAssignmentFromCache(equipId, assignedRolId);
+                    const roleToDelete = assignedRoleId || selectedRoleId;
+                    if (roleToDelete) {
+                        await deleteStaffAssignmentByRoleId(equipId, roleToDelete);
                     } else {
                         invalidateStaffAssignmentsCache();
                     }
@@ -1495,11 +1671,17 @@
 
                 selectEl.dataset.assignedRolId = '';
                 selectEl.dataset.prevValue = '';
+                if (roleSelectEl) {
+                    roleSelectEl.dataset.prevRoleId = String(roleSelectEl.value || '');
+                }
                 await saveStaffInputsSilently();
                 return;
             }
 
             selectEl.dataset.prevValue = selectedValue;
+            if (roleSelectEl) {
+                roleSelectEl.dataset.prevRoleId = String(roleSelectEl.value || '');
+            }
             await saveStaffInputsSilently();
         } catch (error) {
             console.warn('Error actualitzant assignació de staff:', error && error.message ? error.message : error);
@@ -1515,6 +1697,91 @@
         } finally {
             selectEl.disabled = false;
             selectEl.dataset.cfStaffMemberBusy = '';
+            if (roleSelectEl) {
+                roleSelectEl.disabled = false;
+            }
+        }
+    }
+
+    async function onStaffRoleSelectorChange(event) {
+        const roleSelectEl = event && event.target ? event.target : null;
+        if (!roleSelectEl) return;
+        if (isPageManagedStaffRoleSelect(roleSelectEl)) return;
+        if (roleSelectEl.dataset.cfStaffRoleBusy === '1') return;
+
+        const fieldBase = normalizeStaffFieldBase(
+            roleSelectEl.dataset.fieldBase || String(roleSelectEl.id || '').replace(/_role$/i, '')
+        );
+        if (!fieldBase) return;
+
+        const memberSelectEl = document.getElementById(`${fieldBase}_member`);
+        if (!memberSelectEl) return;
+
+        const selectedMemberId = String(memberSelectEl.value || '').trim();
+        const selectedRoleId = normalizePositiveIdText(roleSelectEl.value);
+        const previousRoleId = normalizePositiveIdText(roleSelectEl.dataset.prevRoleId || memberSelectEl.dataset.assignedRolId || '');
+        const assignedRoleId = normalizePositiveIdText(memberSelectEl.dataset.assignedRolId || '');
+
+        if (selectedMemberId && selectedMemberId !== '__legacy__' && !selectedRoleId) {
+            alert('Selecciona un rol per mantenir aquesta assignació.');
+            roleSelectEl.value = previousRoleId || '';
+            return;
+        }
+
+        let equipId = String(memberSelectEl.dataset.equipId || '').trim();
+        if (!equipId) {
+            equipId = String(await resolveStaffCarnetEquipId() || '').trim();
+            if (equipId) {
+                memberSelectEl.dataset.equipId = equipId;
+            }
+        }
+
+        roleSelectEl.dataset.cfStaffRoleBusy = '1';
+        roleSelectEl.disabled = true;
+
+        try {
+            if (selectedMemberId && selectedMemberId !== '__legacy__' && equipId) {
+                const roleToDelete = assignedRoleId || previousRoleId;
+                if (roleToDelete && roleToDelete !== selectedRoleId) {
+                    await deleteStaffAssignmentByRoleId(equipId, roleToDelete);
+                }
+
+                if (selectedRoleId) {
+                    const assignmentResponse = await fetch(`${base}/api/staff-club/assignments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            equip_id: equipId,
+                            rol_id: selectedRoleId,
+                            staff_membre_id: selectedMemberId
+                        })
+                    });
+
+                    if (!assignmentResponse.ok) {
+                        const errorText = await assignmentResponse.text();
+                        throw new Error(errorText || `HTTP ${assignmentResponse.status}`);
+                    }
+
+                    memberSelectEl.dataset.assignedRolId = selectedRoleId;
+                    upsertStaffAssignmentCache(equipId, selectedRoleId, selectedMemberId);
+                } else {
+                    memberSelectEl.dataset.assignedRolId = '';
+                }
+            }
+
+            roleSelectEl.dataset.prevRoleId = String(roleSelectEl.value || '');
+            await saveStaffInputsSilently();
+        } catch (error) {
+            console.warn('Error actualitzant rol de l\'assignació staff:', error && error.message ? error.message : error);
+            alert('No s\'ha pogut actualitzar el rol de l\'assignació staff.');
+
+            roleSelectEl.value = previousRoleId || '';
+            roleSelectEl.dataset.prevRoleId = roleSelectEl.value;
+            await syncStaffCarnetFromServer();
+        } finally {
+            roleSelectEl.disabled = false;
+            roleSelectEl.dataset.cfStaffRoleBusy = '';
         }
     }
 
@@ -1539,11 +1806,26 @@
                 const selectEl = ensureStaffMemberSelectorForRow(rowEl, fieldBase, nomInput);
                 if (!selectEl) return;
 
+                const roleCell = rowEl.querySelector('td');
+                const roleName = String(
+                    (roleCell && roleCell.dataset && roleCell.dataset.cfStaffRoleName) ||
+                    (roleCell && roleCell.textContent) ||
+                    staffFieldBaseToRoleName(fieldBase)
+                ).trim();
+                const roleSelectEl = ensureStaffRoleSelectorForRow(rowEl, fieldBase, roleCell, roleName);
+                if (!roleSelectEl) return;
+
+                if (roleCell && roleName) {
+                    roleCell.dataset.cfStaffRoleName = roleName;
+                }
+
                 rowStates.push({
                     fieldBase: fieldBase,
                     nomInput: nomInput,
                     telInput: telInput,
-                    selectEl: selectEl
+                    selectEl: selectEl,
+                    roleSelectEl: roleSelectEl,
+                    roleName: roleName
                 });
             });
         });
@@ -1563,38 +1845,63 @@
             normalizedEquipId = normalizePositiveIdText(await resolveStaffCarnetEquipId());
         }
 
-        let assignments = [];
-        let roleMap = {};
-        if (normalizedEquipId) {
-            const loaded = await Promise.all([
-                loadStaffClubAssignments(forceRefresh),
-                loadStaffRoleIdByName(forceRefresh)
-            ]);
+        const loaded = await Promise.all([
+            loadStaffRoleIdByName(forceRefresh),
+            loadStaffRolesCatalog(forceRefresh),
+            normalizedEquipId ? loadStaffClubAssignments(forceRefresh) : Promise.resolve([])
+        ]);
 
-            assignments = Array.isArray(loaded[0]) ? loaded[0] : [];
-            roleMap = loaded[1] && typeof loaded[1] === 'object' ? loaded[1] : {};
-        }
+        const roleMap = loaded[0] && typeof loaded[0] === 'object' ? loaded[0] : {};
+        const rolesCatalog = Array.isArray(loaded[1]) ? loaded[1] : [];
+        const assignments = Array.isArray(loaded[2]) ? loaded[2] : [];
 
         rowStates.forEach(function (rowState) {
-            const roleName = staffFieldBaseToRoleName(rowState.fieldBase);
+            const roleName = String(rowState.roleName || staffFieldBaseToRoleName(rowState.fieldBase)).trim();
             const roleLookup = normalizeLookupName(roleName);
-            const roleId = normalizePositiveIdText(roleMap[roleLookup]);
+            const fallbackRoleId = normalizePositiveIdText(roleMap[roleLookup]);
+            const currentRoleId = normalizePositiveIdText(rowState.roleSelectEl && rowState.roleSelectEl.value);
 
             const currentNom = String(rowState.nomInput.value || '').trim();
             const currentTel = String(rowState.telInput.value || '').trim();
 
-            let assignedRoleId = roleId;
+            let activeRoleId = currentRoleId || fallbackRoleId;
+            let assignment = null;
+
+            if (normalizedEquipId && activeRoleId) {
+                assignment = assignments.find(function (item) {
+                    return item.equipId === normalizedEquipId && item.rolId === activeRoleId;
+                }) || null;
+            }
+
+            if (!assignment && normalizedEquipId && fallbackRoleId && fallbackRoleId !== activeRoleId) {
+                assignment = assignments.find(function (item) {
+                    return item.equipId === normalizedEquipId && item.rolId === fallbackRoleId;
+                }) || null;
+                if (assignment) {
+                    activeRoleId = assignment.rolId;
+                }
+            }
+
+            if (!activeRoleId && assignment && assignment.rolId) {
+                activeRoleId = assignment.rolId;
+            }
+
+            populateStaffRoleSelect(rowState.roleSelectEl, rolesCatalog, activeRoleId, roleName);
+
+            const selectedRoleId = normalizePositiveIdText(
+                rowState.roleSelectEl && rowState.roleSelectEl.value
+            ) || fallbackRoleId;
+
+            if (rowState.roleSelectEl) {
+                rowState.roleSelectEl.dataset.fallbackRoleId = fallbackRoleId;
+                rowState.roleSelectEl.dataset.prevRoleId = String(rowState.roleSelectEl.value || '');
+                rowState.roleSelectEl.dataset.defaultRoleName = roleName;
+            }
+
             let selectedMember = null;
 
-            if (normalizedEquipId && roleId) {
-                const assignment = assignments.find(function (item) {
-                    return item.equipId === normalizedEquipId && item.rolId === roleId;
-                });
-
-                if (assignment) {
-                    assignedRoleId = assignment.rolId;
-                    selectedMember = membersById.get(assignment.staffMemberId) || null;
-                }
+            if (assignment) {
+                selectedMember = membersById.get(assignment.staffMemberId) || null;
             }
 
             if (!selectedMember) {
@@ -1626,8 +1933,12 @@
 
             rowState.selectEl.dataset.equipId = normalizedEquipId;
             rowState.selectEl.dataset.roleName = roleName;
-            rowState.selectEl.dataset.assignedRolId = assignedRoleId;
+            rowState.selectEl.dataset.assignedRolId = assignment ? assignment.rolId : '';
             rowState.selectEl.dataset.prevValue = rowState.selectEl.value;
+
+            if (rowState.roleSelectEl && !rowState.roleSelectEl.dataset.prevRoleId) {
+                rowState.roleSelectEl.dataset.prevRoleId = String(selectedRoleId || '');
+            }
         });
     }
 

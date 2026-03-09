@@ -23,8 +23,8 @@
         .players-table tr.group-row.group-gap td{border-top:14px solid #f8fafc;}
         .add-form-box{margin-top:1rem;background:#f8fafc;border:1px solid var(--border);border-radius:0.75rem;padding:1rem;}
         .add-form-title{font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#475569;margin-bottom:0.8rem;}
-        .form-grid{display:grid;grid-template-columns:2fr 1.2fr 0.8fr 0.8fr;gap:0.75rem;align-items:end;}
-        .member-filter-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:0.75rem;align-items:end;}
+        .form-grid{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.2fr 0.8fr 0.8fr;gap:0.75rem;align-items:end;}
+        .member-filter-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:0.75rem;align-items:end;}
         label{display:block;font-weight:700;font-size:0.8rem;color:#475569;margin-bottom:0.35rem;text-transform:uppercase;letter-spacing:0.05em;}
         input[type=text],select{width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:0.5rem;font-size:0.9rem;outline:none;background:#fff;}
         input[type=text]:focus,select:focus{border-color:var(--primary);}
@@ -36,6 +36,8 @@
         .btn-primary:hover{background:#b91c1c;}
         .btn-secondary{background:#e2e8f0;color:#0f172a;}
         .btn-secondary:hover{background:#cbd5e1;}
+        .btn-tertiary{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3;}
+        .btn-tertiary:hover{background:#ffe4e6;}
         .delete-x{border:none;background:none;color:var(--primary);cursor:pointer;font-size:1rem;font-weight:800;line-height:1;padding:0;}
         .delete-x:hover{color:#991b1b;}
         .name-cell{font-weight:700;}
@@ -56,6 +58,10 @@
         }
         .name-link:hover{color:#991b1b;background:#fff1f2;}
         .empty-msg{color:#64748b;font-size:0.85rem;padding:1rem;text-align:center;}
+        .assignment-list{margin-top:0.65rem;display:grid;gap:0.45rem;}
+        .assignment-item{display:flex;justify-content:space-between;align-items:center;gap:0.65rem;padding:0.5rem 0.65rem;background:#fff;border:1px solid #e2e8f0;border-radius:0.55rem;}
+        .assignment-label{font-size:0.8rem;color:#334155;font-weight:700;}
+        .assignment-add{margin-top:0.7rem;display:flex;justify-content:flex-end;}
         .pill{display:inline-flex;align-items:center;border-radius:999px;padding:0.2rem 0.55rem;font-size:0.72rem;font-weight:800;}
         .pill-yes{background:#dcfce7;color:#166534;}
         .pill-no{background:#fee2e2;color:#b91c1c;}
@@ -131,6 +137,13 @@
                     <label>Equip</label>
                     <select id="f_equip"></select>
                 </div>
+                <div>
+                    <label>Vista</label>
+                    <select id="f_view">
+                        <option value="grouped">Agrupat per equip</option>
+                        <option value="summary">Resum per membre</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div class="table-wrap">
@@ -139,7 +152,7 @@
                     <tr>
                         <th>Nom i cognoms</th>
                         <th>Telèfon</th>
-                        <th>Rol</th>
+                        <th id="members_assignment_header">Rol</th>
                         <th style="text-align:center;">Carnet</th>
                         <th style="text-align:center;">Actiu</th>
                         <th style="width:60px;">Acció</th>
@@ -149,7 +162,7 @@
             </table>
         </div>
 
-        <div class="add-form-box">
+        <div class="add-form-box" id="member_form_box">
             <div class="add-form-title" id="member_form_title">Alta membre staff</div>
             <div class="form-grid">
                 <div>
@@ -160,6 +173,14 @@
                     <label>Telèfon</label>
                     <input type="text" id="m_telefon" placeholder="Telèfon...">
                 </div>
+                <div id="member_equip_field">
+                    <label>Equip</label>
+                    <select id="m_equip"></select>
+                </div>
+                <div id="member_rol_field">
+                    <label>Rol</label>
+                    <select id="m_rol"></select>
+                </div>
                 <div>
                     <label>Carnet</label>
                     <div class="checkbox-wrap"><input type="checkbox" id="m_carnet"></div>
@@ -169,6 +190,10 @@
                     <div class="checkbox-wrap"><input type="checkbox" id="m_actiu" checked></div>
                 </div>
             </div>
+            <div class="assignment-add">
+                <button class="btn btn-tertiary" type="button" onclick="addDraftAssignment()">Afegir assignació</button>
+            </div>
+            <div id="member_assignments_list" class="assignment-list"></div>
             <div class="actions-end">
                 <button class="btn btn-secondary" id="btn_cancel_member" onclick="cancelEditMember()">Cancel·lar</button>
                 <button class="btn btn-primary" id="btn_save_member" onclick="saveMember()">Desar membre</button>
@@ -187,6 +212,7 @@
         let equips = [];
         let rols = [];
         let editingMemberId = null;
+        let draftAssignments = [];
 
         function esc(value) {
             return String(value || '')
@@ -270,6 +296,163 @@
                 .replace(/[\u0300-\u036f]/g, '');
         }
 
+        function renderMemberEquipOptions(selectedEquipId = '') {
+            const equipSelect = document.getElementById('m_equip');
+            if (!equipSelect) return;
+
+            const currentValue = String(selectedEquipId || '').trim();
+            const sortedEquips = [...equips].sort(compareEquipsById);
+            equipSelect.innerHTML = `
+                <option value="">Sense assignar</option>
+                ${sortedEquips.map(e => `<option value="${esc(e.id)}">${esc(e.name || e.nom || e.id)}</option>`).join('')}
+            `;
+
+            const hasCurrent = Array.from(equipSelect.options).some(option => option.value === currentValue);
+            equipSelect.value = hasCurrent ? currentValue : '';
+        }
+
+        function renderMemberRoleOptions(selectedRoleId = '') {
+            const roleSelect = document.getElementById('m_rol');
+            if (!roleSelect) return;
+
+            const currentValue = String(selectedRoleId || '').trim();
+            const sortedRoles = [...rols].sort((a, b) => compareRoleIds((a && a.id) || '', (b && b.id) || ''));
+
+            roleSelect.innerHTML = `
+                <option value="">Sense rol</option>
+                ${sortedRoles.map(role => `<option value="${esc(role.id)}">${esc(role.nom || role.name || role.id)}</option>`).join('')}
+            `;
+
+            const hasCurrent = Array.from(roleSelect.options).some(option => option.value === currentValue);
+            roleSelect.value = hasCurrent ? currentValue : '';
+        }
+
+        function normalizeAssignmentPair(pair) {
+            const equipId = String(pair && (pair.equip_id ?? pair.equipId) || '').trim();
+            const rolId = String(pair && (pair.rol_id ?? pair.rolId) || '').trim();
+
+            if (!/^\d+$/.test(equipId) || !/^\d+$/.test(rolId)) return null;
+
+            return {
+                equip_id: equipId,
+                rol_id: rolId
+            };
+        }
+
+        function getAssignmentKey(assignment) {
+            const normalized = normalizeAssignmentPair(assignment);
+            if (!normalized) return '';
+            return `${normalized.equip_id}:${normalized.rol_id}`;
+        }
+
+        function sortAssignmentsList(list) {
+            return [...(Array.isArray(list) ? list : [])].sort((a, b) => {
+                const equipCompare = compareRoleIds(a.equip_id, b.equip_id);
+                if (equipCompare !== 0) return equipCompare;
+                return compareRoleIds(a.rol_id, b.rol_id);
+            });
+        }
+
+        function setDraftAssignments(nextAssignments) {
+            const seen = new Set();
+            const normalized = [];
+
+            (Array.isArray(nextAssignments) ? nextAssignments : []).forEach(item => {
+                const parsed = normalizeAssignmentPair(item);
+                if (!parsed) return;
+
+                const key = getAssignmentKey(parsed);
+                if (!key || seen.has(key)) return;
+
+                seen.add(key);
+                normalized.push(parsed);
+            });
+
+            draftAssignments = sortAssignmentsList(normalized);
+            renderDraftAssignments();
+        }
+
+        function getAssignmentsForMember(memberId) {
+            const normalizedMemberId = String(memberId || '').trim();
+            if (!normalizedMemberId) return [];
+
+            const memberAssignments = assignments
+                .filter(row => String(row && row.staff_membre_id || '').trim() === normalizedMemberId)
+                .map(normalizeAssignmentPair)
+                .filter(Boolean);
+
+            const seen = new Set();
+            const deduped = [];
+            memberAssignments.forEach(item => {
+                const key = getAssignmentKey(item);
+                if (!key || seen.has(key)) return;
+                seen.add(key);
+                deduped.push(item);
+            });
+
+            return sortAssignmentsList(deduped);
+        }
+
+        function renderDraftAssignments() {
+            const container = document.getElementById('member_assignments_list');
+            if (!container) return;
+
+            if (!draftAssignments.length) {
+                container.innerHTML = '<div class="empty-msg">Sense assignacions equip/rol.</div>';
+                return;
+            }
+
+            container.innerHTML = draftAssignments.map((assignment, index) => {
+                const equipName = getEquipNameById(assignment.equip_id);
+                const rolName = getRolNameById(assignment.rol_id);
+
+                return `
+                    <div class="assignment-item">
+                        <span class="assignment-label">${esc(equipName)} · ${esc(rolName)}</span>
+                        <button type="button" class="delete-x" title="Treure assignació" onclick="removeDraftAssignment(${index})">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function syncMemberAssignments(memberId, desiredAssignments) {
+            const memberIdText = String(memberId || '').trim();
+            if (!memberIdText) return;
+
+            const desired = sortAssignmentsList((Array.isArray(desiredAssignments) ? desiredAssignments : [])
+                .map(normalizeAssignmentPair)
+                .filter(Boolean));
+            const current = getAssignmentsForMember(memberIdText);
+
+            const desiredKeys = new Set(desired.map(getAssignmentKey));
+            const currentKeys = new Set(current.map(getAssignmentKey));
+
+            for (const assignment of current) {
+                const key = getAssignmentKey(assignment);
+                if (!key || desiredKeys.has(key)) continue;
+
+                await requestJson(
+                    `${API_ASSIGNMENTS}?equipId=${encodeURIComponent(assignment.equip_id)}&rolId=${encodeURIComponent(assignment.rol_id)}`,
+                    { method: 'DELETE' }
+                );
+            }
+
+            for (const assignment of desired) {
+                const key = getAssignmentKey(assignment);
+                if (!key || currentKeys.has(key)) continue;
+
+                await requestJson(API_ASSIGNMENTS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        equip_id: assignment.equip_id,
+                        rol_id: assignment.rol_id,
+                        staff_membre_id: memberIdText
+                    })
+                });
+            }
+        }
+
         function buildMemberTeamMap() {
             const map = new Map();
             assignments.forEach(assignment => {
@@ -300,18 +483,21 @@
             return Array.from(teamMap.get(teamKey)).sort(compareRoleIds);
         }
 
-        function getMemberRowMarkup(member, roleIds = []) {
+        function getMemberRowMarkup(member, roleData = [], equipId = '') {
             const carnetBadge = member.carnet
                 ? '<span class="pill pill-yes">Sí</span>'
                 : '<span class="pill pill-no">No</span>';
             const activeBadge = member.actiu
                 ? '<span class="pill pill-yes">Actiu</span>'
                 : '<span class="pill pill-no">Inactiu</span>';
-            const roleLabel = formatRoleList(roleIds);
+            const roleLabel = Array.isArray(roleData)
+                ? formatRoleList(roleData)
+                : String(roleData || '-').trim() || '-';
+            const roleIdsAttr = (Array.isArray(roleData) ? roleData : []).join(',');
 
             return `
                 <tr>
-                    <td data-label="Nom i cognoms" class="name-cell"><button type="button" class="name-link" data-action="edit" data-member-id="${esc(member.id)}">${esc(member.nom)}</button></td>
+                    <td data-label="Nom i cognoms" class="name-cell"><button type="button" class="name-link" data-action="edit" data-member-id="${esc(member.id)}" data-equip-id="${esc(equipId)}" data-role-ids="${esc(roleIdsAttr)}">${esc(member.nom)}</button></td>
                     <td data-label="Telèfon">${esc(member.telefon || '-')}</td>
                     <td data-label="Rol">${esc(roleLabel)}</td>
                     <td data-label="Carnet" style="text-align:center;">${carnetBadge}</td>
@@ -319,6 +505,61 @@
                     <td data-label="Acció" style="text-align:right;"><button type="button" class="delete-x" title="Eliminar" data-action="delete" data-member-id="${esc(member.id)}">✕</button></td>
                 </tr>
             `;
+        }
+
+        function getMemberAssignmentPairs(memberTeamMap, memberId, teamFilter = '') {
+            const memberKey = String(memberId || '').trim();
+            const teamMap = memberTeamMap.get(memberKey) || new Map();
+            const pairs = [];
+
+            if (teamFilter && teamFilter !== '__UNASSIGNED__') {
+                const roleSet = teamMap.get(String(teamFilter || ''));
+                if (!roleSet) return [];
+
+                Array.from(roleSet).forEach(rolId => {
+                    const parsed = normalizeAssignmentPair({ equip_id: teamFilter, rol_id: rolId });
+                    if (parsed) pairs.push(parsed);
+                });
+
+                return sortAssignmentsList(pairs);
+            }
+
+            teamMap.forEach((roleSet, equipId) => {
+                Array.from(roleSet || []).forEach(rolId => {
+                    const parsed = normalizeAssignmentPair({ equip_id: equipId, rol_id: rolId });
+                    if (parsed) pairs.push(parsed);
+                });
+            });
+
+            return sortAssignmentsList(pairs);
+        }
+
+        function formatMemberAssignmentsLabel(assignmentPairs, teamFilter = '') {
+            const pairs = Array.isArray(assignmentPairs) ? assignmentPairs : [];
+            if (!pairs.length) return 'Sense assignar';
+
+            if (teamFilter && teamFilter !== '__UNASSIGNED__') {
+                return pairs
+                    .map(pair => getRolNameById(pair.rol_id))
+                    .join(', ');
+            }
+
+            return pairs
+                .map(pair => `${getEquipNameById(pair.equip_id)} · ${getRolNameById(pair.rol_id)}`)
+                .join(' | ');
+        }
+
+        function renderMembersSummary(tbody, filteredMembers, memberTeamMap, teamFilter) {
+            const rows = [...filteredMembers]
+                .sort((a, b) => String(a.nom || '').localeCompare(String(b.nom || '')))
+                .map(member => {
+                    const assignmentPairs = getMemberAssignmentPairs(memberTeamMap, member.id, teamFilter);
+                    const assignmentLabel = formatMemberAssignmentsLabel(assignmentPairs, teamFilter);
+                    return getMemberRowMarkup(member, assignmentLabel, '');
+                })
+                .join('');
+
+            tbody.innerHTML = rows || '<tr><td colspan="6" class="empty-msg">Cap membre coincideix amb els filtres seleccionats.</td></tr>';
         }
 
         function renderMemberFilters() {
@@ -345,6 +586,21 @@
             document.getElementById('m_telefon').value = '';
             document.getElementById('m_carnet').checked = false;
             document.getElementById('m_actiu').checked = true;
+            const equipField = document.getElementById('member_equip_field');
+            const roleField = document.getElementById('member_rol_field');
+            const equipSelect = document.getElementById('m_equip');
+            const roleSelect = document.getElementById('m_rol');
+            if (equipField) equipField.style.display = '';
+            if (roleField) roleField.style.display = '';
+            if (equipSelect) {
+                renderMemberEquipOptions('');
+                equipSelect.disabled = false;
+            }
+            if (roleSelect) {
+                renderMemberRoleOptions('');
+                roleSelect.disabled = false;
+            }
+            setDraftAssignments([]);
             document.getElementById('btn_cancel_member').style.display = 'none';
             document.getElementById('btn_save_member').textContent = 'Desar membre';
         }
@@ -358,7 +614,13 @@
 
             const nameFilter = normalizeText(document.getElementById('f_nom') ? document.getElementById('f_nom').value : '');
             const teamFilter = String(document.getElementById('f_equip') ? document.getElementById('f_equip').value : '');
+            const viewMode = String(document.getElementById('f_view') ? document.getElementById('f_view').value : 'grouped');
+            const assignmentHeader = document.getElementById('members_assignment_header');
             const memberTeamMap = buildMemberTeamMap();
+
+            if (assignmentHeader) {
+                assignmentHeader.textContent = viewMode === 'summary' ? 'Assignacions' : 'Rol';
+            }
 
             const filteredMembers = members.filter(member => {
                 const normalizedName = normalizeText(member.nom);
@@ -379,6 +641,11 @@
                 return;
             }
 
+            if (viewMode === 'summary') {
+                renderMembersSummary(tbody, filteredMembers, memberTeamMap, teamFilter);
+                return;
+            }
+
             const groups = [];
 
             if (!teamFilter || teamFilter === '__UNASSIGNED__') {
@@ -390,7 +657,7 @@
                 if (unassigned.length) {
                     groups.push({
                         title: 'SENSE ASSIGNAR',
-                        members: unassigned.map(member => ({ member, roleIds: [] }))
+                        members: unassigned.map(member => ({ member, roleIds: [], equipId: '' }))
                     });
                 }
             }
@@ -400,7 +667,7 @@
                     .map(member => {
                         const roleIds = getMemberRolesForEquip(memberTeamMap, member.id, teamFilter);
                         if (!roleIds.length) return null;
-                        return { member, roleIds };
+                        return { member, roleIds, equipId: String(teamFilter || '') };
                     })
                     .filter(Boolean)
                     .sort((a, b) => {
@@ -424,7 +691,7 @@
                         .map(member => {
                             const roleIds = getMemberRolesForEquip(memberTeamMap, member.id, equipId);
                             if (!roleIds.length) return null;
-                            return { member, roleIds };
+                            return { member, roleIds, equipId };
                         })
                         .filter(Boolean)
                         .sort((a, b) => {
@@ -451,7 +718,7 @@
                 <tr class="group-row ${index > 0 ? 'group-gap' : ''}">
                     <td colspan="6" class="group-title">${esc(group.title)} (${group.members.length})</td>
                 </tr>
-                ${group.members.map(item => getMemberRowMarkup(item.member, item.roleIds)).join('')}
+                ${group.members.map(item => getMemberRowMarkup(item.member, item.roleIds, item.equipId)).join('')}
             `).join('');
         }
 
@@ -465,9 +732,30 @@
             document.getElementById('m_telefon').value = member.telefon || '';
             document.getElementById('m_carnet').checked = !!member.carnet;
             document.getElementById('m_actiu').checked = member.actiu !== false;
+
+            const equipField = document.getElementById('member_equip_field');
+            const roleField = document.getElementById('member_rol_field');
+            const equipSelect = document.getElementById('m_equip');
+            const roleSelect = document.getElementById('m_rol');
+            if (equipField) equipField.style.display = '';
+            if (roleField) roleField.style.display = '';
+            renderMemberEquipOptions('');
+            renderMemberRoleOptions('');
+            if (equipSelect) {
+                equipSelect.disabled = false;
+            }
+            if (roleSelect) {
+                roleSelect.disabled = false;
+            }
+
+            setDraftAssignments(getAssignmentsForMember(editingMemberId));
+
             document.getElementById('btn_cancel_member').style.display = '';
             document.getElementById('btn_save_member').textContent = 'Actualitzar membre';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const formBox = document.getElementById('member_form_box');
+            if (formBox && typeof formBox.scrollIntoView === 'function') {
+                formBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         };
 
         window.cancelEditMember = function() {
@@ -482,11 +770,27 @@
                 carnet: document.getElementById('m_carnet').checked,
                 actiu: document.getElementById('m_actiu').checked
             };
+            const selectedEquipId = String((document.getElementById('m_equip') || {}).value || '').trim();
+            const selectedRoleId = String((document.getElementById('m_rol') || {}).value || '').trim();
 
             if (!payload.nom) {
                 alert('Introdueix el nom del membre de staff.');
                 return;
             }
+
+            if ((selectedEquipId && !selectedRoleId) || (!selectedEquipId && selectedRoleId)) {
+                alert('Per afegir una assignació pendent cal seleccionar equip i rol.');
+                return;
+            }
+
+            const pendingAssignment = normalizeAssignmentPair({
+                equip_id: selectedEquipId,
+                rol_id: selectedRoleId
+            });
+            const pendingKey = getAssignmentKey(pendingAssignment);
+            const desiredAssignments = pendingKey && !draftAssignments.some(item => getAssignmentKey(item) === pendingKey)
+                ? [...draftAssignments, pendingAssignment]
+                : [...draftAssignments];
 
             try {
                 if (editingMemberId) {
@@ -495,12 +799,20 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+
+                    await syncMemberAssignments(editingMemberId, desiredAssignments);
                 } else {
-                    await requestJson(API_MEMBERS, {
+                    const created = await requestJson(API_MEMBERS, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+
+                    const createdMemberId = String(
+                        (created && created.member && (created.member.id ?? created.member.staff_membre_id)) || ''
+                    ).trim();
+
+                    await syncMemberAssignments(createdMemberId, desiredAssignments);
                 }
 
                 await loadAll();
@@ -544,11 +856,44 @@
 
                 renderMemberFilters();
                 renderMembers();
+                if (!editingMemberId) {
+                    renderMemberEquipOptions((document.getElementById('m_equip') || {}).value || '');
+                    renderMemberRoleOptions((document.getElementById('m_rol') || {}).value || '');
+                    renderDraftAssignments();
+                }
             } catch (error) {
                 console.error('Error carregant dades de staff club:', error);
                 alert('No s\'han pogut carregar les dades de staff club.');
             }
         }
+
+        window.addDraftAssignment = function() {
+            const equipId = String((document.getElementById('m_equip') || {}).value || '').trim();
+            const roleId = String((document.getElementById('m_rol') || {}).value || '').trim();
+
+            if (!equipId || !roleId) {
+                alert('Selecciona equip i rol per afegir una assignació.');
+                return;
+            }
+
+            const nextAssignment = normalizeAssignmentPair({ equip_id: equipId, rol_id: roleId });
+            const nextKey = getAssignmentKey(nextAssignment);
+            const alreadyExists = draftAssignments.some(item => getAssignmentKey(item) === nextKey);
+            if (alreadyExists) {
+                alert('Aquesta assignació ja està afegida.');
+                return;
+            }
+
+            setDraftAssignments([...draftAssignments, nextAssignment]);
+        };
+
+        window.removeDraftAssignment = function(index) {
+            const idx = Number(index);
+            if (!Number.isInteger(idx) || idx < 0 || idx >= draftAssignments.length) return;
+
+            const nextAssignments = draftAssignments.filter((_, currentIndex) => currentIndex !== idx);
+            setDraftAssignments(nextAssignments);
+        };
 
         document.getElementById('members_tbody').addEventListener('click', function(event) {
             const button = event.target.closest('button[data-action][data-member-id]');
@@ -570,6 +915,7 @@
 
         document.getElementById('f_nom').addEventListener('input', renderMembers);
         document.getElementById('f_equip').addEventListener('change', renderMembers);
+        document.getElementById('f_view').addEventListener('change', renderMembers);
 
         resetMemberForm();
         loadAll();
