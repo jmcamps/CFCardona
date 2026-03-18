@@ -134,6 +134,7 @@
                 <div><label>Camp</label><select id="h_camp"><option value="">Selecciona...</option><option>Espai 1</option><option>Espai 2</option><option>Espai 3</option><option>Espai 4</option><option>Espai 1/2 (F11)</option><option>Espai 3/4 (F11)</option></select></div>
                 <div><button class="btn btn-primary" onclick="addHorariGlobal()" style="white-space:nowrap;">AFEGIR</button></div>
             </div>
+            <div id="training_stats" style="margin-top:1.2rem;"></div>
         </div>
         <div class="horari-form">
             <div class="horari-form-title">Afegir Entrenament de Porters</div>
@@ -404,6 +405,7 @@
             renderByDay();
             renderByTeam();
             renderPortersTrainings();
+            renderTrainingsStats();
             populateTeamSelect();
         }
 
@@ -641,6 +643,95 @@
                     </tbody>
                 </table>
                 ${summaryHtml}
+            `;
+        }
+
+        function renderTrainingsStats() {
+            const el = document.getElementById('training_stats');
+            if (!el) return;
+
+            const sortedTeams = [...TEAMS].sort((a, b) => {
+                const idA = Number(String(a.id || '').trim());
+                const idB = Number(String(b.id || '').trim());
+                const bothNumeric = Number.isFinite(idA) && Number.isFinite(idB);
+                if (bothNumeric) return idA - idB;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+
+            // Calculate days per team (only regular trainings, not porters)
+            const teamDaysMap = new Map();
+            sortedTeams.forEach(team => {
+                const teamId = String(team.id || '').trim();
+                const daysWithTraining = new Set(
+                    horarios
+                        .filter(h => !isPortersTraining(h) && String(h.team_id || '').trim() === teamId)
+                        .map(h => String(h.dia || '').trim())
+                );
+                if (daysWithTraining.size > 0) {
+                    teamDaysMap.set(teamId, {
+                        teamName: String(team.name || `Equip ${teamId}`),
+                        days: [...daysWithTraining].sort((a, b) => DIES.indexOf(a) - DIES.indexOf(b))
+                    });
+                }
+            });
+
+            // Teams with 0 days
+            const noTrainingTeams = sortedTeams
+                .filter(team => !teamDaysMap.has(String(team.id || '').trim()))
+                .map(team => String(team.name || `Equip ${team.id}`));
+
+            // Teams with 1 day
+            const oneDayTeams = [...teamDaysMap.entries()]
+                .filter(([_, info]) => info.days.length === 1)
+                .map(([_, info]) => info.teamName)
+                .sort((a, b) => a.localeCompare(b));
+
+            // Teams with consecutive days
+            const consecutiveDaysTeams = [...teamDaysMap.entries()]
+                .filter(([_, info]) => {
+                    const daysSet = new Set(info.days);
+                    for (let i = 0; i < DIES.length - 1; i++) {
+                        if (daysSet.has(DIES[i]) && daysSet.has(DIES[i + 1])) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .map(([_, info]) => {
+                    // Find consecutive sequences
+                    const daysSet = new Set(info.days);
+                    const consecutiveSequences = [];
+                    for (let i = 0; i < DIES.length - 1; i++) {
+                        if (daysSet.has(DIES[i]) && daysSet.has(DIES[i + 1])) {
+                            consecutiveSequences.push(`${DIES[i]}-${DIES[i + 1]}`);
+                        }
+                    }
+                    return {
+                        teamName: info.teamName,
+                        sequences: consecutiveSequences.join(', ')
+                    };
+                })
+                .sort((a, b) => a.teamName.localeCompare(b.teamName));
+
+            el.innerHTML = `
+                <div class="porters-summary">
+                    <span class="porters-summary-title">Equips amb 0 dies d'entrenament</span>
+                    ${noTrainingTeams.length
+                        ? `<div class="porters-team-tags">${noTrainingTeams.map(name => `<span class="porters-team-tag">${esc(name)}</span>`).join('')}</div>`
+                        : '<div class="empty-msg" style="padding:0;">Tots els equips tenen almenys un dia d\'entrenament.</div>'}
+                </div>
+                <div class="porters-summary">
+                    <span class="porters-summary-title">Equips amb 1 dia d'entrenament</span>
+                    ${oneDayTeams.length
+                        ? `<div class="porters-team-tags">${oneDayTeams.map(name => `<span class="porters-team-tag">${esc(name)}</span>`).join('')}</div>`
+                        : '<div class="empty-msg" style="padding:0;">Cap equip té només un dia d\'entrenament.</div>'}
+                </div>
+                <div class="porters-summary">
+                    <span class="porters-summary-title">Equips amb dies d'entrenament seguits</span>
+                    ${consecutiveDaysTeams.length
+                        ? `<div style="display:flex;flex-wrap:wrap;gap:0.6rem;">${consecutiveDaysTeams.map(item => `<div style="background:#ecfdf5;border:1px solid #86efac;border-radius:0.5rem;padding:0.5rem 0.8rem;font-size:0.8rem;font-weight:600;color:#065f46;"><div>${esc(item.teamName)}</div><div style="font-size:0.72rem;color:#059669;margin-top:0.2rem;">${esc(item.sequences)}</div></div>`).join('')}</div>`
+                        : '<div class="empty-msg" style="padding:0;">Cap equip té dies d\'entrenament consecutius.</div>'}
+                </div>
             `;
         }
 
