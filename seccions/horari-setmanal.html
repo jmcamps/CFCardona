@@ -37,7 +37,7 @@
         .slot-time{font-size:0.9rem;font-weight:900;color:#0f172a;}
         .slot-tag{font-size:0.72rem;font-weight:800;color:#991b1b;background:#fff1f2;border:1px solid #fecaca;border-radius:999px;padding:0.2rem 0.55rem;}
         .slot-layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:0.75rem;align-items:start;}
-        .fields{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;}
+        .fields{display:grid;grid-template-columns:1fr;gap:0.75rem;}
 
         .vestidors-box{border:1px solid #fecaca;background:#fff5f5;border-radius:0.55rem;padding:0.65rem 0.7rem;}
         .vestidors-box h4{font-size:0.82rem;color:#991b1b;font-weight:900;margin-bottom:0.45rem;}
@@ -87,9 +87,20 @@
         .zones.quad{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
         .zones.duo{grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
         .zone{display:flex;align-items:center;justify-content:center;padding:0.45rem;text-align:center;position:relative;z-index:2;}
+        .half-center-stack{position:absolute;top:50%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;gap:0.28rem;align-items:center;max-width:42%;}
+        .half-center-stack.left{left:25%;}
+        .half-center-stack.right{left:75%;}
+        .half-center-stack .team-pill{max-width:100%;}
+        .goal-area-stack{position:absolute;top:50%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;gap:0.2rem;align-items:center;max-width:38%;}
+        .goal-area-stack.left{left:12%;}
+        .goal-area-stack.right{left:88%;}
+        .goal-area-stack .goalkeeper-marker{margin-top:0;}
         .team-line{display:flex;align-items:center;justify-content:center;gap:0.55rem;max-width:98%;width:100%;}
         .team-pill{background:rgba(15,23,42,0.5);color:#f8fafc;border:1px solid rgba(255,255,255,0.34);border-radius:0.5rem;padding:0.2rem 0.55rem;font-size:0.92rem;font-weight:900;line-height:1.15;min-width:0;max-width:95%;text-shadow:0 1px 1px rgba(0,0,0,0.35);}
         .team-pill.empty{background:rgba(15,23,42,0.18);color:rgba(248,250,252,0.8);border-color:rgba(255,255,255,0.2);font-weight:800;font-size:0.8rem;}
+        .goalkeeper-marker{margin-top:0.28rem;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:#fff7ed;color:#9a3412;border:1px solid #fdba74;border-radius:0.55rem;padding:0.18rem 0.45rem;font-size:0.68rem;font-weight:900;line-height:1.1;min-width:86px;}
+        .goalkeeper-marker .goalkeeper-title{font-size:0.64rem;letter-spacing:0.03em;}
+        .goalkeeper-marker .goalkeeper-time{font-size:0.68rem;font-weight:900;white-space:nowrap;}
 
         .pending-list{display:flex;flex-wrap:wrap;gap:0.45rem;}
         .pending-item{font-size:0.75rem;font-weight:800;color:#065f46;background:#ecfdf5;border:1px solid #86efac;border-radius:999px;padding:0.25rem 0.55rem;}
@@ -122,6 +133,9 @@
             .vestidors-box{padding:0.55rem 0.6rem;}
             .field .field-lines{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);}
             .team-pill{font-size:0.78rem;padding:0.16rem 0.4rem;}
+            .goalkeeper-marker{min-width:102px;padding:0.2rem 0.5rem;}
+            .goalkeeper-marker .goalkeeper-title{font-size:0.62rem;}
+            .goalkeeper-marker .goalkeeper-time{font-size:0.66rem;}
         }
     </style>
 </head>
@@ -131,7 +145,7 @@
             <div class="head-top">
                 <div>
                     <h1>Infografia setmanal d'entrenaments</h1>
-                    <p>Per franges: camp en 4 zones (Espais 1-4) o en 2 zones (F11), amb l'equip sobre cada secció.</p>
+                    <p>Per franges: camp en 4 zones (Espais 1-4) o en 2 zones (F11), amb l'equip sobre cada secció i els entrenaments de porters a la porteria assignada.</p>
                 </div>
                 <div class="actions">
                     <a class="btn" id="manageHorarisBtn" href="horari-entrenaments.html">Gestionar horaris</a>
@@ -241,15 +255,30 @@
         }
 
         function normalizeHorari(row) {
+            const rawCamp = String(row.camp || '').trim();
+            const rawTipus = String(row.tipus || '').trim().toLowerCase();
+            const inferredPorters = /^porteria\s*:/i.test(rawCamp);
+            const decodedPorteria = inferredPorters
+                ? rawCamp.replace(/^porteria\s*:/i, '').trim()
+                : '';
+            const tipus = (rawTipus === 'porters' || inferredPorters) ? 'porters' : 'equip';
+            const porteria = String(row.porteria || decodedPorteria || '').trim();
+
             return {
                 id: String(row.id || `${Date.now()}_${Math.random().toString(36).slice(2)}`),
                 team_id: String(row.team_id || '').trim(),
                 dia: String(row.dia || ''),
                 inici: String(row.inici || ''),
                 fi: String(row.fi || ''),
-                camp: String(row.camp || '').trim(),
-                vestidor: String(row.vestidor || '').trim()
+                camp: tipus === 'porters' ? '' : rawCamp,
+                vestidor: String(row.vestidor || '').trim(),
+                tipus,
+                porteria: tipus === 'porters' ? porteria : ''
             };
+        }
+
+        function isPortersTraining(row) {
+            return String(row && row.tipus || '').trim().toLowerCase() === 'porters';
         }
 
         function renderTabs() {
@@ -273,17 +302,42 @@
             const dayRows = horarios
                 .filter(h => h.dia === activeDay && h.inici && h.fi)
                 .sort((a,b) => toMinutes(a.inici) - toMinutes(b.inici) || toMinutes(a.fi) - toMinutes(b.fi));
+            const equipRows = dayRows.filter(h => !isPortersTraining(h));
+            const portersRows = dayRows.filter(h => isPortersTraining(h));
+            const normalizedPortersRows = (() => {
+                const expanded = [];
+                portersRows.forEach(item => {
+                    const inici = String(item.inici || '').trim();
+                    const fi = String(item.fi || '').trim();
+
+                    if (inici === '18:45' && fi === '20:30') {
+                        expanded.push({ ...item, inici: '18:00', fi: '18:45' });
+                        expanded.push({ ...item, inici: '18:45', fi: '19:30' });
+                        return;
+                    }
+
+                    expanded.push({ ...item, inici, fi });
+                });
+
+                const seen = new Set();
+                return expanded.filter(item => {
+                    const key = `${String(item.porteria || '').trim()}|${String(item.inici || '').trim()}|${String(item.fi || '').trim()}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+            })();
 
             dayBig.textContent = activeDay;
 
-            if (dayRows.length === 0) {
+            if (equipRows.length === 0) {
                 daySub.textContent = 'Sense franges registrades per aquest dia';
                 board.innerHTML = `<div class="empty">No hi ha franges d'entrenament per ${esc(activeDay)}.</div>`;
                 return;
             }
 
             const groupsMap = {};
-            dayRows.forEach(item => {
+            equipRows.forEach(item => {
                 const key = `${item.inici}|${item.fi}`;
                 if (!groupsMap[key]) groupsMap[key] = { inici: item.inici, fi: item.fi, items: [] };
                 groupsMap[key].items.push(item);
@@ -307,9 +361,43 @@
                 };
             };
 
-            const cellMarkup = (cell) => {
+            const isOverlap = (startA, endA, startB, endB) => startA < endB && endA > startB;
+
+            const getPortersRowsForGroup = (group) => {
+                const groupStart = toMinutes(group.inici);
+                const groupEnd = toMinutes(group.fi);
+                return normalizedPortersRows.filter(item => {
+                    const itemStart = toMinutes(item.inici);
+                    const itemEnd = toMinutes(item.fi);
+                    return isOverlap(groupStart, groupEnd, itemStart, itemEnd);
+                });
+            };
+
+            const getPortersLabelsForPorteria = (items, porteriaName) => {
+                const target = String(porteriaName || '').trim();
+                if (!target) return [];
+                const labels = items
+                    .filter(item => String(item.porteria || '').trim() === target)
+                    .map(item => {
+                        const inici = String(item.inici || '').trim();
+                        const fi = String(item.fi || '').trim();
+                        if (!inici || !fi) return '';
+                        return `${inici} - ${fi}`;
+                    })
+                    .filter(Boolean);
+                return [...new Set(labels)];
+            };
+
+            const cellMarkup = (cell, portersLabels, hideEmptyTeam = false) => {
                 const hasTeam = Boolean(cell.team);
-                return `<div class="team-line"><div class="team-pill ${hasTeam ? '' : 'empty'}">${esc(cell.team || '')}</div></div>`;
+                const teamText = hasTeam ? cell.team : (hideEmptyTeam ? '' : '—');
+                const markers = (Array.isArray(portersLabels) ? portersLabels : [])
+                    .map(label => `<div class="goalkeeper-marker"><span class="goalkeeper-title">PORTERS</span><span class="goalkeeper-time">${esc(label)}</span></div>`)
+                    .join('');
+                const teamMarkup = teamText
+                    ? `<div class="team-line"><div class="team-pill ${hasTeam ? '' : 'empty'}">${esc(teamText)}</div></div>`
+                    : '';
+                return `<div>${teamMarkup}${markers}</div>`;
             };
 
             const renderPitchLines = () => `
@@ -363,36 +451,43 @@
                 `;
             };
 
-            const renderQuadField = (items) => {
-                const z1 = cellData(items, 'Espai 1');
-                const z2 = cellData(items, 'Espai 2');
-                const z3 = cellData(items, 'Espai 3');
-                const z4 = cellData(items, 'Espai 4');
+            const renderQuadField = (equipItems, portersItems) => {
+                const z1 = cellData(equipItems, 'Espai 1');
+                const z2 = cellData(equipItems, 'Espai 2');
+                const z3 = cellData(equipItems, 'Espai 3');
+                const z4 = cellData(equipItems, 'Espai 4');
+                const p1 = getPortersLabelsForPorteria(portersItems, 'Espai 1');
+                const p2 = getPortersLabelsForPorteria(portersItems, 'Espai 2');
+                const p3 = getPortersLabelsForPorteria(portersItems, 'Espai 3');
+                const p4 = getPortersLabelsForPorteria(portersItems, 'Espai 4');
+                const f11LeftTeamLabels = [...new Set(
+                    equipItems
+                        .filter(item => String(item.camp || '').trim() === 'Espai 1/2 (F11)')
+                        .map(item => teamName(item.team_id))
+                        .filter(Boolean)
+                )];
+                const f11RightTeamLabels = [...new Set(
+                    equipItems
+                        .filter(item => String(item.camp || '').trim() === 'Espai 3/4 (F11)')
+                        .map(item => teamName(item.team_id))
+                        .filter(Boolean)
+                )];
+                const f11LeftPorters = getPortersLabelsForPorteria(portersItems, 'Espai 1/2 (F11)');
+                const f11RightPorters = getPortersLabelsForPorteria(portersItems, 'Espai 3/4 (F11)');
+                const f11HalfCenterMarkup = `${f11LeftTeamLabels.length ? `<div class="half-center-stack left">${f11LeftTeamLabels.map(label => `<div class="team-pill">${esc(label)}</div>`).join('')}</div>` : ''}${f11RightTeamLabels.length ? `<div class="half-center-stack right">${f11RightTeamLabels.map(label => `<div class="team-pill">${esc(label)}</div>`).join('')}</div>` : ''}`;
+                const f11GoalAreaMarkup = `${f11LeftPorters.length ? `<div class="goal-area-stack left">${f11LeftPorters.map(label => `<div class="goalkeeper-marker"><span class="goalkeeper-title">PORTERS</span><span class="goalkeeper-time">${esc(label)}</span></div>`).join('')}</div>` : ''}${f11RightPorters.length ? `<div class="goal-area-stack right">${f11RightPorters.map(label => `<div class="goalkeeper-marker"><span class="goalkeeper-title">PORTERS</span><span class="goalkeeper-time">${esc(label)}</span></div>`).join('')}</div>` : ''}`;
+                const hideEmptyF7Slots = (f11LeftTeamLabels.length || f11RightTeamLabels.length || f11LeftPorters.length || f11RightPorters.length);
                 return `
                     <div class="field-card">
                         <div class="field quad">
                             ${renderPitchLines()}
+                            ${f11HalfCenterMarkup}
+                            ${f11GoalAreaMarkup}
                             <div class="zones quad">
-                                <div class="zone">${cellMarkup(z1)}</div>
-                                <div class="zone">${cellMarkup(z2)}</div>
-                                <div class="zone">${cellMarkup(z3)}</div>
-                                <div class="zone">${cellMarkup(z4)}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            };
-
-            const renderF11Field = (items) => {
-                const left = cellData(items, 'Espai 1/2 (F11)');
-                const right = cellData(items, 'Espai 3/4 (F11)');
-                return `
-                    <div class="field-card">
-                        <div class="field duo">
-                            ${renderPitchLines()}
-                            <div class="zones duo">
-                                <div class="zone">${cellMarkup(left)}</div>
-                                <div class="zone">${cellMarkup(right)}</div>
+                                <div class="zone">${cellMarkup(z1, p1, hideEmptyF7Slots)}</div>
+                                <div class="zone">${cellMarkup(z2, p2, hideEmptyF7Slots)}</div>
+                                <div class="zone">${cellMarkup(z3, p3, hideEmptyF7Slots)}</div>
+                                <div class="zone">${cellMarkup(z4, p4, hideEmptyF7Slots)}</div>
                             </div>
                         </div>
                     </div>
@@ -400,22 +495,31 @@
             };
 
             const html = groups.map(group => {
-                const hasStd = group.items.some(x => CAMP_STD.includes(String(x.camp || '')));
-                const hasF11 = group.items.some(x => CAMP_F11.includes(String(x.camp || '')));
-                const pending = group.items.filter(x => !String(x.camp || '').trim()).map(x => teamName(x.team_id));
+                const equipItems = group.items;
+                const portersItems = getPortersRowsForGroup(group);
+                const hasStdEquip = equipItems.some(x => CAMP_STD.includes(String(x.camp || '')));
+                const hasF11Equip = equipItems.some(x => CAMP_F11.includes(String(x.camp || '')));
+                const hasStdPorters = portersItems.some(x => CAMP_STD.includes(String(x.porteria || '')));
+                const hasF11Porters = portersItems.some(x => CAMP_F11.includes(String(x.porteria || '')));
+                const hasAnyField = hasStdEquip || hasF11Equip || hasStdPorters || hasF11Porters;
+                const pending = equipItems.filter(x => !String(x.camp || '').trim()).map(x => teamName(x.team_id));
+                const portersCount = portersItems.length;
+                const tagParts = [`${equipItems.length} assignacions`];
+                if (portersCount) {
+                    tagParts.push(`${portersCount} sessions porters`);
+                }
 
                 return `
                     <article class="slot">
                         <div class="slot-head">
                             <div class="slot-time">${esc(group.inici)} - ${esc(group.fi)}</div>
-                            <div class="slot-tag">${group.items.length} assignacions</div>
+                            <div class="slot-tag">${tagParts.join(' · ')}</div>
                         </div>
                         <div class="slot-layout">
                             <div class="fields">
-                                ${hasStd ? renderQuadField(group.items) : ''}
-                                ${hasF11 ? renderF11Field(group.items) : ''}
+                                ${hasAnyField ? renderQuadField(equipItems, portersItems) : ''}
                             </div>
-                            ${renderVestidors(group.items)}
+                            ${renderVestidors(equipItems)}
                         </div>
                         ${pending.length ? `<div class="pending-list" style="margin-top:0.65rem;">${pending.map(p => `<span class="pending-item">${esc(p)} · sense camp</span>`).join('')}</div>` : ''}
                     </article>

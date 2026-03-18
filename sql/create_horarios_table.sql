@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS horarios_entrenaments (
     fi TEXT NOT NULL,
     vestidor TEXT,
     camp TEXT NOT NULL,
+    tipus TEXT NOT NULL DEFAULT 'equip',
+    porteria TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -16,6 +18,7 @@ CREATE TABLE IF NOT EXISTS horarios_entrenaments (
 -- Crear índex per a queries més ràpides
 CREATE INDEX IF NOT EXISTS idx_horarios_team_id ON horarios_entrenaments(team_id);
 CREATE INDEX IF NOT EXISTS idx_horarios_dia ON horarios_entrenaments(dia);
+CREATE INDEX IF NOT EXISTS idx_horarios_tipus ON horarios_entrenaments(tipus);
 
 -- Enable RLS (Row Level Security) per permetre accés sense autenticació
 ALTER TABLE horarios_entrenaments ENABLE ROW LEVEL SECURITY;

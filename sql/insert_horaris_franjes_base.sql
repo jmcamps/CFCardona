@@ -38,8 +38,8 @@ WITH seeds(dia, inici, fi, vestidor, camp, team_id) AS (
         ('Divendres','18:45', '20:15', 'Vestidor 5', 'Espai 1/2 (F11)', ''),
         ('Divendres','18:45', '20:15', 'Vestidor 6', 'Espai 3/4 (F11)', '')
 )
-INSERT INTO horarios_entrenaments (team_id, dia, inici, fi, vestidor, camp)
-SELECT s.team_id, s.dia, s.inici, s.fi, s.vestidor, s.camp
+INSERT INTO horarios_entrenaments (team_id, dia, inici, fi, vestidor, camp, tipus)
+SELECT s.team_id, s.dia, s.inici, s.fi, s.vestidor, s.camp, 'equip'
 FROM seeds s
 WHERE NOT EXISTS (
     SELECT 1

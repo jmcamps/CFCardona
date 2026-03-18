@@ -72,6 +72,13 @@
         .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
         .actions-end{display:flex;justify-content:flex-end;margin-bottom:0.8rem;}
         .horari-form-row-main{grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 1fr 1fr auto;}
+        .porters-form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:0.6rem;align-items:end;}
+        .porters-list{margin-top:1rem;}
+        .porters-note{margin-top:0.55rem;font-size:0.78rem;font-weight:700;color:#0f766e;}
+        .porters-team-tags{display:flex;flex-wrap:wrap;gap:0.35rem;}
+        .porters-team-tag{display:inline-flex;align-items:center;background:#ecfdf5;color:#065f46;border:1px solid #86efac;border-radius:999px;padding:0.18rem 0.52rem;font-size:0.72rem;font-weight:700;line-height:1.1;}
+        .porters-summary{margin-top:0.8rem;background:#f8fafc;border:1px solid var(--border);border-radius:0.65rem;padding:0.7rem 0.8rem;}
+        .porters-summary-title{font-size:0.76rem;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.45rem;display:block;}
         
         /* Scouting Styles */
         .scouting-container { display: flex; gap: 2rem; align-items: flex-start; }
@@ -128,6 +135,37 @@
                 <div><button class="btn btn-primary" onclick="addHorariGlobal()" style="white-space:nowrap;">AFEGIR</button></div>
             </div>
         </div>
+        <div class="horari-form">
+            <div class="horari-form-title">Afegir Entrenament de Porters</div>
+            <div class="porters-form-row">
+                <div>
+                    <label>Dia</label>
+                    <select id="p_dia">
+                        <option value="">Selecciona...</option>
+                        <option>Dilluns</option>
+                        <option>Dimarts</option>
+                        <option>Dimecres</option>
+                        <option>Dijous</option>
+                        <option>Divendres</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Porteria assignada</label>
+                    <select id="p_porteria">
+                        <option value="">Selecciona...</option>
+                        <option>Espai 1</option>
+                        <option>Espai 2</option>
+                        <option>Espai 3</option>
+                        <option>Espai 4</option>
+                        <option>Espai 1/2 (F11)</option>
+                        <option>Espai 3/4 (F11)</option>
+                    </select>
+                </div>
+                <div><button class="btn btn-primary" onclick="addPortersTraining()" style="white-space:nowrap;">AFEGIR PORTERS</button></div>
+            </div>
+            <div class="porters-note">Franges fixes: 18:00-18:45 i 18:45-19:30 (mateix dia).</div>
+            <div id="porters_list" class="porters-list"></div>
+        </div>
     </div>
 
     <div class="card">
@@ -145,6 +183,11 @@
         const DIES = ['Dilluns','Dimarts','Dimecres','Dijous','Divendres'];
         const VESTIDOR_OPTIONS = ['','Vestidor 1','Vestidor 2','Vestidor 3','Vestidor 4','Vestidor 5','Vestidor 6'];
         const CAMP_OPTIONS = ['','Espai 1','Espai 2','Espai 3','Espai 4','Espai 1/2 (F11)','Espai 3/4 (F11)'];
+        const PORTERIA_OPTIONS = ['','Espai 1','Espai 2','Espai 3','Espai 4','Espai 1/2 (F11)','Espai 3/4 (F11)'];
+        const PORTERS_FRANGES = [
+            { inici: '18:00', fi: '18:45' },
+            { inici: '18:45', fi: '19:30' }
+        ];
         let TEAMS = [];
         let horarios = [];
 
@@ -161,6 +204,53 @@
             const order = ['Espai 1', 'Espai 2', 'Espai 3', 'Espai 4', 'Espai 1/2 (F11)', 'Espai 3/4 (F11)'];
             const idx = order.indexOf(value);
             return idx === -1 ? 999 : idx;
+        }
+
+        function isPortersTraining(item) {
+            return String(item && item.tipus || '').trim().toLowerCase() === 'porters';
+        }
+
+        function normalizeHorariRow(item) {
+            const rawCamp = String(item && item.camp || '').trim();
+            const rawTipus = String(item && item.tipus || '').trim().toLowerCase();
+            const inferredPorters = /^porteria\s*:/i.test(rawCamp);
+            const decodedPorteria = inferredPorters
+                ? rawCamp.replace(/^porteria\s*:/i, '').trim()
+                : '';
+            const tipus = rawTipus === 'porters' || inferredPorters ? 'porters' : 'equip';
+            const porteria = String(item && item.porteria || decodedPorteria || '').trim();
+
+            return {
+                ...item,
+                id: item && item.id ? String(item.id) : ((window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`),
+                team_id: item && (item.team_id !== null && item.team_id !== undefined) ? String(item.team_id).trim() : '',
+                dia: String(item && item.dia || '').trim(),
+                inici: String(item && item.inici || '').trim(),
+                fi: String(item && item.fi || '').trim(),
+                vestidor: String(item && item.vestidor || '').trim(),
+                camp: tipus === 'porters' ? '' : rawCamp,
+                tipus,
+                porteria: tipus === 'porters' ? porteria : ''
+            };
+        }
+
+        function sortHorariosList(list) {
+            return [...(Array.isArray(list) ? list : [])].sort((a, b) => {
+                const dayDiff = DIES.indexOf(String(a.dia || '')) - DIES.indexOf(String(b.dia || ''));
+                if (dayDiff !== 0) return dayDiff;
+                return String(a.inici || '').localeCompare(String(b.inici || ''));
+            });
+        }
+
+        function resolveTeamName(teamId) {
+            const id = String(teamId || '').trim();
+            if (!id) return 'Sense equip';
+            const team = TEAMS.find(t => String(t.id) === id);
+            return team ? String(team.name || `Equip ${id}`) : `Equip ${id}`;
+        }
+
+        function timesOverlap(startA, endA, startB, endB) {
+            return String(startA || '') < String(endB || '') && String(endA || '') > String(startB || '');
         }
 
         async function persistHorarios() {
@@ -183,11 +273,15 @@
 
         function getCollisionMessage(candidate, ignoreId) {
             const overlap = (aStart, aEnd, bStart, bEnd) => aStart < bEnd && aEnd > bStart;
+            const candidateIsPorters = isPortersTraining(candidate);
 
             for (const h of horarios) {
                 if (ignoreId && String(h.id) === String(ignoreId)) continue;
                 if (h.dia !== candidate.dia) continue;
                 if (!overlap(candidate.inici, candidate.fi, h.inici, h.fi)) continue;
+
+                const existingIsPorters = isPortersTraining(h);
+                if (candidateIsPorters || existingIsPorters) continue;
 
                 if (candidate.camp && h.camp && candidate.camp === h.camp) {
                     return `Col·lisió detectada: ja hi ha un equip al camp ${candidate.camp} en aquesta franja.`;
@@ -219,6 +313,7 @@
         window.updateHorariTeam = function(horariId, teamId) {
             const item = horarios.find(h => String(h.id) === String(horariId));
             if (!item) return;
+            if (isPortersTraining(item)) return;
             item.team_id = String(teamId || '').trim();
             if (!item.team_id) {
                 item.camp = '';
@@ -261,7 +356,7 @@
                 return;
             }
 
-            horarios.sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
+            horarios = sortHorariosList(horarios);
             try {
                 await persistHorarios();
                 renderAll();
@@ -291,7 +386,7 @@
                 const r = await fetch(API_HORARIOS);
                 horarios = await r.json();
                 if (!Array.isArray(horarios)) horarios = [];
-                horarios = horarios.map(h => ({ ...h, id: h.id ? String(h.id) : '', team_id: (h.team_id === null || h.team_id === undefined) ? '' : String(h.team_id) }));
+                horarios = sortHorariosList(horarios.map(normalizeHorariRow));
             } catch(e) {
                 console.warn('Error carregant horaris:', e);
                 horarios = [];
@@ -308,6 +403,7 @@
         function renderAll() {
             renderByDay();
             renderByTeam();
+            renderPortersTrainings();
             populateTeamSelect();
         }
 
@@ -367,10 +463,12 @@
                 inici: h_inici,
                 fi: h_fi,
                 vestidor: h_vestidor,
-                camp: h_camp
+                camp: h_camp,
+                tipus: 'equip',
+                porteria: ''
             });
             
-            horarios.sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
+            horarios = sortHorariosList(horarios);
             
             try {
                 await persistHorarios();
@@ -378,6 +476,173 @@
                 ['h_inici','h_fi','h_vestidor','h_camp'].forEach(id => document.getElementById(id).value = '');
             } catch(e) { alert(`Error al guardar: ${e?.message || e}`); }
         };
+
+        window.addPortersTraining = async function() {
+            const dia = String((document.getElementById('p_dia') || {}).value || '').trim();
+            const porteria = String((document.getElementById('p_porteria') || {}).value || '').trim();
+
+            if (!dia || !porteria) {
+                alert('Cal seleccionar dia i porteria.');
+                return;
+            }
+
+            if (!PORTERIA_OPTIONS.includes(porteria)) {
+                alert('Porteria invàlida.');
+                return;
+            }
+
+            const hasExistingForDay = horarios.some(h => isPortersTraining(h) && String(h.dia || '') === dia);
+            if (hasExistingForDay) {
+                const shouldReplace = confirm('Aquest dia ja té entrenament de porters. Vols substituir-lo?');
+                if (!shouldReplace) return;
+            }
+
+            const nextHorarios = horarios.filter(h => !(isPortersTraining(h) && String(h.dia || '') === dia));
+
+            PORTERS_FRANGES.forEach(slot => {
+                nextHorarios.push({
+                    id: (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                    team_id: '',
+                    dia,
+                    inici: slot.inici,
+                    fi: slot.fi,
+                    vestidor: '',
+                    camp: '',
+                    tipus: 'porters',
+                    porteria
+                });
+            });
+
+            horarios = sortHorariosList(nextHorarios);
+
+            try {
+                await persistHorarios();
+                renderAll();
+            } catch (e) {
+                alert(`Error al guardar entrenament de porters: ${e?.message || e}`);
+            }
+        };
+
+        window.removePortersTraining = async function(dia) {
+            const safeDay = String(dia || '').trim();
+            if (!safeDay) return;
+
+            if (!confirm(`Segur que vols eliminar l'entrenament de porters de ${safeDay}?`)) return;
+
+            horarios = horarios.filter(h => !(isPortersTraining(h) && String(h.dia || '') === safeDay));
+            try {
+                await persistHorarios();
+                renderAll();
+            } catch (e) {
+                alert(`Error al eliminar entrenament de porters: ${e?.message || e}`);
+            }
+        };
+
+        function renderPortersTrainings() {
+            const el = document.getElementById('porters_list');
+            if (!el) return;
+
+            const sortedTeams = [...TEAMS].sort((a, b) => {
+                const idA = Number(String(a.id || '').trim());
+                const idB = Number(String(b.id || '').trim());
+                const bothNumeric = Number.isFinite(idA) && Number.isFinite(idB);
+                if (bothNumeric) return idA - idB;
+                return String(a.id || '').localeCompare(String(b.id || ''));
+            });
+
+            const rows = DIES.map(dia => {
+                const dayRows = horarios.filter(h => isPortersTraining(h) && String(h.dia || '') === dia);
+                if (!dayRows.length) return null;
+                const first = dayRows[0] || {};
+
+                const candidateTeamIds = [...new Set(
+                    horarios
+                        .filter(h => !isPortersTraining(h)
+                            && String(h.dia || '') === dia
+                            && String(h.team_id || '').trim()
+                            && String(h.camp || '').trim())
+                        .filter(h => PORTERS_FRANGES.some(slot => timesOverlap(slot.inici, slot.fi, h.inici, h.fi)))
+                        .map(h => String(h.team_id || '').trim())
+                )];
+
+                return {
+                    dia,
+                    porteria: String(first.porteria || '').trim() || 'Sense porteria',
+                    candidateTeamIds,
+                    candidateTeams: candidateTeamIds
+                        .map(resolveTeamName)
+                        .sort((a, b) => a.localeCompare(b))
+                };
+            }).filter(Boolean);
+
+            const assignedTeamIds = new Set(rows.flatMap(row => row.candidateTeamIds));
+            const noPortersTeams = sortedTeams
+                .filter(team => !assignedTeamIds.has(String(team.id || '').trim()))
+                .map(team => String(team.name || `Equip ${team.id}`));
+
+            const teamDaysMap = new Map();
+            rows.forEach((row) => {
+                row.candidateTeamIds.forEach((teamId) => {
+                    const normalizedTeamId = String(teamId || '').trim();
+                    if (!normalizedTeamId) return;
+                    if (!teamDaysMap.has(normalizedTeamId)) {
+                        teamDaysMap.set(normalizedTeamId, new Set());
+                    }
+                    teamDaysMap.get(normalizedTeamId).add(row.dia);
+                });
+            });
+
+            const multiDayTeams = [...teamDaysMap.entries()]
+                .map(([teamId, daysSet]) => ({
+                    teamId,
+                    teamName: resolveTeamName(teamId),
+                    days: [...daysSet].sort((a, b) => DIES.indexOf(a) - DIES.indexOf(b))
+                }))
+                .filter(item => item.days.length > 1)
+                .sort((a, b) => b.days.length - a.days.length || a.teamName.localeCompare(b.teamName));
+
+            const summaryHtml = `
+                <div class="porters-summary">
+                    <span class="porters-summary-title">Equips sense cap dia amb porters assignat</span>
+                    ${sortedTeams.length === 0
+                        ? '<div class="empty-msg" style="padding:0;">No hi ha equips disponibles.</div>'
+                        : (noPortersTeams.length
+                            ? `<div class="porters-team-tags">${noPortersTeams.map(name => `<span class="porters-team-tag">${esc(name)}</span>`).join('')}</div>`
+                            : '<div class="empty-msg" style="padding:0;">Tots els equips tenen almenys un dia amb porters.</div>')}
+                </div>
+                <div class="porters-summary">
+                    <span class="porters-summary-title">Equips amb més d'un dia d'entrenament de porters</span>
+                    ${multiDayTeams.length
+                        ? `<div class="porters-team-tags">${multiDayTeams.map(item => `<span class="porters-team-tag">${esc(item.teamName)} · ${item.days.length} dies</span>`).join('')}</div>`
+                        : '<div class="empty-msg" style="padding:0;">Cap equip té més d\'un dia de porters.</div>'}
+                </div>
+            `;
+
+            if (!rows.length) {
+                el.innerHTML = '<div class="empty-msg">Sense entrenaments de porters.</div>' + summaryHtml;
+                return;
+            }
+
+            el.innerHTML = `
+                <table class="horari-table mobile-card-table">
+                    <thead><tr><th>Dia</th><th>Franges</th><th>Porteria</th><th>Equips possibles</th><th style="width:50px"></th></tr></thead>
+                    <tbody>
+                        ${rows.map(row => `
+                            <tr>
+                                <td data-label="Dia">${esc(row.dia)}</td>
+                                <td data-label="Franges">18:00-18:45 / 18:45-19:30</td>
+                                <td data-label="Porteria">Entrenament porters · ${esc(row.porteria)}</td>
+                                <td data-label="Equips possibles">${row.candidateTeams.length
+                                    ? `<div class="porters-team-tags">${row.candidateTeams.map(name => `<span class="porters-team-tag">${esc(name)}</span>`).join('')}</div>`
+                                    : '<span class="empty-msg" style="padding:0;">Cap equip al camp en aquestes franges.</span>'}</td>
+                                <td data-label="Accions"><button class="btn-remove" onclick="removePortersTraining('${esc(row.dia)}')">&#x00D7;</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ${summaryHtml}
+            `;
+        }
 
         window.removeHorariGlobal = async function(horariId) {
             if(!confirm('Segur que vols eliminar aquesta franja?')) return;
@@ -393,7 +658,9 @@
             if(!el) return;
             let html = '';
             DIES.forEach(dia => {
-                let sessions = horarios.filter(h => h.dia === dia).sort((a,b) => (a.inici || '').localeCompare(b.inici || ''));
+                let sessions = horarios
+                    .filter(h => h.dia === dia && !isPortersTraining(h))
+                    .sort((a,b) => (a.inici || '').localeCompare(b.inici || ''));
                 const enriched = sessions.map((s) => {
                     const team = TEAMS.find(t => String(t.id) === String(s.team_id));
                     return {...s, teamName: team ? team.name : (s.team_id ? s.team_id : 'Sense equip')};
@@ -474,7 +741,9 @@
             ];
 
             groups.forEach(g => {
-                const h = horarios.filter(h => String(h.team_id || '') === g.id).sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
+                const h = horarios
+                    .filter(h => !isPortersTraining(h) && String(h.team_id || '') === g.id)
+                    .sort((a,b) => DIES.indexOf(a.dia) - DIES.indexOf(b.dia) || (a.inici || '').localeCompare(b.inici || ''));
                 if(h.length === 0) return;
                 html += `<div class="team-section">
                     <h3>${g.name}</h3>
@@ -556,7 +825,8 @@
             .actions-end .fed-link { width: 100%; justify-content: center; text-align: center; }
             .horari-form { padding: 0.95rem; }
             .horari-form-row,
-            .horari-form-row-main { grid-template-columns: 1fr; }
+            .horari-form-row-main,
+            .porters-form-row { grid-template-columns: 1fr; }
             .horari-form-row > div,
             .horari-form-row-main > div { width: 100%; }
             .horari-form-row .btn,

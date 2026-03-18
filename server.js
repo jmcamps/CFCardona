@@ -541,7 +541,30 @@ async function readHorarios() {
     if (!USE_SUPABASE) return [];
 
     const rows = await supabaseRestRequest('GET', '/rest/v1/horarios_entrenaments?order=created_at.desc');
-    return Array.isArray(rows) ? rows : [];
+    return (Array.isArray(rows) ? rows : []).map((row) => {
+        const rawCamp = String(row && row.camp || '').trim();
+        const rawTipus = String(row && row.tipus || '').trim().toLowerCase();
+        const inferredPorters = /^porteria\s*:/i.test(rawCamp);
+        const decodedPorteria = inferredPorters
+            ? rawCamp.replace(/^porteria\s*:/i, '').trim()
+            : '';
+        const tipus = (rawTipus === 'porters' || inferredPorters) ? 'porters' : 'equip';
+        const rawPorteria = String(row && row.porteria || '').trim();
+        const porteria = rawPorteria || decodedPorteria;
+
+        return {
+            ...row,
+            id: String(row && row.id || ''),
+            team_id: String(row && row.team_id || '').trim(),
+            dia: String(row && row.dia || '').trim(),
+            inici: String(row && row.inici || '').trim(),
+            fi: String(row && row.fi || '').trim(),
+            vestidor: String(row && row.vestidor || '').trim(),
+            camp: tipus === 'porters' ? '' : rawCamp,
+            tipus,
+            porteria: tipus === 'porters' ? porteria : ''
+        };
+    });
 }
 
 async function readEquips() {
@@ -2546,6 +2569,7 @@ async function writeHorarios(horarios) {
 
     try {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const normalizeHorariType = (value) => String(value || '').trim().toLowerCase() === 'porters' ? 'porters' : 'equip';
 
         if (!Array.isArray(horarios)) {
             throw new Error('Payload d\'horaris invàlid');
@@ -2561,17 +2585,26 @@ async function writeHorarios(horarios) {
             const teamId = String(item.team_id || '').trim();
             const campValue = String(item.camp || '').trim();
             const vestidorValue = item.vestidor ? String(item.vestidor).trim() : '';
+            const tipus = normalizeHorariType(item.tipus);
+            const isPorters = tipus === 'porters';
+            const porteriaValue = String(item.porteria || '').trim();
             const row = {
                 id: uuidRegex.test(rawId) ? rawId : randomUUID(),
-                team_id: teamId,
+                team_id: isPorters ? '' : teamId,
                 dia: String(item.dia || '').trim(),
                 inici: String(item.inici || '').trim(),
                 fi: String(item.fi || '').trim(),
-                vestidor: teamId ? (vestidorValue || null) : null,
-                camp: teamId ? campValue : ''
+                vestidor: isPorters ? null : (teamId ? (vestidorValue || null) : null),
+                camp: isPorters ? '' : (teamId ? campValue : ''),
+                tipus,
+                porteria: isPorters ? (porteriaValue || null) : null
             };
 
             if (!row.dia || !row.inici || !row.fi) {
+                return null;
+            }
+
+            if (isPorters && !row.porteria) {
                 return null;
             }
 
@@ -2582,12 +2615,43 @@ async function writeHorarios(horarios) {
             throw new Error('No hi ha horaris vàlids per guardar');
         }
 
-        await supabaseRestRequest(
-            'POST',
-            '/rest/v1/horarios_entrenaments?on_conflict=id',
-            normalized,
-            'resolution=merge-duplicates'
-        );
+        try {
+            await supabaseRestRequest(
+                'POST',
+                '/rest/v1/horarios_entrenaments?on_conflict=id',
+                normalized,
+                'resolution=merge-duplicates'
+            );
+        } catch (err) {
+            const missingTipus = isMissingSupabaseColumnError(err, 'tipus');
+            const missingPorteria = isMissingSupabaseColumnError(err, 'porteria');
+
+            if (!missingTipus && !missingPorteria) {
+                throw err;
+            }
+
+            const legacyRows = normalized.map((row) => {
+                const isPorters = String(row.tipus || '').trim().toLowerCase() === 'porters';
+                const encodedPorteria = String(row.porteria || '').trim();
+
+                return {
+                    id: row.id,
+                    team_id: isPorters ? '' : row.team_id,
+                    dia: row.dia,
+                    inici: row.inici,
+                    fi: row.fi,
+                    vestidor: isPorters ? null : row.vestidor,
+                    camp: isPorters ? `PORTERIA:${encodedPorteria}` : row.camp
+                };
+            });
+
+            await supabaseRestRequest(
+                'POST',
+                '/rest/v1/horarios_entrenaments?on_conflict=id',
+                legacyRows,
+                'resolution=merge-duplicates'
+            );
+        }
 
         const existing = await supabaseRestRequest('GET', '/rest/v1/horarios_entrenaments?select=id');
         const keepIds = new Set(normalized.map(row => row.id));
