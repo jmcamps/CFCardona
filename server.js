@@ -337,6 +337,10 @@ function getAuthorizationRule(pathname, method) {
         return { requiredRoles: [], readOnlyAllowed: true };
     }
 
+    if (p === '/api/jugadors-seguiment/incorporar' || p === '/api/jugadors-seguiment/incorporar/') {
+        return { requiredRoles: [ROLES.SCOUTING, ROLES.FUTBOL_BASE, ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
     if (p.startsWith('/api/jugadors-seguiment')) {
         return { requiredRoles: [ROLES.SCOUTING, ROLES.DIRECCIO], readOnlyAllowed: true };
     }
@@ -618,7 +622,7 @@ async function readJugadorsByEquip(equipId) {
                 revisio: normalizeBoolean(row.revisio_medica),
                 inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
                 pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
-                vinculat_club: normalizeBoolean(row.vinculat_club),
+                vinculat_club: normalizeBoolean(row.vinculat_club ?? row.vinculatClub),
                 posicions,
                 posicio: posicions.join(', ')
             };
@@ -639,7 +643,7 @@ async function readJugadorsByEquip(equipId) {
             revisio: normalizeBoolean(p.revisio),
             inscripcio_feta: normalizeBoolean(p.inscripcio_feta ?? p.inscripcio),
             pagament_fcf_fet: normalizeBoolean(p.pagament_fcf_fet ?? p.pagament_fcf),
-            vinculat_club: normalizeBoolean(p.vinculat_club),
+            vinculat_club: normalizeBoolean(p.vinculat_club ?? p.vinculatClub),
             posicions,
             posicio: posicions.join(', ')
         };
@@ -735,7 +739,7 @@ async function readJugadorById(jugadorId) {
             revisio: normalizeBoolean(row.revisio_medica),
             inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
             pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
-            vinculat_club: normalizeBoolean(row.vinculat_club),
+            vinculat_club: normalizeBoolean(row.vinculat_club ?? row.vinculatClub),
             edat: fromRowOrDetall('edat', ''),
             poblacio: fromRowOrDetall('poblacio', fromRowOrDetall('residencia', '')),
             rol_actual_id: rolActualId,
@@ -773,7 +777,7 @@ async function readJugadorById(jugadorId) {
         revisio: normalizeBoolean(found.revisio),
         inscripcio_feta: normalizeBoolean(found.inscripcio_feta ?? found.inscripcio),
         pagament_fcf_fet: normalizeBoolean(found.pagament_fcf_fet ?? found.pagament_fcf),
-        vinculat_club: normalizeBoolean(found.vinculat_club),
+        vinculat_club: normalizeBoolean(found.vinculat_club ?? found.vinculatClub),
         edat: found.edat || '',
         poblacio: found.poblacio || '',
         rol_actual_id: found.rol_actual_id || null,
@@ -2286,6 +2290,126 @@ async function deleteJugadorSeguiment(id) {
     await removePlayerFromAllSegments(safeId);
 }
 
+function resolveAuthActor(authUser, fallbackAutor = '') {
+    const fromMetadata = [
+        authUser && authUser.user_metadata && authUser.user_metadata.full_name,
+        authUser && authUser.user_metadata && authUser.user_metadata.name,
+        authUser && authUser.raw_user_meta_data && authUser.raw_user_meta_data.full_name,
+        authUser && authUser.raw_user_meta_data && authUser.raw_user_meta_data.name,
+        authUser && authUser.email
+    ]
+        .map(value => String(value || '').trim())
+        .find(Boolean);
+
+    if (fromMetadata) return fromMetadata;
+    return String(fallbackAutor || '').trim() || 'Anònim';
+}
+
+function buildIncorporacioObservacioText(jugador) {
+    const nom = String(jugador && jugador.nom ? jugador.nom : '').trim() || 'Jugador sense nom';
+    const anyNaixement = parseAnyNaixement(jugador && (jugador.any_naixement ?? jugador.naixement));
+    const genere = String(jugador && jugador.genere ? jugador.genere : '').trim();
+    const club = String(jugador && jugador.club ? jugador.club : '').trim();
+    const tel = String(jugador && jugador.tel ? jugador.tel : '').trim();
+    const poblacio = String(jugador && jugador.poblacio ? jugador.poblacio : '').trim();
+    const situacio = String(jugador && jugador.situacio ? jugador.situacio : '').trim();
+    const posicions = Array.isArray(jugador && jugador.posicions)
+        ? [...new Set(jugador.posicions.map(item => String(item || '').trim()).filter(Boolean))]
+        : [];
+
+    const lines = [
+        `Incorporació de captació a la plantilla: ${nom}.`,
+        anyNaixement ? `Any de naixement: ${anyNaixement}` : '',
+        genere ? `Gènere: ${genere}` : '',
+        club ? `Club actual/origen: ${club}` : '',
+        poblacio ? `Residència: ${poblacio}` : '',
+        tel ? `Telèfon: ${tel}` : '',
+        posicions.length ? `Posicions: ${posicions.join(', ')}` : '',
+        'Informe tècnic:',
+        situacio || 'Sense informe tècnic disponible.'
+    ].filter(Boolean);
+
+    return lines.join('\n');
+}
+
+async function incorporarJugadorSeguiment(payload, authUser = null) {
+    const jugadorId = String(payload && (payload.jugador_id ?? payload.jugadorId ?? payload.id) || '').trim();
+    const equipId = Number(payload && (payload.equip_id ?? payload.equipId));
+    const scope = String(payload && payload.scope || '').trim();
+
+    if (!jugadorId) {
+        throw new Error('jugador_id obligatori');
+    }
+    if (!Number.isInteger(equipId) || equipId <= 0) {
+        throw new Error('equip_id invàlid');
+    }
+    if (!scope) {
+        throw new Error('scope obligatori');
+    }
+
+    const trackedPlayers = await readJugadorsSeguiment();
+    const jugador = (Array.isArray(trackedPlayers) ? trackedPlayers : []).find(item => String(item && item.id || '') === jugadorId);
+    if (!jugador) {
+        throw new Error('Jugador en seguiment no trobat');
+    }
+
+    const autor = resolveAuthActor(authUser, payload && payload.autor);
+    const dataObservacio = String(payload && payload.data || '').trim();
+    const safeData = /^\d{4}-\d{2}-\d{2}$/.test(dataObservacio)
+        ? dataObservacio
+        : new Date().toISOString().slice(0, 10);
+    const textObservacio = buildIncorporacioObservacioText(jugador);
+
+    let createdPlayer = null;
+    let createdObservacio = null;
+
+    try {
+        createdPlayer = await createJugador({
+            equip_id: equipId,
+            nom: jugador.nom,
+            any_naixement: jugador.any_naixement ?? jugador.naixement,
+            revisio_medica: false,
+            inscripcio_feta: false,
+            pagament_fcf_fet: false,
+            vinculat_club: true,
+            vinculatClub: true
+        });
+
+        if (!normalizeBoolean(createdPlayer && createdPlayer.vinculat_club) && createdPlayer && createdPlayer.id) {
+            await updateJugador({ id: createdPlayer.id, vinculat_club: true, vinculatClub: true });
+            createdPlayer.vinculat_club = true;
+        }
+
+        createdObservacio = await addObservacio(scope, {
+            autor,
+            data: safeData,
+            text: textObservacio
+        });
+
+        await deleteJugadorSeguiment(jugadorId);
+
+        return {
+            jugador: createdPlayer,
+            observacio: createdObservacio,
+            seguiment_id: jugadorId
+        };
+    } catch (err) {
+        if (createdObservacio && createdObservacio.id) {
+            try {
+                await deleteObservacio(scope, createdObservacio.id);
+            } catch (_) {}
+        }
+
+        if (createdPlayer && createdPlayer.id) {
+            try {
+                await deleteJugador(createdPlayer.id);
+            } catch (_) {}
+        }
+
+        throw err;
+    }
+}
+
 async function createJugador(payload) {
     const equipId = Number(payload?.equip_id);
     const nom = String(payload?.nom || '').trim();
@@ -2294,7 +2418,10 @@ async function createJugador(payload) {
     const revisioMedica = normalizeBoolean(payload?.revisio_medica);
     const inscripcioFeta = normalizeBoolean(payload?.inscripcio_feta);
     const pagamentFcfFet = normalizeBoolean(payload?.pagament_fcf_fet);
-    const vinculatClub = normalizeBoolean(payload?.vinculat_club);
+    const vinculatClubValue = payload?.vinculat_club !== undefined
+        ? payload.vinculat_club
+        : payload?.vinculatClub;
+    const vinculatClub = normalizeBoolean(vinculatClubValue);
 
     if (!Number.isInteger(equipId) || equipId <= 0) {
         throw new Error('equip_id invàlid');
@@ -2359,7 +2486,7 @@ async function createJugador(payload) {
             revisio: row ? normalizeBoolean(row.revisio_medica) : revisioMedica,
             inscripcio_feta: row ? normalizeBoolean(row.inscripcio_feta ?? inscripcioFeta) : inscripcioFeta,
             pagament_fcf_fet: row ? normalizeBoolean(row.pagament_fcf_fet ?? pagamentFcfFet) : pagamentFcfFet,
-            vinculat_club: row ? normalizeBoolean(row.vinculat_club ?? vinculatClub) : vinculatClub
+            vinculat_club: row ? normalizeBoolean((row.vinculat_club ?? row.vinculatClub) ?? vinculatClub) : vinculatClub
         };
     }
 
@@ -2405,7 +2532,10 @@ async function updateJugador(payload) {
     if (payload.revisio_medica !== undefined) patch.revisio_medica = normalizeBoolean(payload.revisio_medica);
     if (payload.inscripcio_feta !== undefined) patch.inscripcio_feta = normalizeBoolean(payload.inscripcio_feta);
     if (payload.pagament_fcf_fet !== undefined) patch.pagament_fcf_fet = normalizeBoolean(payload.pagament_fcf_fet);
-    if (payload.vinculat_club !== undefined) patch.vinculat_club = normalizeBoolean(payload.vinculat_club);
+    const vinculatClubPayload = payload.vinculat_club !== undefined
+        ? payload.vinculat_club
+        : payload.vinculatClub;
+    if (vinculatClubPayload !== undefined) patch.vinculat_club = normalizeBoolean(vinculatClubPayload);
 
         const detailFields = [
         'edat', 'poblacio', 'fitxa_mensual', 'primes_partit', 'prima_permanencia',
@@ -3217,6 +3347,37 @@ const server = http.createServer(async (req, res) => {
                 });
                 res.end(JSON.stringify({
                     error: "No s'han pogut llegir els jugadors en seguiment",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (/^\/api\/jugadors-seguiment\/incorporar\/?$/.test(pathname) && req.method === 'POST') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const parsed = body ? JSON.parse(body) : {};
+                const result = await incorporarJugadorSeguiment(parsed, req.authUser || null);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success', ...result }));
+            } catch (err) {
+                if (err instanceof SyntaxError) {
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'JSON invàlid' }));
+                    return;
+                }
+                console.error('Error POST /api/jugadors-seguiment/incorporar:', err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut incorporar el jugador de captació",
                     details: err && err.message ? err.message : String(err)
                 }));
             }

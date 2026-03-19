@@ -2644,6 +2644,128 @@
         });
     }
 
+    function decodeSafeUriComponent(value) {
+        const raw = String(value || '');
+        if (!raw) return '';
+        try {
+            return decodeURIComponent(raw);
+        } catch (_) {
+            return raw;
+        }
+    }
+
+    async function refreshAfterCaptacioIncorporacio() {
+        if (typeof window.load === 'function') {
+            const maybePromise = window.load();
+            if (maybePromise && typeof maybePromise.then === 'function') {
+                await maybePromise;
+            }
+            return;
+        }
+
+        window.location.reload();
+    }
+
+    function getIncorporarEndpointCandidates() {
+        const unique = new Set();
+        [
+            `${base}/api/jugadors-seguiment/incorporar`,
+            '/api/jugadors-seguiment/incorporar',
+            `${base}/api/jugadors-seguiment/incorporar/`,
+            '/api/jugadors-seguiment/incorporar/'
+        ].forEach(function (value) {
+            const url = String(value || '').trim();
+            if (!url) return;
+            unique.add(url);
+        });
+
+        return [...unique];
+    }
+
+    async function postIncorporarJugador(payload) {
+        const endpoints = getIncorporarEndpointCandidates();
+        let lastError = null;
+
+        for (const endpoint of endpoints) {
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (res.status === 404) {
+                    lastError = new Error('Error 404');
+                    continue;
+                }
+
+                return { res, data };
+            } catch (err) {
+                lastError = err;
+            }
+        }
+
+        throw (lastError || new Error('No s\'ha pogut contactar amb el servidor.'));
+    }
+
+    window.cfIncorporarCaptacioJugador = async function (payload, triggerButton) {
+        const rawPlayerId = payload && payload.playerId;
+        const rawEquipId = payload && payload.equipId;
+        const rawScope = payload && payload.scope;
+
+        const playerId = decodeSafeUriComponent(rawPlayerId).trim();
+        const equipIdText = decodeSafeUriComponent(rawEquipId).trim();
+        const scope = decodeSafeUriComponent(rawScope).trim();
+        const equipId = Number(equipIdText);
+
+        if (!playerId || !scope || !Number.isInteger(equipId) || equipId <= 0) {
+            alert('No s\'ha pogut resoldre el jugador o l\'equip per fer la incorporació.');
+            return;
+        }
+
+        if (!window.confirm('Vols incorporar aquest jugador a la plantilla?')) {
+            return;
+        }
+
+        const button = triggerButton && typeof triggerButton === 'object' ? triggerButton : null;
+        const previousText = button ? String(button.textContent || '') : '';
+        const previousDisabled = button ? !!button.disabled : false;
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'INCORPORANT...';
+        }
+
+        try {
+            const { res, data } = await postIncorporarJugador({
+                jugador_id: playerId,
+                equip_id: equipId,
+                scope
+            });
+
+            if (!res.ok) {
+                throw new Error(data && (data.details || data.error) ? (data.details || data.error) : `Error ${res.status}`);
+            }
+
+            await refreshAfterCaptacioIncorporacio();
+
+            const playerName = data && data.jugador && data.jugador.nom
+                ? String(data.jugador.nom)
+                : 'El jugador';
+            alert(`${playerName} s'ha incorporat a la plantilla.`);
+        } catch (err) {
+            alert(err && err.message ? err.message : 'No s\'ha pogut incorporar el jugador.');
+        } finally {
+            if (button) {
+                button.disabled = previousDisabled;
+                button.textContent = previousText || 'INCORPORAR A PLANTILLA';
+            }
+        }
+    };
+
     (async function applyRoleVisibility() {
         try {
             const res = await fetch(`${base}/api/auth/session`, { credentials: 'same-origin' });
