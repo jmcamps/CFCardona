@@ -2803,6 +2803,80 @@ async function ensureHorariosTable() {
     if (!USE_SUPABASE) return;
 }
 
+async function readSnapshots() {
+    if (!USE_SUPABASE) return [];
+    try {
+        const rows = await supabaseRestRequest('GET', '/rest/v1/horarios_snapshots?order=created_at.desc');
+        return rows || [];
+    } catch (err) {
+        console.error('Error reading snapshots:', err.message);
+        return [];
+    }
+}
+
+async function createSnapshot(name, description, horarios) {
+    if (!USE_SUPABASE) throw new Error('Snapshots require Supabase');
+    if (!name || !name.trim()) throw new Error('Cal indicar nom del snapshot');
+    if (!Array.isArray(horarios)) throw new Error('Dades d\'horarios invàlides');
+
+    try {
+        const payload = [{
+            name: String(name).trim(),
+            description: description ? String(description).trim() : null,
+            data: horarios
+        }];
+        
+        const result = await supabaseRestRequest('POST', '/rest/v1/horarios_snapshots', payload);
+        return result ? result[0] : null;
+    } catch (err) {
+        console.error('Error creating snapshot:', err.message);
+        throw err;
+    }
+}
+
+async function getSnapshot(snapshotId) {
+    if (!USE_SUPABASE) return null;
+    try {
+        const snapshotIdNum = parseInt(snapshotId, 10);
+        if (!snapshotIdNum) throw new Error('ID de snapshot invàlid');
+
+        const result = await supabaseRestRequest('GET', `/rest/v1/horarios_snapshots?id=eq.${snapshotIdNum}`);
+        return result && result.length ? result[0] : null;
+    } catch (err) {
+        console.error('Error getting snapshot:', err.message);
+        throw err;
+    }
+}
+
+async function restoreSnapshot(snapshotId) {
+    if (!USE_SUPABASE) throw new Error('Snapshots require Supabase');
+    try {
+        const snapshot = await getSnapshot(snapshotId);
+        if (!snapshot) throw new Error('Snapshot no trobat');
+        if (!Array.isArray(snapshot.data)) throw new Error('Dades de snapshot invàlides');
+
+        await writeHorarios(snapshot.data);
+        return { status: 'success', restored: snapshot.name };
+    } catch (err) {
+        console.error('Error restoring snapshot:', err.message);
+        throw err;
+    }
+}
+
+async function deleteSnapshot(snapshotId) {
+    if (!USE_SUPABASE) throw new Error('Snapshots require Supabase');
+    try {
+        const snapshotIdNum = parseInt(snapshotId, 10);
+        if (!snapshotIdNum) throw new Error('ID de snapshot invàlid');
+
+        await supabaseRestRequest('DELETE', `/rest/v1/horarios_snapshots?id=eq.${snapshotIdNum}`);
+        return { status: 'success' };
+    } catch (err) {
+        console.error('Error deleting snapshot:', err.message);
+        throw err;
+    }
+}
+
 async function readObservacions(scope) {
     const safeScope = String(scope || '').trim();
     if (!safeScope) {
@@ -3916,6 +3990,140 @@ const server = http.createServer(async (req, res) => {
                 });
                 res.end(JSON.stringify({
                     error: "No s'ha pogut guardar els horaris",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/horarios-snapshots' && req.method === 'GET') {
+        (async () => {
+            try {
+                const snapshots = await readSnapshots();
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify(snapshots));
+            } catch (err) {
+                console.error('Error GET /api/horarios-snapshots:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'han pogut llegir els snapshots",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname === '/api/horarios-snapshots' && req.method === 'POST') {
+        (async () => {
+            try {
+                const body = await readBody(req);
+                const { name, description, data } = body ? JSON.parse(body) : {};
+                if (!data) {
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'Cal indicar dades d\'horarios' }));
+                    return;
+                }
+                const snapshot = await createSnapshot(name, description, data);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({ status: 'success', snapshot: snapshot }));
+            } catch (err) {
+                console.error('Error POST /api/horarios-snapshots:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut guardar el snapshot",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname.startsWith('/api/horarios-snapshots/') && req.method === 'GET') {
+        (async () => {
+            try {
+                const snapshotId = pathname.split('/')[3];
+                const snapshot = await getSnapshot(snapshotId);
+                if (!snapshot) {
+                    res.writeHead(404, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'Snapshot no trobat' }));
+                    return;
+                }
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify(snapshot));
+            } catch (err) {
+                console.error('Error GET /api/horarios-snapshots/:id:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut llegir el snapshot",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname.startsWith('/api/horarios-snapshots/') && pathname.endsWith('/restore') && req.method === 'POST') {
+        (async () => {
+            try {
+                const snapshotId = pathname.split('/')[3];
+                const result = await restoreSnapshot(snapshotId);
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify(result));
+            } catch (err) {
+                console.error('Error POST /api/horarios-snapshots/:id/restore:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut restaurar el snapshot",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname.startsWith('/api/horarios-snapshots/') && req.method === 'DELETE') {
+        (async () => {
+            try {
+                const snapshotId = pathname.split('/')[3];
+                if (snapshotId && snapshotId !== 'restore') {
+                    const result = await deleteSnapshot(snapshotId);
+                    res.writeHead(200, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify(result));
+                } else {
+                    res.writeHead(400, {
+                        'Content-Type': 'application/json',
+                        'X-Storage-Backend': storageBackend
+                    });
+                    res.end(JSON.stringify({ error: 'ID de snapshot invàlid' }));
+                }
+            } catch (err) {
+                console.error('Error DELETE /api/horarios-snapshots/:id:', err && err.message ? err.message : err);
+                res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: "No s'ha pogut eliminar el snapshot",
                     details: err && err.message ? err.message : String(err)
                 }));
             }

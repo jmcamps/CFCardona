@@ -114,13 +114,28 @@
         .tree-node{display:inline-flex;align-items:center;justify-content:center;padding:0.6rem 1.4rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;text-decoration:none;color:var(--primary);background:white;border:2px solid var(--primary);box-shadow:0 2px 8px rgba(217,29,29,0.1);transition:all 0.2s;white-space:nowrap;}
         .tree-node:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(217,29,29,0.2);background:#fff5f5;}
         .tree-node.root{background:#fee2e2;}
-        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}}
+        
+        /* Export modal styles */
+        .export-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;}
+        .export-modal.active{display:flex;}
+        .export-modal-content{background:white;border-radius:1rem;padding:2rem;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);}
+        .export-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:2px solid #fee2e2;padding-bottom:1rem;}
+        .export-modal-header h2{margin:0;color:#d91d1d;font-size:1.1rem;}
+        .export-modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;}
+        .export-modal-close:hover{color:#d91d1d;}
+        .export-modal-actions{display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;}
+        .export-modal-textarea{width:100%;min-height:400px;padding:0.75rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-family:monospace;font-size:0.85rem;resize:vertical;}
+        
+        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}.export-modal-content{padding:1rem;}.export-modal-actions{flex-direction:column;}.export-modal-actions .btn{width:100%;}}
     </style>
 </head>
 <body>
 <div class="card">
         <h2>&#x1F5D3; Gestionar Horaris d'Entrenament</h2>
         <div class="actions-end">
+            <button class="fed-link" style="font-size:0.78rem;padding:0.45rem 0.85rem;" onclick="openExportModal()">📥 EXPORTAR MARKDOWN</button>
+            <button class="fed-link" style="font-size:0.78rem;padding:0.45rem 0.85rem;" onclick="openSaveSnapshotModal()">💾 GUARDAR CONFIGURACIÓ</button>
+            <button class="fed-link" style="font-size:0.78rem;padding:0.45rem 0.85rem;" onclick="openRestoreSnapshotModal()">⬅️ RESTAURAR CONFIGURACIÓ</button>
             <a href="horari-setmanal.html" class="fed-link" style="font-size:0.78rem;padding:0.45rem 0.85rem;">VEURE INFOGRAFIA SETMANAL</a>
         </div>
         <div class="horari-form">
@@ -884,6 +899,343 @@
 
         function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
         document.getElementById('h_team')?.addEventListener('change', syncAltaNoTeamState);
+
+        function openExportModal() {
+            const markdown = generateMarkdown();
+            const textarea = document.getElementById('export_textarea');
+            textarea.value = markdown;
+            document.getElementById('export_modal').classList.add('active');
+        }
+
+        function closeExportModal() {
+            document.getElementById('export_modal').classList.remove('active');
+        }
+
+        function copyToClipboard() {
+            const textarea = document.getElementById('export_textarea');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Markdown copiat al portapapeles!');
+        }
+
+        function downloadMarkdown() {
+            const markdown = document.getElementById('export_textarea').value;
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `horaris-entrenaments-${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateMarkdown() {
+            const lines = [];
+            lines.push('# Horaris d\'Entrenament CF Cardona');
+            lines.push('');
+            lines.push(`*Generat el ${new Date().toLocaleDateString('ca-ES')} a les ${new Date().toLocaleTimeString('ca-ES')}*`);
+            lines.push('');
+
+            // Estadístiques
+            lines.push('## 📊 Estadístiques d\'Entrenaments');
+            lines.push('');
+
+            const buildTeamsMap = () => {
+                const map = new Map();
+                horarios.forEach(h => {
+                    if (isPortersTraining(h) || !h.team_id) return;
+                    const teamId = String(h.team_id || '').trim();
+                    if (!map.has(teamId)) {
+                        map.set(teamId, { teamName: resolveTeamName(teamId), days: new Set() });
+                    }
+                    map.get(teamId).days.add(String(h.dia || ''));
+                });
+                return map;
+            };
+
+            const teamsMap = buildTeamsMap();
+
+            // Equips amb 0 dies
+            const noTrainingTeams = TEAMS.filter(t => {
+                const teamId = String(t.id || '').trim();
+                return !teamsMap.has(teamId);
+            }).map(t => t.name || t.id).sort();
+
+            lines.push('### Equips amb 0 dies d\'entrenament:');
+            if (noTrainingTeams.length) {
+                noTrainingTeams.forEach(name => {
+                    lines.push(`- ${name}`);
+                });
+            } else {
+                lines.push('✅ Tots els equips tienen almenys un dia d\'entrenament.');
+            }
+            lines.push('');
+
+            // Equips amb 1 dia
+            const oneDayTeams = [...teamsMap.entries()]
+                .filter(([_, info]) => info.days.size === 1)
+                .map(([_, info]) => info.teamName)
+                .sort();
+
+            lines.push('### Equips amb 1 dia d\'entrenament:');
+            if (oneDayTeams.length) {
+                oneDayTeams.forEach(name => {
+                    lines.push(`- ${name}`);
+                });
+            } else {
+                lines.push('✅ Cap equip amb només un dia.');
+            }
+            lines.push('');
+
+            // Equips amb dies consecutius
+            const consecutiveDaysTeams = [...teamsMap.entries()]
+                .filter(([_, info]) => {
+                    const daysSet = info.days;
+                    for (let i = 0; i < DIES.length - 1; i++) {
+                        if (daysSet.has(DIES[i]) && daysSet.has(DIES[i + 1])) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .map(([_, info]) => {
+                    const daysSet = info.days;
+                    const sequences = [];
+                    for (let i = 0; i < DIES.length - 1; i++) {
+                        if (daysSet.has(DIES[i]) && daysSet.has(DIES[i + 1])) {
+                            sequences.push(`${DIES[i]}-${DIES[i + 1]}`);
+                        }
+                    }
+                    return `${info.teamName}: ${sequences.join(', ')}`;
+                })
+                .sort();
+
+            lines.push('### Equips amb dies d\'entrenament seguits:');
+            if (consecutiveDaysTeams.length) {
+                consecutiveDaysTeams.forEach(item => {
+                    lines.push(`- ${item}`);
+                });
+            } else {
+                lines.push('✅ Cap equip amb dies consecutius.');
+            }
+            lines.push('');
+
+            // Horaris per dies
+            lines.push('## 📅 Horaris per Dies');
+            lines.push('');
+
+            DIES.forEach(dia => {
+                const dayHorarios = horarios.filter(h => h.dia === dia && !isPortersTraining(h));
+                if (dayHorarios.length === 0) return;
+
+                lines.push(`### ${dia}`);
+                lines.push('');
+                lines.push('| Hora | Equip | Camp | Vestidor |');
+                lines.push('|------|-------|------|----------|');
+
+                const grouped = {};
+                dayHorarios.forEach(h => {
+                    const key = `${h.inici || '-'}|${h.fi || '-'}`;
+                    if (!grouped[key]) {
+                        grouped[key] = [];
+                    }
+                    grouped[key].push(h);
+                });
+
+                Object.entries(grouped).sort(([a], [b]) => {
+                    const timeA = a.split('|')[0];
+                    const timeB = b.split('|')[0];
+                    return String(timeA).localeCompare(String(timeB));
+                }).forEach(([key, items]) => {
+                    const [inici, fi] = key.split('|');
+                    items.sort((a, b) => campSortRank(a.camp) - campSortRank(b.camp) || String(a.camp || '').localeCompare(String(b.camp || '')))
+                        .forEach(h => {
+                            const teamName = resolveTeamName(h.team_id) || 'Sense equip';
+                            lines.push(`| ${inici}-${fi} | ${teamName} | ${h.camp || '-'} | ${h.vestidor || '-'} |`);
+                        });
+                });
+                lines.push('');
+            });
+
+            // Horaris de Porters
+            const portersHorarios = horarios.filter(h => isPortersTraining(h));
+            if (portersHorarios.length > 0) {
+                lines.push('## 🥅 Entrenaments de Porters');
+                lines.push('');
+
+                const portersByDay = {};
+                portersHorarios.forEach(h => {
+                    if (!portersByDay[h.dia]) {
+                        portersByDay[h.dia] = [];
+                    }
+                    portersByDay[h.dia].push(h);
+                });
+
+                DIES.forEach(dia => {
+                    if (!portersByDay[dia]) return;
+
+                    lines.push(`### ${dia}`);
+                    lines.push('');
+                    lines.push('| Hora | Porteria |');
+                    lines.push('|------|----------|');
+
+                    portersByDay[dia].forEach(h => {
+                        lines.push(`| ${h.inici}-${h.fi} | ${h.porteria || '-'} |`);
+                    });
+                    lines.push('');
+                });
+            }
+
+            return lines.join('\n');
+        }
+
+        // Snapshot functions
+        function openSaveSnapshotModal() {
+            document.getElementById('snapshot_name').value = '';
+            document.getElementById('snapshot_description').value = '';
+            document.getElementById('save_snapshot_modal').classList.add('active');
+            document.getElementById('snapshot_name').focus();
+        }
+
+        function closeSaveSnapshotModal() {
+            document.getElementById('save_snapshot_modal').classList.remove('active');
+        }
+
+        function openRestoreSnapshotModal() {
+            document.getElementById('restore_snapshot_modal').classList.add('active');
+            loadSnapshotsList();
+        }
+
+        function closeRestoreSnapshotModal() {
+            document.getElementById('restore_snapshot_modal').classList.remove('active');
+        }
+
+        async function saveSnapshot() {
+            const name = document.getElementById('snapshot_name').value.trim();
+            if (!name) {
+                alert('Cal indicar un nom per a la configuració');
+                return;
+            }
+
+            const description = document.getElementById('snapshot_description').value.trim();
+
+            try {
+                const response = await fetch('/api/horarios-snapshots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        description: description || null,
+                        data: horarios
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+
+                alert(`✅ Configuració "${name}" guardada correctament!`);
+                closeSaveSnapshotModal();
+            } catch (err) {
+                console.error('Error saving snapshot:', err);
+                alert(`❌ Error al guardar: ${err.message}`);
+            }
+        }
+
+        async function loadSnapshotsList() {
+            const container = document.getElementById('snapshots_list');
+            container.innerHTML = '<p style="text-align: center; color: #94a3b8;">Carregant...</p>';
+
+            try {
+                const response = await fetch('/api/horarios-snapshots');
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+
+                const snapshots = await response.json();
+                if (!snapshots || snapshots.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #94a3b8;">No hi ha configuracions guardades.</p>';
+                    return;
+                }
+
+                let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+                snapshots.forEach(snap => {
+                    const createdAt = new Date(snap.created_at).toLocaleDateString('ca-ES');
+                    const desc = snap.description ? `<p style="font-size: 0.85rem; color: #64748b; margin: 0.25rem 0 0 0;">${esc(snap.description)}</p>` : '';
+                    html += `
+                        <div style="border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem; background: #f8fafc;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.75rem;">
+                                <div style="flex: 1; min-width: 0;">
+                                    <p style="font-weight: 600; margin: 0; color: #1e293b;">${esc(snap.name)}</p>
+                                    ${desc}
+                                    <p style="font-size: 0.8rem; color: #94a3b8; margin: 0.5rem 0 0 0;">${createdAt}</p>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                                    <button class="btn btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.7rem;" onclick="restoreSnapshot(${snap.id})">Restaurar</button>
+                                    <button class="btn" style="font-size: 0.8rem; padding: 0.4rem 0.7rem; background: #fee2e2; color: #dc2626;" onclick="deleteSnapshot(${snap.id})">Eliminar</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading snapshots:', err);
+                container.innerHTML = `<p style="text-align: center; color: #dc2626;">❌ Error: ${err.message}</p>`;
+            }
+        }
+
+        async function restoreSnapshot(snapshotId) {
+            if (!confirm('Estàs segur? Això sobreescriurà els horaris actuals.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/horarios-snapshots/${snapshotId}/restore`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                alert(`✅ Restaurat: "${result.restored}"`);
+                closeRestoreSnapshotModal();
+                location.reload();
+            } catch (err) {
+                console.error('Error restoring snapshot:', err);
+                alert(`❌ Error: ${err.message}`);
+            }
+        }
+
+        async function deleteSnapshot(snapshotId) {
+            if (!confirm('Estàs segur? Aquesta acció és irreversible.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/horarios-snapshots/${snapshotId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+
+                alert('✅ Configuració eliminada.');
+                loadSnapshotsList();
+            } catch (err) {
+                console.error('Error deleting snapshot:', err);
+                alert(`❌ Error: ${err.message}`);
+            }
+        }
+
         load();
     </script>
     <style>
@@ -996,6 +1348,63 @@
             }
         }
     </style>
+
+    <!-- Export Modal -->
+    <div id="export_modal" class="export-modal">
+        <div class="export-modal-content">
+            <div class="export-modal-header">
+                <h2>📋 Exportar Horaris</h2>
+                <button class="export-modal-close" onclick="closeExportModal()">✕</button>
+            </div>
+            <div class="export-modal-actions">
+                <button class="btn btn-primary" onclick="copyToClipboard()">📋 Copiar al portapapeles</button>
+                <button class="btn btn-primary" onclick="downloadMarkdown()">⬇️ Descarregar fitxer</button>
+            </div>
+            <textarea id="export_textarea" class="export-modal-textarea" readonly></textarea>
+        </div>
+    </div>
+
+    <!-- Save Snapshot Modal -->
+    <div id="save_snapshot_modal" class="export-modal">
+        <div class="export-modal-content">
+            <div class="export-modal-header">
+                <h2>💾 Guardar Configuració d'Horaris</h2>
+                <button class="export-modal-close" onclick="closeSaveSnapshotModal()">✕</button>
+            </div>
+            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nom de la configuració</label>
+                    <input type="text" id="snapshot_name" placeholder="Ex: Config inicial, Després canvi S14..." style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.4rem;" />
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Descripció (opcional)</label>
+                    <textarea id="snapshot_description" placeholder="Ex: Redistribució per evitar dies consecutius..." style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.4rem; min-height: 80px; resize: vertical;"></textarea>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn btn-primary" onclick="saveSnapshot()">✅ Guardar</button>
+                    <button class="btn" style="background: #f1f5f9; color: #64748b;" onclick="closeSaveSnapshotModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Snapshot Modal -->
+    <div id="restore_snapshot_modal" class="export-modal">
+        <div class="export-modal-content">
+            <div class="export-modal-header">
+                <h2>⬅️ Restaurar Configuració d'Horaris</h2>
+                <button class="export-modal-close" onclick="closeRestoreSnapshotModal()">✕</button>
+            </div>
+            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div id="snapshots_list" style="max-height: 400px; overflow-y: auto;">
+                    <p style="text-align: center; color: #94a3b8;">Carregant configuracions disponibles...</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn" style="background: #f1f5f9; color: #64748b;" onclick="closeRestoreSnapshotModal()">Tancar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
 </body>
 </html>
