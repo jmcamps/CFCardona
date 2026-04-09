@@ -49,6 +49,7 @@ create table if not exists jugador (
   residencia text,
   any_final_revisio_medica int,
   revisio_medica boolean,
+  renovara boolean,
   rol_actual_id bigint references rol(id) on delete set null,
   rol_previst_id bigint references rol(id) on delete set null,
   edat text,

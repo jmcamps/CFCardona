@@ -202,6 +202,17 @@ function loadPlayerData() {
         revisioEl.value = data.revisio ? 'true' : 'false';
     }
 
+    const renovaraEl = document.getElementById('renovara');
+    if (renovaraEl) {
+        if (data.renovara === true) {
+            renovaraEl.value = 'true';
+        } else if (data.renovara === false) {
+            renovaraEl.value = 'false';
+        } else {
+            renovaraEl.value = '';
+        }
+    }
+
     const rolActualEl = document.getElementById('rol_actual');
     if (rolActualEl) {
         const roleId = data.rol_actual_id !== null && data.rol_actual_id !== undefined
@@ -421,6 +432,12 @@ function buildPlayerPayload() {
         posicions: Array.from(document.querySelectorAll('input[name="player_pos"]:checked')).map(cb => cb.value)
     };
 
+    const renovaraEl = document.getElementById('renovara');
+    if (renovaraEl) {
+        const raw = String(renovaraEl.value || '').trim();
+        payload.renovara = raw === '' ? null : raw === 'true';
+    }
+
     const rolActualEl = document.getElementById('rol_actual');
     if (rolActualEl) {
         const raw = String(rolActualEl.value || '').trim();
@@ -567,6 +584,7 @@ async function init() {
         currentPlayerData = {
             equip_id: currentEquipId,
             revisio: false,
+            renovara: null,
             posicions: [],
             conversations: [],
             comentaris: []

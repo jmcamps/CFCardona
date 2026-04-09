@@ -605,10 +605,21 @@ async function readJugadorsByEquip(equipId) {
     };
 
     if (USE_SUPABASE) {
-        const rows = await supabaseRestRequest(
-            'GET',
-            `/rest/v1/jugador?equip_id=eq.${id}&select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club&order=nom.asc`
-        );
+        let rows;
+        try {
+            rows = await supabaseRestRequest(
+                'GET',
+                `/rest/v1/jugador?equip_id=eq.${id}&select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club,renovara&order=nom.asc`
+            );
+        } catch (err) {
+            if (!isMissingSupabaseColumnError(err, 'renovara')) {
+                throw err;
+            }
+            rows = await supabaseRestRequest(
+                'GET',
+                `/rest/v1/jugador?equip_id=eq.${id}&select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club&order=nom.asc`
+            );
+        }
         const safeRows = Array.isArray(rows) ? rows : [];
         const mappedRows = await Promise.all(safeRows.map(async (row) => {
             const posicionsFromJoin = await readJugadorPosicions(row.id);
@@ -623,6 +634,7 @@ async function readJugadorsByEquip(equipId) {
                 inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
                 pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
                 vinculat_club: normalizeBoolean(row.vinculat_club ?? row.vinculatClub),
+                renovara: normalizeNullableBoolean(row.renovara),
                 posicions,
                 posicio: posicions.join(', ')
             };
@@ -644,6 +656,7 @@ async function readJugadorsByEquip(equipId) {
             inscripcio_feta: normalizeBoolean(p.inscripcio_feta ?? p.inscripcio),
             pagament_fcf_fet: normalizeBoolean(p.pagament_fcf_fet ?? p.pagament_fcf),
             vinculat_club: normalizeBoolean(p.vinculat_club ?? p.vinculatClub),
+            renovara: normalizeNullableBoolean(p.renovara),
             posicions,
             posicio: posicions.join(', ')
         };
@@ -740,6 +753,7 @@ async function readJugadorById(jugadorId) {
             inscripcio_feta: normalizeBoolean(row.inscripcio_feta),
             pagament_fcf_fet: normalizeBoolean(row.pagament_fcf_fet),
             vinculat_club: normalizeBoolean(row.vinculat_club ?? row.vinculatClub),
+            renovara: normalizeNullableBoolean(fromRowOrDetall('renovara', null)),
             edat: fromRowOrDetall('edat', ''),
             poblacio: fromRowOrDetall('poblacio', fromRowOrDetall('residencia', '')),
             rol_actual_id: rolActualId,
@@ -778,6 +792,7 @@ async function readJugadorById(jugadorId) {
         inscripcio_feta: normalizeBoolean(found.inscripcio_feta ?? found.inscripcio),
         pagament_fcf_fet: normalizeBoolean(found.pagament_fcf_fet ?? found.pagament_fcf),
         vinculat_club: normalizeBoolean(found.vinculat_club ?? found.vinculatClub),
+        renovara: normalizeNullableBoolean(found.renovara),
         edat: found.edat || '',
         poblacio: found.poblacio || '',
         rol_actual_id: found.rol_actual_id || null,
@@ -952,6 +967,12 @@ function normalizeBoolean(value) {
     if (['true', 't', '1', 'yes', 'si', 'sí'].includes(text)) return true;
     if (['false', 'f', '0', 'no'].includes(text)) return false;
     return !!value;
+}
+
+function normalizeNullableBoolean(value) {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'string' && !value.trim()) return null;
+    return normalizeBoolean(value);
 }
 
 async function ensureRolIdByName(rolName) {
@@ -2422,6 +2443,9 @@ async function createJugador(payload) {
         ? payload.vinculat_club
         : payload?.vinculatClub;
     const vinculatClub = normalizeBoolean(vinculatClubValue);
+    const renovara = payload?.renovara === undefined
+        ? null
+        : normalizeNullableBoolean(payload.renovara);
 
     if (!Number.isInteger(equipId) || equipId <= 0) {
         throw new Error('equip_id invàlid');
@@ -2439,14 +2463,15 @@ async function createJugador(payload) {
             revisio_medica: revisioMedica,
             inscripcio_feta: inscripcioFeta,
             pagament_fcf_fet: pagamentFcfFet,
-            vinculat_club: vinculatClub
+            vinculat_club: vinculatClub,
+            renovara
         };
 
         let rows;
         try {
             rows = await supabaseRestRequest(
                 'POST',
-                '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club',
+                '/rest/v1/jugador?select=id,nom,any_naixement,data_naixement,revisio_medica,inscripcio_feta,pagament_fcf_fet,vinculat_club,renovara',
                 [insertRow],
                 'return=representation'
             );
@@ -2454,7 +2479,8 @@ async function createJugador(payload) {
             const missingFlagsColumns =
                 isMissingSupabaseColumnError(err, 'inscripcio_feta') ||
                 isMissingSupabaseColumnError(err, 'pagament_fcf_fet') ||
-                isMissingSupabaseColumnError(err, 'vinculat_club');
+                isMissingSupabaseColumnError(err, 'vinculat_club') ||
+                isMissingSupabaseColumnError(err, 'renovara');
 
             if (!missingFlagsColumns) {
                 throw err;
@@ -2486,7 +2512,8 @@ async function createJugador(payload) {
             revisio: row ? normalizeBoolean(row.revisio_medica) : revisioMedica,
             inscripcio_feta: row ? normalizeBoolean(row.inscripcio_feta ?? inscripcioFeta) : inscripcioFeta,
             pagament_fcf_fet: row ? normalizeBoolean(row.pagament_fcf_fet ?? pagamentFcfFet) : pagamentFcfFet,
-            vinculat_club: row ? normalizeBoolean((row.vinculat_club ?? row.vinculatClub) ?? vinculatClub) : vinculatClub
+            vinculat_club: row ? normalizeBoolean((row.vinculat_club ?? row.vinculatClub) ?? vinculatClub) : vinculatClub,
+            renovara: row ? normalizeNullableBoolean(row.renovara ?? renovara) : renovara
         };
     }
 
@@ -2501,7 +2528,8 @@ async function createJugador(payload) {
         revisio: revisioMedica,
         inscripcio: inscripcioFeta,
         pagament_fcf: pagamentFcfFet,
-        vinculat_club: vinculatClub
+        vinculat_club: vinculatClub,
+        renovara
     };
     data.seccio_s13.plantilla.push(player);
     await writeDatabase(data);
@@ -2536,6 +2564,8 @@ async function updateJugador(payload) {
         ? payload.vinculat_club
         : payload.vinculatClub;
     if (vinculatClubPayload !== undefined) patch.vinculat_club = normalizeBoolean(vinculatClubPayload);
+    const hasRenovara = Object.prototype.hasOwnProperty.call(payload || {}, 'renovara');
+    const renovaraValue = hasRenovara ? normalizeNullableBoolean(payload.renovara) : undefined;
 
         const detailFields = [
         'edat', 'poblacio', 'fitxa_mensual', 'primes_partit', 'prima_permanencia',
@@ -2605,6 +2635,14 @@ async function updateJugador(payload) {
             return false;
         };
 
+        if (hasRenovara) {
+            if (columns.has('renovara')) {
+                patch.renovara = renovaraValue;
+            } else {
+                fitxaDetallNext.renovara = renovaraValue;
+            }
+        }
+
         for (const field of detailFields) {
             if (payload[field] === undefined) continue;
             const value = payload[field];
@@ -2656,6 +2694,7 @@ async function updateJugador(payload) {
         plantilla[index].pagament_fcf_fet = normalizeBoolean(patch.pagament_fcf_fet);
     }
     if (patch.vinculat_club !== undefined) plantilla[index].vinculat_club = normalizeBoolean(patch.vinculat_club);
+    if (hasRenovara) plantilla[index].renovara = renovaraValue;
     if (payload.rol_actual_id !== undefined) plantilla[index].rol_actual_id = payload.rol_actual_id;
     if (payload.rol_previst_id !== undefined) plantilla[index].rol_previst_id = payload.rol_previst_id;
     if (payload.rol_actual !== undefined) plantilla[index].rol_actual = payload.rol_actual;
