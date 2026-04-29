@@ -53,6 +53,10 @@
         .plantilla-groups{display:grid;gap:0.9rem;}
         .plantilla-group{border:1px solid var(--border);border-radius:0.8rem;overflow:auto;background:#fff;}
         .plantilla-group-title{background:#f8fafc;color:#334155;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;font-size:0.76rem;padding:0.58rem 0.75rem;border-bottom:1px solid var(--border);}
+        .renewal-badge{display:inline-flex;align-items:center;justify-content:center;padding:0.16rem 0.55rem;border-radius:999px;font-size:0.72rem;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;}
+        .renewal-yes{background:#dcfce7;color:#166534;}
+        .renewal-no{background:#fee2e2;color:#991b1b;}
+        .renewal-pending{background:#e2e8f0;color:#475569;}
         .obs-list{margin-bottom:1rem;}
         .obs-item{background:#fffafa;border:1px solid #fecaca;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;}
         .obs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
@@ -352,6 +356,16 @@
             const plantillaTitle = document.getElementById('plantilla_title');
             if (plantillaTitle) plantillaTitle.innerHTML = '&#x1F4CB; Plantilla de Jugadors (' + (Array.isArray(plantilla) ? plantilla.length : 0) + ')';
 
+            const getRenovacioInfo = (value) => {
+                if (value === true || value === 1 || value === '1' || String(value || '').toLowerCase() === 'true') {
+                    return { label: 'Sí', className: 'renewal-yes' };
+                }
+                if (value === false || value === 0 || value === '0' || String(value || '').toLowerCase() === 'false') {
+                    return { label: 'No', className: 'renewal-no' };
+                }
+                return { label: 'Pendent', className: 'renewal-pending' };
+            };
+
             if (!plantilla || plantilla.length === 0) {
                 groupsContainer.innerHTML = '<div class="empty-msg">No hi ha jugadors registrats per a aquest equip.</div>';
                 return;
@@ -375,10 +389,12 @@
                     ? list.map(player => {
                         const playerId = encodeURIComponent(String(player.id || ''));
                         const posicioText = getPlayerPositionsList(player).join(', ') || 'N/D';
+                        const renovacio = getRenovacioInfo(player.renovara);
                         return `
                             <tr>
                                 <td data-label="Jugador">${esc(player.nom || 'N/A')}</td>
                                 <td data-label="Posició">${esc(posicioText)}</td>
+                                <td data-label="Renovació"><span class="renewal-badge ${renovacio.className}">${renovacio.label}</span></td>
                                 <td data-label="Accions" class="plantilla-actions">
                                     <a href="jugador-detall.html?playerId=${playerId}" class="fed-link btn-edit">VEURE DETALLS</a>
                                     <button class="btn-remove" onclick="removePlayer(${Number(player.id)||0})" title="Eliminar jugador">&#x00D7;</button>
@@ -386,7 +402,7 @@
                             </tr>
                         `;
                     }).join('')
-                    : '<tr><td colspan="3" class="empty-msg">Sense jugadors en aquest grup.</td></tr>';
+                    : '<tr><td colspan="4" class="empty-msg">Sense jugadors en aquest grup.</td></tr>';
 
                 return `
                     <div class="plantilla-group">
@@ -396,6 +412,7 @@
                                 <tr>
                                     <th>Jugador</th>
                                     <th>Posició</th>
+                                    <th>Renovació</th>
                                     <th class="plantilla-actions"></th>
                                 </tr>
                             </thead>
