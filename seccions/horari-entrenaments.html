@@ -9,7 +9,8 @@
     <style>
         :root{--primary:#d91d1d;--bg:#f1f5f9;--border:#e2e8f0;}
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
-        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:auto;}
+        html,body{max-width:100%;overflow-x:hidden;}
+        body{background:var(--bg);min-height:100vh;padding:2rem;overflow-x:hidden;}
 .card{background:white;border-radius:1rem;padding:2rem;box-shadow:0 4px 6px -1px rgb(0 0 0/0.1);border:1px solid var(--border);max-width:960px;margin:0 auto 2rem;position:relative;z-index:1;}
         .card h2{color:var(--primary);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;border-bottom:2px solid #fee2e2;padding-bottom:0.75rem;}
         label{display:block;font-weight:700;font-size:0.82rem;color:#475569;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em;}
@@ -70,7 +71,8 @@
         .coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
         .link-card p{color:#64748b;font-size:0.9rem;margin-bottom:1.2rem;}
         .tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0;min-width:max-content;margin:0 auto;}
-        .actions-end{display:flex;justify-content:flex-end;margin-bottom:0.8rem;}
+        .actions-end{display:flex;justify-content:flex-end;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.8rem;}
+        .actions-end .fed-link{flex:0 1 auto;text-align:center;white-space:normal;justify-content:center;}
         .horari-form-row-main{grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 1fr 1fr auto;}
         .porters-form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:0.6rem;align-items:end;}
         .porters-list{margin-top:1rem;}
@@ -116,17 +118,37 @@
         .tree-node.root{background:#fee2e2;}
         
         /* Export modal styles */
-        .export-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;}
+        .export-modal{display:none;position:fixed;inset:0;width:auto;height:auto;transform:none;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;overflow:hidden;}
         .export-modal.active{display:flex;}
-        .export-modal-content{background:white;border-radius:1rem;padding:2rem;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);}
+        .export-modal-content{background:white;border-radius:1rem;padding:2rem;max-width:min(900px, calc(100dvw - 2rem));width:100%;max-height:90dvh;overflow-y:auto;overflow-x:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);}
+        .export-modal-content-export{max-width:720px;}
+        .export-modal-content-narrow{max-width:640px;}
         .export-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;border-bottom:2px solid #fee2e2;padding-bottom:1rem;}
         .export-modal-header h2{margin:0;color:#d91d1d;font-size:1.1rem;}
         .export-modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;}
         .export-modal-close:hover{color:#d91d1d;}
         .export-modal-actions{display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;}
-        .export-modal-textarea{width:100%;min-height:400px;padding:0.75rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-family:monospace;font-size:0.85rem;resize:vertical;}
+        .export-modal-textarea{width:100%;min-height:400px;padding:0.75rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-family:monospace;font-size:0.85rem;line-height:1.45;resize:vertical;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap;}
+        .export-modal-body{display:flex;flex-direction:column;gap:1rem;min-height:0;}
+        .snapshot-modal-body{padding:1rem;display:flex;flex-direction:column;gap:1rem;}
+        .snapshot-modal-footer{display:flex;gap:0.5rem;justify-content:flex-end;flex-wrap:wrap;}
+        .modal-field{display:flex;flex-direction:column;gap:0.5rem;min-width:0;}
+        .modal-field-label{display:block;font-weight:600;color:#334155;}
+        .modal-input,.modal-textarea{width:100%;padding:0.75rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-size:0.92rem;background:white;}
+        .modal-textarea{min-height:96px;resize:vertical;}
+        .snapshots-scroll{max-height:400px;overflow-y:auto;}
+        .snapshots-stack{display:flex;flex-direction:column;gap:0.75rem;}
+        .snapshot-card{border:1px solid #e2e8f0;border-radius:0.5rem;padding:0.75rem;background:#f8fafc;}
+        .snapshot-card-main{display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;}
+        .snapshot-card-info{flex:1;min-width:0;}
+        .snapshot-card-name{font-weight:600;margin:0;color:#1e293b;}
+        .snapshot-card-desc{font-size:0.85rem;color:#64748b;margin:0.25rem 0 0 0;}
+        .snapshot-card-date{font-size:0.8rem;color:#94a3b8;margin:0.5rem 0 0 0;}
+        .snapshot-card-actions{display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;}
+        .snapshot-card-actions .btn{font-size:0.8rem;padding:0.4rem 0.7rem;}
+        .btn-danger-soft{background:#fee2e2;color:#dc2626;}
         
-        @media(max-width:640px){.staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}.export-modal-content{padding:1rem;}.export-modal-actions{flex-direction:column;}.export-modal-actions .btn{width:100%;}}
+        @media(max-width:640px){body{padding:0.9rem;overflow-x:hidden;}.card{max-width:100%;padding:1rem;} .staff-fields,.comp-grid,.form-row-4,.form-row-3,.coord-grid{grid-template-columns:1fr;}.horari-form-row{grid-template-columns:1fr 1fr;}.obs-form-row{grid-template-columns:1fr;}.actions-end{flex-direction:column;align-items:stretch;}.actions-end .fed-link{width:100%;}.export-modal{padding:0.5rem;width:100dvw;}.export-modal-content{width:min(100%, calc(100dvw - 1rem));max-width:min(100%, calc(100dvw - 1rem));padding:1rem;max-height:calc(100dvh - 1rem);border-radius:0.85rem;}.export-modal-header{align-items:flex-start;gap:0.75rem;}.export-modal-header h2{font-size:1rem;line-height:1.25;}.export-modal-close{flex:0 0 auto;line-height:1;}.export-modal-actions{flex-direction:column;}.export-modal-actions .btn{width:100%;}.export-modal-textarea{min-height:280px;font-size:0.8rem;}.snapshot-modal-body{padding:0;}.snapshot-modal-footer{flex-direction:column;}.snapshot-modal-footer .btn{width:100%;}.modal-input,.modal-textarea{font-size:0.9rem;padding:0.7rem;}.snapshot-card-main{flex-direction:column;}.snapshot-card-actions{width:100%;justify-content:stretch;}.snapshot-card-actions .btn{width:100%;}}
     </style>
 </head>
 <body>
@@ -900,11 +922,34 @@
         function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
         document.getElementById('h_team')?.addEventListener('change', syncAltaNoTeamState);
 
+        function closeTopNavOverlayIfOpen() {
+            document.body.classList.remove('cf-nav-open');
+            const navWrap = document.querySelector('.cf-topnav-wrap');
+            if (navWrap) navWrap.classList.remove('mobile-open');
+
+            const mobileBtn = document.getElementById('cf-mobile-open-btn');
+            if (mobileBtn) {
+                mobileBtn.setAttribute('aria-expanded', 'false');
+                mobileBtn.textContent = 'Menú ☰';
+            }
+        }
+
+        function getPreparedModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return null;
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+            closeTopNavOverlayIfOpen();
+            return modal;
+        }
+
         function openExportModal() {
             const markdown = generateMarkdown();
             const textarea = document.getElementById('export_textarea');
             textarea.value = markdown;
-            document.getElementById('export_modal').classList.add('active');
+            const modal = getPreparedModal('export_modal');
+            if (modal) modal.classList.add('active');
         }
 
         function closeExportModal() {
@@ -1095,7 +1140,8 @@
         function openSaveSnapshotModal() {
             document.getElementById('snapshot_name').value = '';
             document.getElementById('snapshot_description').value = '';
-            document.getElementById('save_snapshot_modal').classList.add('active');
+            const modal = getPreparedModal('save_snapshot_modal');
+            if (modal) modal.classList.add('active');
             document.getElementById('snapshot_name').focus();
         }
 
@@ -1104,7 +1150,8 @@
         }
 
         function openRestoreSnapshotModal() {
-            document.getElementById('restore_snapshot_modal').classList.add('active');
+            const modal = getPreparedModal('restore_snapshot_modal');
+            if (modal) modal.classList.add('active');
             loadSnapshotsList();
         }
 
@@ -1160,21 +1207,21 @@
                     return;
                 }
 
-                let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+                let html = '<div class="snapshots-stack">';
                 snapshots.forEach(snap => {
                     const createdAt = new Date(snap.created_at).toLocaleDateString('ca-ES');
-                    const desc = snap.description ? `<p style="font-size: 0.85rem; color: #64748b; margin: 0.25rem 0 0 0;">${esc(snap.description)}</p>` : '';
+                    const desc = snap.description ? `<p class="snapshot-card-desc">${esc(snap.description)}</p>` : '';
                     html += `
-                        <div style="border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem; background: #f8fafc;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.75rem;">
-                                <div style="flex: 1; min-width: 0;">
-                                    <p style="font-weight: 600; margin: 0; color: #1e293b;">${esc(snap.name)}</p>
+                        <div class="snapshot-card">
+                            <div class="snapshot-card-main">
+                                <div class="snapshot-card-info">
+                                    <p class="snapshot-card-name">${esc(snap.name)}</p>
                                     ${desc}
-                                    <p style="font-size: 0.8rem; color: #94a3b8; margin: 0.5rem 0 0 0;">${createdAt}</p>
+                                    <p class="snapshot-card-date">${createdAt}</p>
                                 </div>
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
-                                    <button class="btn btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.7rem;" onclick="restoreSnapshot(${snap.id})">Restaurar</button>
-                                    <button class="btn" style="font-size: 0.8rem; padding: 0.4rem 0.7rem; background: #fee2e2; color: #dc2626;" onclick="deleteSnapshot(${snap.id})">Eliminar</button>
+                                <div class="snapshot-card-actions">
+                                    <button class="btn btn-primary" onclick="restoreSnapshot(${snap.id})">Restaurar</button>
+                                    <button class="btn btn-danger-soft" onclick="deleteSnapshot(${snap.id})">Eliminar</button>
                                 </div>
                             </div>
                         </div>
@@ -1351,36 +1398,38 @@
 
     <!-- Export Modal -->
     <div id="export_modal" class="export-modal">
-        <div class="export-modal-content">
+        <div class="export-modal-content export-modal-content-export">
             <div class="export-modal-header">
                 <h2>📋 Exportar Horaris</h2>
                 <button class="export-modal-close" onclick="closeExportModal()">✕</button>
             </div>
-            <div class="export-modal-actions">
-                <button class="btn btn-primary" onclick="copyToClipboard()">📋 Copiar al portapapeles</button>
-                <button class="btn btn-primary" onclick="downloadMarkdown()">⬇️ Descarregar fitxer</button>
+            <div class="export-modal-body">
+                <div class="export-modal-actions">
+                    <button class="btn btn-primary" onclick="copyToClipboard()">📋 Copiar al portapapeles</button>
+                    <button class="btn btn-primary" onclick="downloadMarkdown()">⬇️ Descarregar fitxer</button>
+                </div>
+                <textarea id="export_textarea" class="export-modal-textarea" readonly wrap="soft"></textarea>
             </div>
-            <textarea id="export_textarea" class="export-modal-textarea" readonly></textarea>
         </div>
     </div>
 
     <!-- Save Snapshot Modal -->
     <div id="save_snapshot_modal" class="export-modal">
-        <div class="export-modal-content">
+        <div class="export-modal-content export-modal-content-narrow">
             <div class="export-modal-header">
                 <h2>💾 Guardar Configuració d'Horaris</h2>
                 <button class="export-modal-close" onclick="closeSaveSnapshotModal()">✕</button>
             </div>
-            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nom de la configuració</label>
-                    <input type="text" id="snapshot_name" placeholder="Ex: Config inicial, Després canvi S14..." style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.4rem;" />
+            <div class="snapshot-modal-body">
+                <div class="modal-field">
+                    <label class="modal-field-label" for="snapshot_name">Nom de la configuració</label>
+                    <input type="text" id="snapshot_name" class="modal-input" placeholder="Ex: Config inicial, Després canvi S14..." />
                 </div>
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Descripció (opcional)</label>
-                    <textarea id="snapshot_description" placeholder="Ex: Redistribució per evitar dies consecutius..." style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.4rem; min-height: 80px; resize: vertical;"></textarea>
+                <div class="modal-field">
+                    <label class="modal-field-label" for="snapshot_description">Descripció (opcional)</label>
+                    <textarea id="snapshot_description" class="modal-textarea" placeholder="Ex: Redistribució per evitar dies consecutius..."></textarea>
                 </div>
-                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <div class="snapshot-modal-footer">
                     <button class="btn btn-primary" onclick="saveSnapshot()">✅ Guardar</button>
                     <button class="btn" style="background: #f1f5f9; color: #64748b;" onclick="closeSaveSnapshotModal()">Cancelar</button>
                 </div>
@@ -1390,16 +1439,16 @@
 
     <!-- Restore Snapshot Modal -->
     <div id="restore_snapshot_modal" class="export-modal">
-        <div class="export-modal-content">
+        <div class="export-modal-content export-modal-content-narrow">
             <div class="export-modal-header">
                 <h2>⬅️ Restaurar Configuració d'Horaris</h2>
                 <button class="export-modal-close" onclick="closeRestoreSnapshotModal()">✕</button>
             </div>
-            <div style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-                <div id="snapshots_list" style="max-height: 400px; overflow-y: auto;">
+            <div class="snapshot-modal-body">
+                <div id="snapshots_list" class="snapshots-scroll">
                     <p style="text-align: center; color: #94a3b8;">Carregant configuracions disponibles...</p>
                 </div>
-                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <div class="snapshot-modal-footer">
                     <button class="btn" style="background: #f1f5f9; color: #64748b;" onclick="closeRestoreSnapshotModal()">Tancar</button>
                 </div>
             </div>
