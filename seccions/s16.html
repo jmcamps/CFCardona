@@ -122,7 +122,11 @@
         .actions-end{display:flex;justify-content:flex-end;}
         .mobile-card-table{width:100%;}
 
+                .plantilla-toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0.75rem;margin:-0.5rem 0 1.5rem;}
+        .plantilla-toolbar label{margin-bottom:0.3rem;}
+
         @media(max-width:760px){
+            .plantilla-toolbar{grid-template-columns:1fr; gap:0.5rem; margin-bottom:1rem;}
             body{padding:0.9rem;overflow-x:hidden;}
             .card{padding:1rem;border-radius:0.85rem;margin-bottom:1rem;}
             .card h2{font-size:1rem;margin-bottom:1rem;}
@@ -249,16 +253,54 @@
     </div>
     <div class="card">
         <h2 id="plantilla_title">&#x1F4CB; Plantilla de Jugadors (0)</h2>
+        <div class="plantilla-toolbar">
+            <div>
+                <label for="plantilla_filter_nom">Filtre per nom</label>
+                <input type="text" id="plantilla_filter_nom" placeholder="Buscar jugador..." oninput="renderPlantilla()">
+            </div>
+            <div>
+                <label for="plantilla_filter_revisio">Revisió mèdica</label>
+                <select id="plantilla_filter_revisio" onchange="renderPlantilla()">
+                    <option value="all">Tots</option>
+                    <option value="yes">Sí</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div>
+                <label for="plantilla_filter_inscripcio">Inscripció</label>
+                <select id="plantilla_filter_inscripcio" onchange="renderPlantilla()">
+                    <option value="all">Tots</option>
+                    <option value="yes">Sí</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div>
+                <label for="plantilla_filter_pagament">Pagament FCF</label>
+                <select id="plantilla_filter_pagament" onchange="renderPlantilla()">
+                    <option value="all">Tots</option>
+                    <option value="yes">Sí</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div>
+                <label for="plantilla_filter_vinculat">Vinculat al club</label>
+                <select id="plantilla_filter_vinculat" onchange="renderPlantilla()">
+                    <option value="all">Tots</option>
+                    <option value="yes">Sí</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        </div>
         <div class="table-wrap">
             <table class="plantilla-table mobile-card-table">
                 <thead>
                     <tr>
                         <th>Jugador</th>
                         <th>Any de naixement</th>
-                        <th style="text-align:center;">Revisió mèdica</th>
-                        <th style="text-align:center;">Inscripció</th>
-                        <th style="text-align:center;">Pagament FCF</th>
-                        <th style="text-align:center;">Vinculat al club</th>
+                        <th style="text-align:center;" id="th_revisio">Revisió mèdica</th>
+                        <th style="text-align:center;" id="th_inscripcio">Inscripció</th>
+                        <th style="text-align:center;" id="th_pagament">Pagament FCF</th>
+                        <th style="text-align:center;" id="th_vinculat">Vinculat al club</th>
                         <th class="plantilla-actions"></th>
                     </tr>
                 </thead>
@@ -689,10 +731,7 @@
             const body=document.getElementById('plantilla_tbody');
             if(!body) return;
             const plantillaTitle=document.getElementById('plantilla_title');
-            if(plantillaTitle){
-                if(!plantillaTitle.dataset.baseTitle) plantillaTitle.dataset.baseTitle=plantillaTitle.innerHTML.replace(/\s*\(\d+\)\s*$/,'');
-                plantillaTitle.innerHTML=plantillaTitle.dataset.baseTitle+' ('+plantilla.length+')';
-            }
+            
             const alertBox=document.getElementById('plantilla_alert');
             const alertText=document.getElementById('plantilla_alert_text');
             const staffAlert=document.getElementById('staff_alert');
@@ -712,17 +751,75 @@
                 if(!primerNom.trim()) missing.push('primer entrenador');
                 if(!segonNom.trim()) missing.push('segon entrenador');
                 if(missing.length){
-                    staffAlertText.textContent=`Falta ${missing.join(' i ' )} a l'equip!`;
+                    staffAlertText.textContent=`Falta ${missing.join(' i ')} a l'equip!`;
                     staffAlert.style.display='flex';
                 }else{
                     staffAlert.style.display='none';
                 }
             }
             if(!plantilla.length){
+                if(plantillaTitle) plantillaTitle.innerHTML = '&#x1F4CB; ' + (plantillaTitle.innerHTML.includes('Jugadores') ? 'Plantilla de Jugadores' : 'Plantilla de Jugadors') + ' (0)';
                 body.innerHTML='<tr><td colspan="7" class="empty-msg">Sense jugadors registrats.</td></tr>';
+                const thRevisio = document.getElementById('th_revisio');
+                const thInscripcio = document.getElementById('th_inscripcio');
+                const thPagament = document.getElementById('th_pagament');
+                const thVinculat = document.getElementById('th_vinculat');
+                if(thRevisio) thRevisio.textContent = 'Revisió mèdica (0)';
+                if(thInscripcio) thInscripcio.textContent = 'Inscripció (0)';
+                if(thPagament) thPagament.textContent = 'Pagament FCF (0)';
+                if(thVinculat) thVinculat.textContent = 'Vinculat al club (0)';
                 return;
             }
-            body.innerHTML=plantilla.map((p,i)=>{
+
+            const filterNom = String((document.getElementById('plantilla_filter_nom') || {}).value || '').trim().toLowerCase();
+            const filterRevisio = String((document.getElementById('plantilla_filter_revisio') || {}).value || 'all');
+            const filterInscripcio = String((document.getElementById('plantilla_filter_inscripcio') || {}).value || 'all');
+            const filterPagament = String((document.getElementById('plantilla_filter_pagament') || {}).value || 'all');
+            const filterVinculat = String((document.getElementById('plantilla_filter_vinculat') || {}).value || 'all');
+
+            const filtered = plantilla
+                .map((p, originalIndex) => ({ player: p, index: originalIndex }))
+                .filter(item => {
+                    const p = item.player;
+                    const nomMatches = !filterNom || String(p.nom || '').toLowerCase().includes(filterNom);
+                    const revisioMatches = filterRevisio === 'all' || (filterRevisio === 'yes' ? p.revisio : !p.revisio);
+                    const inscripcioMatches = filterInscripcio === 'all' || (filterInscripcio === 'yes' ? p.inscripcio : !p.inscripcio);
+                    const pagamentMatches = filterPagament === 'all' || (filterPagament === 'yes' ? p.pagament_fcf : !p.pagament_fcf);
+                    const vinculatMatches = filterVinculat === 'all' || (filterVinculat === 'yes' ? p.vinculat_club : !p.vinculat_club);
+                    return nomMatches && revisioMatches && inscripcioMatches && pagamentMatches && vinculatMatches;
+                });
+
+            if (plantillaTitle) {
+                const isFem = plantillaTitle.innerHTML.includes('Jugadores');
+                plantillaTitle.innerHTML = '&#x1F4CB; ' + (isFem ? 'Plantilla de Jugadores' : 'Plantilla de Jugadors') + ' (' + filtered.length + ')';
+            }
+
+            const filteredTotals = filtered.reduce((acc, item) => {
+                const p = item.player;
+                if (p.revisio) acc.revisio += 1;
+                if (p.inscripcio) acc.inscripcio += 1;
+                if (p.pagament_fcf) acc.pagament_fcf += 1;
+                if (p.vinculat_club) acc.vinculat_club += 1;
+                return acc;
+            }, { revisio: 0, inscripcio: 0, pagament_fcf: 0, vinculat_club: 0 });
+
+            const thRevisio = document.getElementById('th_revisio');
+            const thInscripcio = document.getElementById('th_inscripcio');
+            const thPagament = document.getElementById('th_pagament');
+            const thVinculat = document.getElementById('th_vinculat');
+            if(thRevisio) thRevisio.textContent = 'Revisió mèdica (' + filteredTotals.revisio + ')';
+            if(thInscripcio) thInscripcio.textContent = 'Inscripció (' + filteredTotals.inscripcio + ')';
+            if(thPagament) thPagament.textContent = 'Pagament FCF (' + filteredTotals.pagament_fcf + ')';
+            if(thVinculat) thVinculat.textContent = 'Vinculat al club (' + filteredTotals.vinculat_club + ')';
+
+            if(!filtered.length){
+                body.innerHTML='<tr><td colspan="7" class="empty-msg">Sense jugadors que coincideixin amb els filtres.</td></tr>';
+                return;
+            }
+
+            body.innerHTML=filtered.map((item)=>{
+                const p = item.player;
+                const i = item.index;
                 const checkedRevisio=p.revisio?'checked':'';
                 const checkedInscripcio=p.inscripcio?'checked':'';
                 const checkedPagamentFcf=p.pagament_fcf?'checked':'';
@@ -738,7 +835,7 @@
                     +'<td data-label="Accions" class="plantilla-actions"><button class="btn-remove" onclick="removePlayer('+i+')">&#x00D7;</button></td>'
                     +'</tr>';
             }).join('');
-        }
+}
 
         window.addPlayer=async function(){
             const nom=document.getElementById('p_nom').value.trim();
