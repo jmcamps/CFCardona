@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
@@ -353,7 +353,7 @@
         const KEY='seccio_s14';
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
-        const TARGET_YEAR=2013;
+        const TARGET_YEARS=[2013, 2014];
         const TARGET_GENDER='Masculí';
         const MIN_PLAYERS=15;
         const MIN_LABEL='F11';
@@ -493,7 +493,7 @@
                 const targetGender=normalizeGender(TARGET_GENDER);
                 captacioSuggestions=(Array.isArray(players)?players:[]).filter(p=>{
                     const year=Number(normalizeBirthYear(p.any_naixement ?? p.naixement ?? ''));
-                    const yearMatch=Number.isFinite(year) && year===TARGET_YEAR;
+                    const yearMatch=Number.isFinite(year) && TARGET_YEARS.includes(year);
                     const genderMatch=normalizeGender(p.genere)===targetGender;
                     return yearMatch && genderMatch;
                 });

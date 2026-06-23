@@ -19,14 +19,12 @@
         futbolBaseFemeni: `${base}/seccions/futbol-base-femeni.html`,
         f7: `${base}/seccions/f7.html`,
         f11: `${base}/seccions/f11.html`,
-        minis: `${base}/seccions/minis.html`,
         s7: `${base}/seccions/s7.html`,
         s8: `${base}/seccions/s8.html`,
         s9: `${base}/seccions/s9.html`,
         s10: `${base}/seccions/s10.html`,
         s11: `${base}/seccions/s11.html`,
         s12: `${base}/seccions/s12.html`,
-        s13: `${base}/seccions/s13.html`,
         s14: `${base}/seccions/s14.html`,
         s16: `${base}/seccions/s16.html`,
         juvenilMasculi: `${base}/seccions/juvenil-masculi.html`,
@@ -634,13 +632,9 @@
                         <span class="cf-nav-feature-title"><span class="icon">🛡️</span>Base Masculí</span>
                         <span class="cf-nav-feature-desc">Accés a totes les categories masculines de formació.</span>
                         <div class="cf-nav-feature-list">
-                            <a class="cf-nav-feature-sub" href="${links.minis}">
-                                <span class="cf-nav-feature-sub-title">Minis</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2021 i 2022.</span>
-                            </a>
                             <a class="cf-nav-feature-sub" href="${links.s7}">
-                                <span class="cf-nav-feature-sub-title">S7</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2020.</span>
+                                <span class="cf-nav-feature-sub-title">Minis-S7</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2020, 2021 i 2022.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s8}">
                                 <span class="cf-nav-feature-sub-title">S8</span>
@@ -662,16 +656,12 @@
                                 <span class="cf-nav-feature-sub-title">S12</span>
                                 <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2015.</span>
                             </a>
-                            <a class="cf-nav-feature-sub" href="${links.s13}">
-                                <span class="cf-nav-feature-sub-title">S13</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2014.</span>
-                            </a>
                             <a class="cf-nav-feature-sub" href="${links.s14}">
-                                <span class="cf-nav-feature-sub-title">S14</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2013.</span>
+                                <span class="cf-nav-feature-sub-title">S13-S14</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2013 i 2014.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.s16}">
-                                <span class="cf-nav-feature-sub-title">S16</span>
+                                <span class="cf-nav-feature-sub-title">S15-S16</span>
                                 <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2011 i 2012.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.juvenilMasculi}">
@@ -780,16 +770,14 @@
     const teamPageTitles = {
         'primer-equip.html': 'Primer Equip',
         'filial.html': 'Filial',
-        'minis.html': 'Minis',
-        's7.html': 'S7',
+        's7.html': 'Minis-S7',
         's8.html': 'S8',
         's9.html': 'S9',
         's10.html': 'S10',
         's11.html': 'S11',
         's12.html': 'S12',
-        's13.html': 'S13',
-        's14.html': 'S14',
-        's16.html': 'S16',
+        's14.html': 'S13-S14',
+        's16.html': 'S15-S16',
         'juvenil-masculi.html': 'Juvenil Masculí',
         'alevi-femeni.html': 'Aleví Femení',
         'infantil-femeni.html': 'Infantil Femení',
@@ -1529,7 +1517,7 @@
             if (result && typeof result.then === 'function') {
                 await result;
             }
-        } catch (_) {}
+        } catch (_) { }
     }
 
     async function deleteStaffAssignmentByRoleId(equipId, roleId) {
@@ -2015,8 +2003,8 @@
                 response.clone().json().then(function (config) {
                     applyStaffCarnetValues(config);
                     injectStaffCarnetColumn();
-                    syncStaffMemberSelectorsFromServer().catch(function () {});
-                }).catch(function () {});
+                    syncStaffMemberSelectorsFromServer().catch(function () { });
+                }).catch(function () { });
 
                 return response;
             });
@@ -2088,12 +2076,12 @@
                 equipId: equipId,
                 forceRefresh: true
             });
-        } catch (_) {}
+        } catch (_) { }
     }
 
     function initStaffCarnetFeature() {
         injectStaffCarnetColumn();
-        syncStaffMemberSelectorsFromServer().catch(function () {});
+        syncStaffMemberSelectorsFromServer().catch(function () { });
         applyStaffCarnetFetchEnhancer();
         syncStaffCarnetFromServer();
     }
@@ -2105,7 +2093,7 @@
         let decodedHash = rawHash;
         try {
             decodedHash = decodeURIComponent(rawHash);
-        } catch (_) {}
+        } catch (_) { }
 
         const withoutHash = decodedHash.replace(/^#/, '').trim();
         if (!withoutHash) return '';
@@ -2363,7 +2351,7 @@
         logoutBtn.addEventListener('click', async function () {
             try {
                 await fetch(`${base}/api/auth/logout`, { method: 'POST', credentials: 'same-origin' });
-            } catch (_) {}
+            } catch (_) { }
             window.location.href = `${base}/login.html`;
         });
     }
@@ -2798,6 +2786,6 @@
 
             const scoutingBaseEntry = document.getElementById('cf-scouting-base-entry');
             if (scoutingBaseEntry) scoutingBaseEntry.style.display = scoutingAllowed ? '' : 'none';
-        } catch (_) {}
+        } catch (_) { }
     })();
 })();
