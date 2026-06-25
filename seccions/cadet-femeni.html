@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadet Femení | CF Cardona</title>
+    <title>Infantil-Cadet Femení | CF Cardona</title>
     <script src="../assets/js/top-nav.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -388,8 +388,7 @@
         const KEY='seccio_cadet-femeni';
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
-        const TARGET_MIN_YEAR=2011;
-        const TARGET_MAX_YEAR=2012;
+        const TARGET_YEARS=[2011, 2012, 2013, 2014];
         const TARGET_GENDER='Femení';
         const MIN_PLAYERS=9;
         const MIN_LABEL='Femení';
@@ -510,7 +509,7 @@
                 const targetGender=normalizeGender(TARGET_GENDER);
                 captacioSuggestions=(Array.isArray(players)?players:[]).filter(p=>{
                     const year=Number(normalizeBirthYear(p.any_naixement ?? p.naixement ?? ''));
-                    const yearMatch=Number.isFinite(year) && year>=TARGET_MIN_YEAR && year<=TARGET_MAX_YEAR;
+                    const yearMatch=Number.isFinite(year) && TARGET_YEARS.includes(year);
                     const genderMatch=normalizeGender(p.genere)===targetGender;
                     return yearMatch && genderMatch;
                 });

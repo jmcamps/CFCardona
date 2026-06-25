@@ -318,7 +318,6 @@ function isFutbolBasePath(pathname) {
         p.startsWith('/seccions/juvenil-masculi') ||
         p.startsWith('/seccions/juvenil-femeni') ||
         p.startsWith('/seccions/alevi-femeni') ||
-        p.startsWith('/seccions/infantil-femeni') ||
         p.startsWith('/seccions/cadet-femeni');
 }
 

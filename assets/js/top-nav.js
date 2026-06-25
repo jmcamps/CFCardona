@@ -29,7 +29,6 @@
         s16: `${base}/seccions/s16.html`,
         juvenilMasculi: `${base}/seccions/juvenil-masculi.html`,
         aleviFemeni: `${base}/seccions/alevi-femeni.html`,
-        infantilFemeni: `${base}/seccions/infantil-femeni.html`,
         cadetFemeni: `${base}/seccions/cadet-femeni.html`,
         juvenilFemeni: `${base}/seccions/juvenil-femeni.html`,
         scouting: `${base}/seccions/scouting.html`,
@@ -678,13 +677,9 @@
                                 <span class="cf-nav-feature-sub-title">Aleví Femení</span>
                                 <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2015 i 2016.</span>
                             </a>
-                            <a class="cf-nav-feature-sub" href="${links.infantilFemeni}">
-                                <span class="cf-nav-feature-sub-title">Infantil Femení</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2013 i 2014.</span>
-                            </a>
                             <a class="cf-nav-feature-sub" href="${links.cadetFemeni}">
-                                <span class="cf-nav-feature-sub-title">Cadet Femení</span>
-                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2011 i 2012.</span>
+                                <span class="cf-nav-feature-sub-title">Infantil-Cadet Femení</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadores nascudes el 2011, 2012, 2013 i 2014.</span>
                             </a>
                             <a class="cf-nav-feature-sub" href="${links.juvenilFemeni}">
                                 <span class="cf-nav-feature-sub-title">Juvenil Femení</span>
@@ -780,8 +775,7 @@
         's16.html': 'S15-S16',
         'juvenil-masculi.html': 'Juvenil Masculí',
         'alevi-femeni.html': 'Aleví Femení',
-        'infantil-femeni.html': 'Infantil Femení',
-        'cadet-femeni.html': 'Cadet Femení',
+        'cadet-femeni.html': 'Infantil-Cadet Femení',
         'juvenil-femeni.html': 'Juvenil Femení',
         'staff-club.html': 'Gestió Staff Club'
     };
