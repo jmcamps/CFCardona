@@ -1483,7 +1483,9 @@ const STAFF_ROLE_MAPPINGS = [
     { roleName: 'Preparador Físic', fieldBase: 's_preparador_fisic' },
     { roleName: 'Delegat', fieldBase: 's_delegat' },
     { roleName: 'Fisioterapeuta', fieldBase: 's_fisioterapeuta' },
-    { roleName: 'Analista Tàctic', fieldBase: 's_analista_tactic' }
+    { roleName: 'Analista Tàctic', fieldBase: 's_analista_tactic' },
+    { roleName: 'Psicòleg Esportiu', fieldBase: 's_psicoleg_esportiu' },
+    { roleName: 'Entrenador de porters', fieldBase: 's_entrenador_porters' }
 ];
 
 const STAFF_ROLE_FIELD_BASE_BY_NAME = STAFF_ROLE_MAPPINGS.reduce((acc, item) => {

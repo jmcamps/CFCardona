@@ -869,7 +869,9 @@
         s_preparador_fisic: 'Preparador Físic',
         s_delegat: 'Delegat',
         s_fisioterapeuta: 'Fisioterapeuta',
-        s_analista_tactic: 'Analista Tàctic'
+        s_analista_tactic: 'Analista Tàctic',
+        s_psicoleg_esportiu: 'Psicòleg Esportiu',
+        s_entrenador_porters: 'Entrenador de porters'
     };
 
     function normalizePath(value) {

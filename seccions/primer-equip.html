@@ -207,6 +207,16 @@
                         <td data-label="Nom i cognoms"><input type="text" id="s_analista_tactic_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
                         <td data-label="Telèfon"><input type="tel" id="s_analista_tactic_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
                     </tr>
+                    <tr>
+                        <td data-label="Rol" class="dia-badge">Psicòleg Esportiu</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_psicoleg_esportiu_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_psicoleg_esportiu_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
+                    <tr>
+                        <td data-label="Rol" class="dia-badge">Entrenador de porters</td>
+                        <td data-label="Nom i cognoms"><input type="text" id="s_entrenador_porters_nom" placeholder="Nom..." onchange="saveAll(true)"></td>
+                        <td data-label="Telèfon"><input type="tel" id="s_entrenador_porters_tel" placeholder="Telèfon..." onchange="saveAll(true)"></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -320,7 +330,7 @@
         ];
 
         let db = {}, observacions = [], horaris = [], partits = [], plantilla = [];
-        const SF = ["s_primer_entrenador_nom", "s_primer_entrenador_tel", "s_segon_entrenador_nom", "s_segon_entrenador_tel", "s_preparador_fisic_nom", "s_preparador_fisic_tel", "s_delegat_nom", "s_delegat_tel", "s_fisioterapeuta_nom", "s_fisioterapeuta_tel", "s_analista_tactic_nom", "s_analista_tactic_tel"];
+        const SF = ["s_primer_entrenador_nom", "s_primer_entrenador_tel", "s_segon_entrenador_nom", "s_segon_entrenador_tel", "s_preparador_fisic_nom", "s_preparador_fisic_tel", "s_delegat_nom", "s_delegat_tel", "s_fisioterapeuta_nom", "s_fisioterapeuta_tel", "s_analista_tactic_nom", "s_analista_tactic_tel", "s_psicoleg_esportiu_nom", "s_psicoleg_esportiu_tel", "s_entrenador_porters_nom", "s_entrenador_porters_tel"];
 
         function normalizePositionName(value) {
             return String(value || '')
