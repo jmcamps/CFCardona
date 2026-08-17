@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juvenil Masculí | CF Cardona</title>
+    <title>Juvenil Masculí - A | CF Cardona</title>
     <script src="../assets/js/top-nav.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -384,8 +384,11 @@
         const API_JUGADORS_SEGUIMENT='/api/jugadors-seguiment';
         const API_EQUIP_CONFIG='/api/equip-config';
         const API_HORARIOS='/api/horarios';
-        const EQUIP_ID=13;
-        const KEY='seccio_juvenil-masculi';
+        const API_EQUIPS='/api/equips';
+        const JUVENIL_VARIANT=new URLSearchParams(window.location.search).get('equip')==='B'?'B':'A';
+        const EQUIP_NAME=`Juvenil Masculí - ${JUVENIL_VARIANT}`;
+        let EQUIP_ID=JUVENIL_VARIANT==='A'?13:null;
+        const KEY=`seccio_juvenil-masculi-${JUVENIL_VARIANT.toLowerCase()}`;
         const STORAGE_KEY=`${KEY}_local`;
         const IS_FILE=window.location.protocol==='file:';
         const TARGET_MIN_YEAR=2008;
@@ -523,6 +526,20 @@
             }catch(e){
                 console.warn('Error carregant captació:',e);
             }
+        }
+
+        async function resolveEquipId(){
+            if(IS_FILE) return;
+            const response=await fetch(API_EQUIPS);
+            if(!response.ok) throw new Error(`GET equips ${response.status}`);
+            const equips=await response.json();
+            const normalizedTarget=normalizeGender(EQUIP_NAME);
+            let equip=(Array.isArray(equips)?equips:[]).find(item=>normalizeGender(item.name||item.nom)===normalizedTarget);
+            if(!equip && JUVENIL_VARIANT==='A'){
+                equip=(Array.isArray(equips)?equips:[]).find(item=>normalizeGender(item.name||item.nom)==='juvenil masculi');
+            }
+            if(!equip || !Number(equip.id)) throw new Error(`No s'ha trobat l'equip ${EQUIP_NAME}`);
+            EQUIP_ID=Number(equip.id);
         }
 
         async function load(){
@@ -970,7 +987,11 @@
 
         function fmtDate(d){if(!d)return'-';return new Date(d+'T12:00:00').toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});}
         function esc(t){if(!t && t!==0)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-        load();
+        document.title=`${EQUIP_NAME} | CF Cardona`;
+        resolveEquipId().then(load).catch(e=>{
+            console.error(e);
+            alert(`No s'ha pogut carregar ${EQUIP_NAME}. Comprova que s'ha aplicat la migració de dades.`);
+        });
     </script>
 </body>
 </html>

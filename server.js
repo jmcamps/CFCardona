@@ -188,10 +188,19 @@ function getSessionTokenFromRequest(req) {
 }
 
 function isPublicPath(pathname) {
-    const path = String(pathname || '');
-    return path === '/login.html' || path === '/assets/js/auth.js' || path === '/favicon.ico' ||
-    path === '/set-password.html' || path === '/assets/js/set-password.js' ||
-    path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session' || path === '/api/auth/exchange';
+    const rawPath = String(pathname || '');
+    const path = rawPath.replace(/\/+$/, '') || '/';
+    const publicMaterialPaths = new Set([
+        '/seccions/moviment-material.html',
+        '/api/material/moviments',
+        '/api/material/moviments/recollida',
+        '/api/material/moviments/material-compartit',
+        '/api/material/moviments/retorn'
+    ]);
+    return path === '/login.html' || path === '/favicon.ico' || path.startsWith('/assets/') ||
+    path === '/set-password.html' ||
+    path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/session' || path === '/api/auth/exchange' ||
+    publicMaterialPaths.has(path);
 }
 
 function setSessionCookie(res, token, maxAgeSeconds = 3600) {
@@ -348,6 +357,14 @@ function getAuthorizationRule(pathname, method) {
         return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: true };
     }
 
+    if (p.startsWith('/api/material/admin/')) {
+        return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: false };
+    }
+
+    if (p.startsWith('/api/material')) {
+        return { requiredRoles: [ROLES.DIRECCIO, ROLES.SENIOR, ROLES.FUTBOL_BASE, ROLES.SCOUTING], readOnlyAllowed: true };
+    }
+
     if (p.startsWith('/api/equips') || p.startsWith('/api/equip-config') || p.startsWith('/api/jugadors') || p.startsWith('/api/rols') || p.startsWith('/api/posicions')) {
         return { requiredRoles: [ROLES.SENIOR, ROLES.FUTBOL_BASE, ROLES.DIRECCIO], readOnlyAllowed: true };
     }
@@ -366,6 +383,10 @@ function getAuthorizationRule(pathname, method) {
 
     if (p.startsWith('/seccions/staff-club')) {
         return { requiredRoles: [ROLES.DIRECCIO], readOnlyAllowed: true };
+    }
+
+    if (p.startsWith('/seccions/material') || p.startsWith('/seccions/moviment-material') || p.startsWith('/seccions/kit-material-detall')) {
+        return { requiredRoles: [ROLES.DIRECCIO, ROLES.SENIOR, ROLES.FUTBOL_BASE, ROLES.SCOUTING], readOnlyAllowed: true };
     }
 
     if (isSeniorPath(p)) {
@@ -1025,6 +1046,586 @@ function normalizePositiveInteger(value) {
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed <= 0) return null;
     return parsed;
+}
+
+function normalizeNonNegativeInteger(value, fieldName = 'cantidad') {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+        throw new Error(`${fieldName} ha de ser un enter igual o superior a zero`);
+    }
+    return parsed;
+}
+
+function normalizeMaterialInput(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const nom = String(source.nom || '').trim();
+    if (!nom) throw new Error('El nom del material és obligatori');
+    if (nom.length > 120) throw new Error('El nom del material és massa llarg');
+
+    return {
+        nom,
+        descripcio: String(source.descripcio || '').trim(),
+        cantidad: normalizeNonNegativeInteger(source.cantidad)
+    };
+}
+
+function normalizeKitInput(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const tipus = String(source.tipus || '').trim().toUpperCase();
+    if (!['F7', 'F11'].includes(tipus)) throw new Error('El tipus del kit ha de ser F7 o F11');
+
+    const rawColor = String(source.color || '').trim().replace(/\s+/g, ' ');
+    if (!rawColor) throw new Error('El color del kit és obligatori');
+    if (rawColor.length > 60) throw new Error('El color del kit és massa llarg');
+    const color = rawColor.charAt(0).toLocaleUpperCase('ca-ES') + rawColor.slice(1);
+
+    return { tipus, color };
+}
+
+async function readMaterialInventory() {
+    const [materialRows, kitRows, assignmentRows, sharedLoanRows, activeSessionRows, kitControlRows, expansionRows, equips, staff] = await Promise.all([
+        supabaseRestRequest('GET', '/rest/v1/material?select=id,nom,descripcio,cantidad&order=nom.asc'),
+        supabaseRestRequest('GET', '/rest/v1/kit_entreno?select=id,tipus,color&order=tipus.asc,color.asc'),
+        supabaseRestRequest('GET', '/rest/v1/kit_entreno_material?select=kit_entreno_id,material_id,cantidad'),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_compartit?select=sessio_id,material_id,cantidad_recollida,cantidad_retornada'),
+        supabaseRestRequest('GET', "/rest/v1/material_sessio?estat=in.(oberta,incidencia)&select=id,data_recollida,equip_id,staff_membre_id,kit_entreno_id,estat"),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_kit_item?select=sessio_id,material_id,cantidad_recollida,cantidad_retornada'),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_ampliacio?select=sessio_id,material_id,staff_membre_id,cantidad,data_recollida&order=data_recollida.asc'),
+        readEquips(),
+        readClubStaffMembers()
+    ]);
+
+    const assignments = (Array.isArray(assignmentRows) ? assignmentRows : []).map((row) => ({
+        kit_entreno_id: Number(row.kit_entreno_id),
+        material_id: Number(row.material_id),
+        cantidad: Number(row.cantidad) || 0
+    }));
+    const activeSessions = Array.isArray(activeSessionRows) ? activeSessionRows : [];
+    const activeIds = new Set(activeSessions.map((row) => Number(row.id)));
+    const equipMap = new Map((Array.isArray(equips) ? equips : []).map((row) => [Number(row.id), String(row.name || row.nom || '')]));
+    const staffMap = new Map((Array.isArray(staff) ? staff : []).map((row) => [Number(row.id), String(row.nom || '')]));
+    const kitMap = new Map((Array.isArray(kitRows) ? kitRows : []).map((row) => [Number(row.id), row]));
+    const sharedLoans = (Array.isArray(sharedLoanRows) ? sharedLoanRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
+    const kitControls = (Array.isArray(kitControlRows) ? kitControlRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
+    const expansions = (Array.isArray(expansionRows) ? expansionRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
+
+    const materials = (Array.isArray(materialRows) ? materialRows : []).map((row) => {
+        const id = Number(row.id);
+        const materialAssignments = assignments.filter((item) => item.material_id === id);
+        const assignadaKit = materialAssignments.reduce((sum, item) => sum + item.cantidad, 0);
+        const prestada = (Array.isArray(sharedLoanRows) ? sharedLoanRows : [])
+            .filter((item) => Number(item.material_id) === id)
+            .reduce((sum, item) => sum + Math.max(0, (Number(item.cantidad_recollida) || 0) - (Number(item.cantidad_retornada) || 0)), 0);
+        const cantidad = Number(row.cantidad) || 0;
+        const bloquejos = [];
+        activeSessions.forEach((session) => {
+            const base = {
+                sessio_id: Number(session.id),
+                data: session.data_recollida,
+                equip_nom: equipMap.get(Number(session.equip_id)) || `Equip ${session.equip_id}`,
+                staff_nom: staffMap.get(Number(session.staff_membre_id)) || `Staff ${session.staff_membre_id}`,
+                estat: String(session.estat || 'oberta')
+            };
+            kitControls.filter((item) => Number(item.sessio_id) === Number(session.id) && Number(item.material_id) === id).forEach((item) => {
+                const pendent = Math.max(0, Number(item.cantidad_recollida || 0) - Number(item.cantidad_retornada || 0));
+                if (!pendent) return;
+                const kit = kitMap.get(Number(session.kit_entreno_id));
+                bloquejos.push({ ...base, cantidad: pendent, origen: 'kit', kit_id: Number(session.kit_entreno_id), kit_nom: kit ? `${kit.color} · ${kit.tipus}` : `Kit ${session.kit_entreno_id}` });
+            });
+            sharedLoans.filter((item) => Number(item.sessio_id) === Number(session.id) && Number(item.material_id) === id).forEach((item) => {
+                const logs = expansions.filter((log) => Number(log.sessio_id) === Number(session.id) && Number(log.material_id) === id);
+                const added = logs.reduce((sum, log) => sum + (Number(log.cantidad) || 0), 0);
+                let returned = Number(item.cantidad_retornada) || 0;
+                const initial = Math.max(0, (Number(item.cantidad_recollida) || 0) - added);
+                const initialPending = Math.max(0, initial - returned);
+                returned = Math.max(0, returned - initial);
+                if (initialPending) bloquejos.push({ ...base, cantidad: initialPending, origen: 'compartit', kit_id: null, kit_nom: '' });
+                logs.forEach((log) => {
+                    const quantity = Number(log.cantidad) || 0;
+                    const pending = Math.max(0, quantity - returned);
+                    returned = Math.max(0, returned - quantity);
+                    if (pending) bloquejos.push({
+                        ...base,
+                        data: log.data_recollida,
+                        staff_nom: staffMap.get(Number(log.staff_membre_id)) || `Staff ${log.staff_membre_id}`,
+                        cantidad: pending,
+                        origen: 'compartit',
+                        kit_id: null,
+                        kit_nom: ''
+                    });
+                });
+            });
+        });
+        return {
+            id,
+            nom: String(row.nom || ''),
+            descripcio: String(row.descripcio || ''),
+            cantidad,
+            assignada_kit: assignadaKit,
+            prestada,
+            assignada: assignadaKit + prestada,
+            disponible: Math.max(0, cantidad - assignadaKit - prestada),
+            bloquejos
+        };
+    });
+
+    const kits = (Array.isArray(kitRows) ? kitRows : []).map((row) => ({
+        id: Number(row.id),
+        tipus: String(row.tipus || ''),
+        color: String(row.color || ''),
+        bloqueig: (() => {
+            const session = activeSessions.find((item) => Number(item.kit_entreno_id) === Number(row.id));
+            if (!session) return null;
+            return {
+                sessio_id: Number(session.id),
+                data: session.data_recollida,
+                equip_nom: equipMap.get(Number(session.equip_id)) || `Equip ${session.equip_id}`,
+                staff_nom: staffMap.get(Number(session.staff_membre_id)) || `Staff ${session.staff_membre_id}`,
+                estat: String(session.estat || 'oberta')
+            };
+        })(),
+        materials: assignments
+            .filter((item) => item.kit_entreno_id === Number(row.id))
+            .map((item) => ({ material_id: item.material_id, cantidad: item.cantidad }))
+    }));
+
+    return { materials, kits };
+}
+
+async function readTrainingKitDetail(kitIdValue) {
+    const kitId = normalizePositiveInteger(kitIdValue);
+    if (!kitId) throw new Error('ID de kit invàlid');
+    const [kitRows, assignmentRows, sessionRows, kitControlRows, sharedRows, expansionRows, materialRows, equips, staff] = await Promise.all([
+        supabaseRestRequest('GET', `/rest/v1/kit_entreno?id=eq.${kitId}&select=id,tipus,color&limit=1`),
+        supabaseRestRequest('GET', `/rest/v1/kit_entreno_material?kit_entreno_id=eq.${kitId}&select=material_id,cantidad`),
+        supabaseRestRequest('GET', `/rest/v1/material_sessio?kit_entreno_id=eq.${kitId}&select=id,data_recollida,data_retorn,updated_at,equip_id,staff_membre_id,staff_retorn_id,estat&order=data_recollida.desc`),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_kit_item?select=sessio_id,material_id,cantidad_esperada,cantidad_recollida,cantidad_retornada,cantidad_no_retornada,incidencia_recollida,incidencia_retorn'),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_compartit?select=sessio_id,material_id,cantidad_recollida,cantidad_retornada,cantidad_no_retornada,incidencia_retorn'),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_ampliacio?select=sessio_id,material_id,staff_membre_id,cantidad,data_recollida&order=data_recollida.asc'),
+        supabaseRestRequest('GET', '/rest/v1/material?select=id,nom'),
+        readEquips(),
+        readClubStaffMembers()
+    ]);
+    const kit = Array.isArray(kitRows) ? kitRows[0] : null;
+    if (!kit) throw new Error('Kit no trobat');
+    const sessionsRaw = Array.isArray(sessionRows) ? sessionRows : [];
+    const sessionIds = new Set(sessionsRaw.map((row) => Number(row.id)));
+    const materialMap = new Map((Array.isArray(materialRows) ? materialRows : []).map((row) => [Number(row.id), String(row.nom || '')]));
+    const equipMap = new Map((Array.isArray(equips) ? equips : []).map((row) => [Number(row.id), String(row.name || row.nom || '')]));
+    const staffMap = new Map((Array.isArray(staff) ? staff : []).map((row) => [Number(row.id), String(row.nom || '')]));
+    const normalizeItem = (row) => ({
+        material_id: Number(row.material_id),
+        material_nom: materialMap.get(Number(row.material_id)) || `Material ${row.material_id}`,
+        cantidad_esperada: Number(row.cantidad_esperada || 0),
+        cantidad_recollida: Number(row.cantidad_recollida || 0),
+        cantidad_retornada: Math.max(0, Number(row.cantidad_retornada || 0) - Number(row.cantidad_no_retornada || 0)),
+        cantidad_no_retornada: Number(row.cantidad_no_retornada || 0),
+        incidencia_recollida: String(row.incidencia_recollida || ''),
+        incidencia_retorn: String(row.incidencia_retorn || '')
+    });
+    const kitControls = (Array.isArray(kitControlRows) ? kitControlRows : []).filter((row) => sessionIds.has(Number(row.sessio_id)));
+    const shared = (Array.isArray(sharedRows) ? sharedRows : []).filter((row) => sessionIds.has(Number(row.sessio_id)));
+    const expansions = (Array.isArray(expansionRows) ? expansionRows : []).filter((row) => sessionIds.has(Number(row.sessio_id)));
+    return {
+        kit: {
+            id: Number(kit.id), tipus: String(kit.tipus || ''), color: String(kit.color || ''),
+            materials: (Array.isArray(assignmentRows) ? assignmentRows : []).map((row) => ({ material_id: Number(row.material_id), material_nom: materialMap.get(Number(row.material_id)) || '', cantidad: Number(row.cantidad) || 0 }))
+        },
+        sessions: sessionsRaw.map((session) => ({
+            id: Number(session.id), data_recollida: session.data_recollida, data_retorn: session.data_retorn, data_actualitzacio: session.updated_at,
+            equip_nom: equipMap.get(Number(session.equip_id)) || `Equip ${session.equip_id}`,
+            staff_recollida_nom: staffMap.get(Number(session.staff_membre_id)) || `Staff ${session.staff_membre_id}`,
+            staff_retorn_nom: session.staff_retorn_id ? (staffMap.get(Number(session.staff_retorn_id)) || `Staff ${session.staff_retorn_id}`) : '',
+            estat: String(session.estat || ''),
+            kit_items: kitControls.filter((row) => Number(row.sessio_id) === Number(session.id)).map(normalizeItem),
+            material_compartit: shared.filter((row) => Number(row.sessio_id) === Number(session.id)).map((row) => ({
+                material_id: Number(row.material_id), material_nom: materialMap.get(Number(row.material_id)) || '',
+                cantidad_recollida: Number(row.cantidad_recollida) || 0,
+                cantidad_retornada: Math.max(0, Number(row.cantidad_retornada || 0) - Number(row.cantidad_no_retornada || 0)),
+                cantidad_no_retornada: Number(row.cantidad_no_retornada) || 0,
+                incidencia_retorn: String(row.incidencia_retorn || '')
+            })),
+            ampliacions: expansions.filter((row) => Number(row.sessio_id) === Number(session.id)).map((row) => ({
+                material_id: Number(row.material_id), material_nom: materialMap.get(Number(row.material_id)) || '',
+                cantidad: Number(row.cantidad) || 0, data_recollida: row.data_recollida,
+                staff_nom: staffMap.get(Number(row.staff_membre_id)) || `Staff ${row.staff_membre_id}`
+            }))
+        }))
+    };
+}
+
+async function createMaterial(payload) {
+    const material = normalizeMaterialInput(payload);
+    const rows = await supabaseRestRequest(
+        'POST',
+        '/rest/v1/material?select=id,nom,descripcio,cantidad',
+        [material],
+        'return=representation'
+    );
+    return Array.isArray(rows) ? rows[0] : null;
+}
+
+async function updateMaterial(materialIdValue, payload) {
+    const materialId = normalizePositiveInteger(materialIdValue);
+    if (!materialId) throw new Error('ID de material invàlid');
+    const material = normalizeMaterialInput(payload);
+    const assignedRows = await supabaseRestRequest(
+        'GET',
+        `/rest/v1/kit_entreno_material?material_id=eq.${materialId}&select=cantidad`
+    );
+    const assigned = (Array.isArray(assignedRows) ? assignedRows : [])
+        .reduce((sum, row) => sum + (Number(row.cantidad) || 0), 0);
+    if (material.cantidad < assigned) {
+        throw new Error(`No es pot reduir l'estoc per sota de les ${assigned} unitats assignades`);
+    }
+    await supabaseRestRequest('PATCH', `/rest/v1/material?id=eq.${materialId}`, material);
+    return { id: materialId, ...material };
+}
+
+async function deleteMaterial(materialIdValue) {
+    const materialId = normalizePositiveInteger(materialIdValue);
+    if (!materialId) throw new Error('ID de material invàlid');
+    await supabaseRestRequest('DELETE', `/rest/v1/material?id=eq.${materialId}`);
+}
+
+async function createTrainingKit(payload) {
+    const kit = normalizeKitInput(payload);
+    const rows = await supabaseRestRequest(
+        'POST',
+        '/rest/v1/kit_entreno?select=id,tipus,color',
+        [kit],
+        'return=representation'
+    );
+    return Array.isArray(rows) ? rows[0] : null;
+}
+
+async function updateTrainingKit(kitIdValue, payload) {
+    const kitId = normalizePositiveInteger(kitIdValue);
+    if (!kitId) throw new Error('ID de kit invàlid');
+    const kit = normalizeKitInput(payload);
+    await supabaseRestRequest('PATCH', `/rest/v1/kit_entreno?id=eq.${kitId}`, kit);
+    return { id: kitId, ...kit };
+}
+
+async function deleteTrainingKit(kitIdValue) {
+    const kitId = normalizePositiveInteger(kitIdValue);
+    if (!kitId) throw new Error('ID de kit invàlid');
+    await supabaseRestRequest('DELETE', `/rest/v1/kit_entreno?id=eq.${kitId}`);
+}
+
+async function setTrainingKitMaterial(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const kitId = normalizePositiveInteger(source.kit_entreno_id ?? source.kitId);
+    const materialId = normalizePositiveInteger(source.material_id ?? source.materialId);
+    const cantidad = normalizeNonNegativeInteger(source.cantidad);
+    if (!kitId || !materialId) throw new Error('El kit i el material són obligatoris');
+
+    if (cantidad === 0) {
+        await supabaseRestRequest(
+            'DELETE',
+            `/rest/v1/kit_entreno_material?kit_entreno_id=eq.${kitId}&material_id=eq.${materialId}`
+        );
+        return { kit_entreno_id: kitId, material_id: materialId, cantidad: 0 };
+    }
+
+    const [materialRows, assignmentRows, sharedLoanRows] = await Promise.all([
+        supabaseRestRequest('GET', `/rest/v1/material?id=eq.${materialId}&select=cantidad&limit=1`),
+        supabaseRestRequest('GET', `/rest/v1/kit_entreno_material?material_id=eq.${materialId}&select=kit_entreno_id,cantidad`),
+        supabaseRestRequest('GET', `/rest/v1/material_sessio_compartit?material_id=eq.${materialId}&select=cantidad_recollida,cantidad_retornada`)
+    ]);
+    const material = Array.isArray(materialRows) ? materialRows[0] : null;
+    if (!material) throw new Error('Material no trobat');
+    const assignedElsewhere = (Array.isArray(assignmentRows) ? assignmentRows : [])
+        .filter((row) => Number(row.kit_entreno_id) !== kitId)
+        .reduce((sum, row) => sum + (Number(row.cantidad) || 0), 0);
+    const loaned = (Array.isArray(sharedLoanRows) ? sharedLoanRows : [])
+        .reduce((sum, row) => sum + Math.max(0, (Number(row.cantidad_recollida) || 0) - (Number(row.cantidad_retornada) || 0)), 0);
+    if (assignedElsewhere + loaned + cantidad > Number(material.cantidad)) {
+        const available = Math.max(0, Number(material.cantidad) - assignedElsewhere - loaned);
+        throw new Error(`Només hi ha ${available} unitats disponibles per a aquest kit`);
+    }
+
+    const assignment = { kit_entreno_id: kitId, material_id: materialId, cantidad };
+    await supabaseRestRequest(
+        'POST',
+        '/rest/v1/kit_entreno_material?on_conflict=kit_entreno_id,material_id',
+        [assignment],
+        'resolution=merge-duplicates'
+    );
+    return assignment;
+}
+
+async function deleteTrainingKitMaterial(kitIdValue, materialIdValue) {
+    const kitId = normalizePositiveInteger(kitIdValue);
+    const materialId = normalizePositiveInteger(materialIdValue);
+    if (!kitId || !materialId) throw new Error('El kit i el material són obligatoris');
+    await supabaseRestRequest(
+        'DELETE',
+        `/rest/v1/kit_entreno_material?kit_entreno_id=eq.${kitId}&material_id=eq.${materialId}`
+    );
+}
+
+async function readMaterialMovementsData() {
+    const [inventory, equips, staff, staffAssignments, sessionRows, kitControlRows, sharedRows] = await Promise.all([
+        readMaterialInventory(),
+        readEquips(),
+        readClubStaffMembers(),
+        readClubStaffAssignments(),
+        supabaseRestRequest('GET', "/rest/v1/material_sessio?estat=in.(oberta,incidencia)&select=id,data_recollida,equip_id,staff_membre_id,kit_entreno_id,estat&order=data_recollida.desc"),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_kit_item?select=sessio_id,material_id,cantidad_esperada,cantidad_recollida,cantidad_retornada,cantidad_no_retornada,incidencia_recollida,incidencia_retorn'),
+        supabaseRestRequest('GET', '/rest/v1/material_sessio_compartit?select=sessio_id,material_id,cantidad_recollida,cantidad_retornada,cantidad_no_retornada,incidencia_retorn')
+    ]);
+
+    const activeSessions = Array.isArray(sessionRows) ? sessionRows : [];
+    const activeIds = new Set(activeSessions.map((row) => Number(row.id)));
+    const kitControls = (Array.isArray(kitControlRows) ? kitControlRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
+    const sharedItems = (Array.isArray(sharedRows) ? sharedRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
+    const equipMap = new Map((Array.isArray(equips) ? equips : []).map((row) => [Number(row.id), String(row.name || row.nom || '')]));
+    const staffMap = new Map((Array.isArray(staff) ? staff : []).map((row) => [Number(row.id), String(row.nom || '')]));
+
+    const sessions = activeSessions.map((row) => ({
+        id: Number(row.id),
+        data_recollida: row.data_recollida,
+        equip_id: Number(row.equip_id),
+        equip_nom: equipMap.get(Number(row.equip_id)) || `Equip ${row.equip_id}`,
+        staff_membre_id: Number(row.staff_membre_id),
+        staff_nom: staffMap.get(Number(row.staff_membre_id)) || `Staff ${row.staff_membre_id}`,
+        kit_entreno_id: Number(row.kit_entreno_id),
+        estat: String(row.estat || 'oberta'),
+        kit_items: kitControls.filter((item) => Number(item.sessio_id) === Number(row.id)).map((item) => ({
+            material_id: Number(item.material_id),
+            cantidad_esperada: Number(item.cantidad_esperada) || 0,
+            cantidad_recollida: Number(item.cantidad_recollida) || 0,
+            cantidad_retornada: Math.max(0, Number(item.cantidad_retornada || 0) - Number(item.cantidad_no_retornada || 0)),
+            cantidad_no_retornada: Number(item.cantidad_no_retornada) || 0,
+            incidencia_recollida: String(item.incidencia_recollida || ''),
+            incidencia_retorn: String(item.incidencia_retorn || '')
+        })),
+        material_compartit: sharedItems.filter((item) => Number(item.sessio_id) === Number(row.id)).map((item) => ({
+            material_id: Number(item.material_id),
+            cantidad_recollida: Number(item.cantidad_recollida) || 0,
+            cantidad_retornada: Math.max(0, Number(item.cantidad_retornada || 0) - Number(item.cantidad_no_retornada || 0)),
+            cantidad_no_retornada: Number(item.cantidad_no_retornada) || 0,
+            incidencia_retorn: String(item.incidencia_retorn || '')
+        }))
+    }));
+
+    inventory.materials = inventory.materials.map((material) => {
+        const holders = [];
+        let prestat = 0;
+        sessions.forEach((session) => {
+            session.material_compartit.forEach((item) => {
+                if (item.material_id !== Number(material.id)) return;
+                const pendent = Math.max(0, item.cantidad_recollida - item.cantidad_retornada);
+                if (!pendent) return;
+                prestat += pendent;
+                holders.push({
+                    sessio_id: session.id,
+                    cantidad: pendent,
+                    staff_nom: session.staff_nom,
+                    equip_nom: session.equip_nom
+                });
+            });
+        });
+        return {
+            ...material,
+            compartit_total: Math.max(0, material.cantidad - material.assignada_kit),
+            compartit_prestat: prestat,
+            compartit_disponible: Math.max(0, material.cantidad - material.assignada_kit - prestat),
+            holders
+        };
+    });
+
+    inventory.kits = inventory.kits.map((kit) => {
+        const holder = sessions.find((session) => session.kit_entreno_id === Number(kit.id));
+        return {
+            ...kit,
+            disponible: !holder,
+            holder: holder ? {
+                sessio_id: holder.id,
+                staff_nom: holder.staff_nom,
+                equip_nom: holder.equip_nom,
+                estat: holder.estat
+            } : null
+        };
+    });
+
+    return {
+        inventory,
+        sessions,
+        equips: Array.isArray(equips) ? equips : [],
+        staff: Array.isArray(staff) ? staff : [],
+        staff_assignments: Array.isArray(staffAssignments) ? staffAssignments : []
+    };
+}
+
+async function collectTrainingMaterial(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const equipId = normalizePositiveInteger(source.equip_id);
+    const staffId = normalizePositiveInteger(source.staff_membre_id);
+    const kitId = normalizePositiveInteger(source.kit_entreno_id);
+    if (!equipId || !staffId || !kitId) throw new Error('Cal seleccionar equip, membre del staff i kit');
+    const staffAssignments = await readClubStaffAssignments();
+    if (!staffAssignments.some((row) => Number(row.equip_id) === equipId && Number(row.staff_membre_id) === staffId)) {
+        throw new Error('El membre del staff no està assignat a aquest equip');
+    }
+    const result = await supabaseRestRequest('POST', '/rest/v1/rpc/recollir_material_entreno', {
+        p_equip_id: equipId,
+        p_staff_membre_id: staffId,
+        p_kit_entreno_id: kitId,
+        p_kit_items: Array.isArray(source.kit_items) ? source.kit_items : [],
+        p_material_compartit: Array.isArray(source.material_compartit) ? source.material_compartit : []
+    });
+    return { sessio_id: Number(result) || result };
+}
+
+async function addSharedMaterialToSession(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const sessionId = normalizePositiveInteger(source.sessio_id);
+    const equipId = normalizePositiveInteger(source.equip_id);
+    const staffId = normalizePositiveInteger(source.staff_membre_id);
+    const shared = Array.isArray(source.material_compartit) ? source.material_compartit : [];
+    if (!sessionId || !equipId || !staffId) throw new Error('Cal seleccionar equip, membre del staff i sessió activa');
+    if (!shared.length) throw new Error('Cal indicar almenys un material i una quantitat');
+    const [sessionRows, staffAssignments] = await Promise.all([
+        supabaseRestRequest('GET', `/rest/v1/material_sessio?id=eq.${sessionId}&estat=in.(oberta,incidencia)&select=id,equip_id&limit=1`),
+        readClubStaffAssignments()
+    ]);
+    const session = Array.isArray(sessionRows) ? sessionRows[0] : null;
+    if (!session || Number(session.equip_id) !== equipId) throw new Error('La sessió seleccionada no està activa per a aquest equip');
+    if (!staffAssignments.some((row) => Number(row.equip_id) === equipId && Number(row.staff_membre_id) === staffId)) {
+        throw new Error('El membre del staff no està assignat a aquest equip');
+    }
+    const result = await supabaseRestRequest('POST', '/rest/v1/rpc/afegir_material_compartit_sessio', {
+        p_sessio_id: sessionId,
+        p_staff_membre_id: staffId,
+        p_material_compartit: shared
+    });
+    return { sessio_id: sessionId, unitats_afegides: Number(result) || 0 };
+}
+
+async function returnTrainingMaterial(payload) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const sessionId = normalizePositiveInteger(source.sessio_id);
+    if (!sessionId) throw new Error('Cal seleccionar una sessió oberta');
+    const [sessionRows, staffAssignments] = await Promise.all([
+        supabaseRestRequest('GET', `/rest/v1/material_sessio?id=eq.${sessionId}&estat=in.(oberta,incidencia)&select=equip_id,staff_membre_id&limit=1`),
+        readClubStaffAssignments()
+    ]);
+    const session = Array.isArray(sessionRows) ? sessionRows[0] : null;
+    if (!session) throw new Error('Sessió no trobada');
+    const staffReturnId = normalizePositiveInteger(source.staff_membre_id) || normalizePositiveInteger(session.staff_membre_id);
+    if (!staffReturnId) throw new Error('La sessió no té cap membre del staff associat');
+    if (!staffAssignments.some((row) => Number(row.equip_id) === Number(session.equip_id) && Number(row.staff_membre_id) === staffReturnId)) {
+        throw new Error('El membre del staff no està assignat a l’equip de la sessió');
+    }
+    const result = await supabaseRestRequest('POST', '/rest/v1/rpc/tornar_material_entreno', {
+        p_sessio_id: sessionId,
+        p_staff_retorn_id: staffReturnId,
+        p_kit_items: Array.isArray(source.kit_items) ? source.kit_items : [],
+        p_material_compartit: Array.isArray(source.material_compartit) ? source.material_compartit : []
+    });
+    return { sessio_id: sessionId, estat: String(result || '') };
+}
+
+async function forceUnlockTrainingMaterial(payload, authUser = null) {
+    const source = payload && typeof payload === 'object' ? payload : {};
+    const sessionId = normalizePositiveInteger(source.sessio_id);
+    const materialId = source.material_id === undefined || source.material_id === null || source.material_id === ''
+        ? null
+        : normalizePositiveInteger(source.material_id);
+    if (!sessionId) throw new Error('Cal indicar la sessió que es vol desbloquejar');
+    if (source.material_id !== undefined && source.material_id !== null && source.material_id !== '' && !materialId) {
+        throw new Error('ID de material invàlid');
+    }
+    const actor = resolveAuthActor(authUser, 'Administració');
+    const motiu = String(source.motiu || 'Retorn no registrat per l’equip').trim().slice(0, 500);
+    const result = await supabaseRestRequest('POST', '/rest/v1/rpc/desbloquejar_material_entreno', {
+        p_sessio_id: sessionId,
+        p_material_id: materialId,
+        p_actor: actor,
+        p_motiu: motiu
+    });
+    return { sessio_id: sessionId, material_id: materialId, estat: String(result || '') };
+}
+
+async function deleteTrainingKitHistory(kitIdValue) {
+    const kitId = normalizePositiveInteger(kitIdValue);
+    if (!kitId) throw new Error('ID de kit invàlid');
+    const rows = await supabaseRestRequest('GET', `/rest/v1/kit_entreno?id=eq.${kitId}&select=id&limit=1`);
+    if (!Array.isArray(rows) || !rows.length) throw new Error('Kit no trobat');
+    await supabaseRestRequest('DELETE', `/rest/v1/material_sessio?kit_entreno_id=eq.${kitId}`);
+    return { kit_id: kitId };
+}
+
+async function handleMaterialApi(pathname, method, requestUrl, req) {
+    const normalizedMethod = String(method || 'GET').toUpperCase();
+    const apiPath = String(pathname || '').replace(/\/+$/, '') || '/';
+    const body = ['POST', 'PATCH'].includes(normalizedMethod)
+        ? JSON.parse((await readBody(req)) || '{}')
+        : {};
+    const id = requestUrl.searchParams.get('id');
+
+    if (apiPath === '/api/material/moviments' && normalizedMethod === 'GET') {
+        return { status: 200, payload: await readMaterialMovementsData() };
+    }
+    if (apiPath === '/api/material/moviments/recollida' && normalizedMethod === 'POST') {
+        return { status: 201, payload: { status: 'success', ...(await collectTrainingMaterial(body)) } };
+    }
+    if (apiPath === '/api/material/moviments/material-compartit' && normalizedMethod === 'POST') {
+        return { status: 200, payload: { status: 'success', ...(await addSharedMaterialToSession(body)) } };
+    }
+    if (apiPath === '/api/material/moviments/retorn' && normalizedMethod === 'POST') {
+        return { status: 200, payload: { status: 'success', ...(await returnTrainingMaterial(body)) } };
+    }
+    if (apiPath === '/api/material/admin/desbloquejar' && normalizedMethod === 'POST') {
+        return { status: 200, payload: { status: 'success', ...(await forceUnlockTrainingMaterial(body, req.authUser || null)) } };
+    }
+    const deleteHistoryMatch = apiPath.match(/^\/api\/material\/admin\/kits\/(\d+)\/historial$/);
+    if (deleteHistoryMatch && normalizedMethod === 'DELETE') {
+        return { status: 200, payload: { status: 'success', ...(await deleteTrainingKitHistory(deleteHistoryMatch[1])) } };
+    }
+
+    const kitDetailMatch = apiPath.match(/^\/api\/material\/kits\/(\d+)$/);
+    if (kitDetailMatch && normalizedMethod === 'GET') {
+        return { status: 200, payload: await readTrainingKitDetail(kitDetailMatch[1]) };
+    }
+
+    if (apiPath === '/api/material' && normalizedMethod === 'GET') {
+        return { status: 200, payload: await readMaterialInventory() };
+    }
+    if (apiPath === '/api/material' && normalizedMethod === 'POST') {
+        return { status: 201, payload: { status: 'success', material: await createMaterial(body) } };
+    }
+    if (apiPath === '/api/material' && normalizedMethod === 'PATCH') {
+        return { status: 200, payload: { status: 'success', material: await updateMaterial(id, body) } };
+    }
+    if (apiPath === '/api/material' && normalizedMethod === 'DELETE') {
+        await deleteMaterial(id);
+        return { status: 200, payload: { status: 'success' } };
+    }
+    if (apiPath === '/api/material/kits' && normalizedMethod === 'POST') {
+        return { status: 201, payload: { status: 'success', kit: await createTrainingKit(body) } };
+    }
+    if (apiPath === '/api/material/kits' && normalizedMethod === 'PATCH') {
+        return { status: 200, payload: { status: 'success', kit: await updateTrainingKit(id, body) } };
+    }
+    if (apiPath === '/api/material/kits' && normalizedMethod === 'DELETE') {
+        await deleteTrainingKit(id);
+        return { status: 200, payload: { status: 'success' } };
+    }
+    if (apiPath === '/api/material/assignments' && normalizedMethod === 'POST') {
+        return { status: 200, payload: { status: 'success', assignment: await setTrainingKitMaterial(body) } };
+    }
+    if (apiPath === '/api/material/assignments' && normalizedMethod === 'DELETE') {
+        await deleteTrainingKitMaterial(
+            requestUrl.searchParams.get('kitId'),
+            requestUrl.searchParams.get('materialId')
+        );
+        return { status: 200, payload: { status: 'success' } };
+    }
+
+    return { status: 405, payload: { error: 'Mètode no permès', details: `${normalizedMethod} ${apiPath}` } };
 }
 
 function normalizeStaffMemberInput(payload, options = {}) {
@@ -3148,7 +3749,7 @@ const server = http.createServer(async (req, res) => {
     const storageBackend = USE_SUPABASE ? 'supabase' : 'file';
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -3977,6 +4578,27 @@ const server = http.createServer(async (req, res) => {
                 });
                 res.end(JSON.stringify({
                     error: "No s'ha pogut eliminar el jugador",
+                    details: err && err.message ? err.message : String(err)
+                }));
+            }
+        })();
+    } else if (pathname.startsWith('/api/material')) {
+        (async () => {
+            try {
+                const result = await handleMaterialApi(pathname, req.method, requestUrl, req);
+                res.writeHead(result.status, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify(result.payload));
+            } catch (err) {
+                console.error(`Error ${req.method} ${pathname}:`, err && err.message ? err.message : err);
+                res.writeHead(400, {
+                    'Content-Type': 'application/json',
+                    'X-Storage-Backend': storageBackend
+                });
+                res.end(JSON.stringify({
+                    error: err instanceof SyntaxError ? 'JSON invàlid' : 'No s\'ha pogut completar l\'operació de material',
                     details: err && err.message ? err.message : String(err)
                 }));
             }

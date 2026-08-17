@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material d’entrenament | CF Cardona</title>
+    <script src="../assets/js/top-nav.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#d91d1d;--primary-dark:#b91c1c;--bg:#f1f5f9;--border:#e2e8f0;--text:#172033;--muted:#64748b;}
+        *{box-sizing:border-box;font-family:'Inter',sans-serif;}
+        body{margin:0;background:var(--bg);min-height:100vh;padding:2rem;color:var(--text);}
+        body::before{content:"";position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:600px;height:600px;background:url('../assets/images/ESCUT CF CARDONA.jpeg') center/contain no-repeat;opacity:.035;filter:blur(2px);pointer-events:none;}
+        .page{max-width:960px;margin:0 auto;position:relative;z-index:1;}
+        .card{background:#fff;border:1px solid var(--border);border-radius:1rem;padding:1.5rem;box-shadow:0 4px 14px rgba(15,23,42,.06);margin-bottom:1.25rem;}
+        .section-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.15rem;padding-bottom:.8rem;border-bottom:2px solid #fee2e2;}
+        .section-head h2{margin:0;color:var(--primary);font-size:1.08rem;font-weight:800;}
+        .section-head p{margin:.3rem 0 0;color:var(--muted);font-size:.84rem;}
+        .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem;}
+        .stat{background:#fff;border:1px solid var(--border);border-radius:.9rem;padding:1.15rem;box-shadow:0 3px 10px rgba(15,23,42,.04);}
+        .stat-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800;}
+        .stat-value{font-size:1.8rem;font-weight:800;margin-top:.25rem;}
+        .stat.assigned .stat-value{color:#2563eb}.stat.available .stat-value{color:#059669}
+        .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:.75rem;}
+        table{width:100%;border-collapse:collapse;min-width:720px;}
+        th{background:#f8fafc;color:#475569;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;padding:.75rem;}
+        td{padding:.82rem .75rem;border-top:1px solid var(--border);font-size:.88rem;vertical-align:top;}
+        .material-name{font-weight:800}.description{color:var(--muted);font-size:.8rem;margin-top:.2rem;max-width:360px;}
+        .blocked-detail td{background:#fff7ed;padding:.7rem .85rem;}.blocked-list{display:grid;gap:.45rem}.blocked-entry{display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:.6rem;align-items:center;border:1px solid #fed7aa;background:#fff;border-radius:.65rem;padding:.6rem}.blocked-count{font-weight:800;color:#c2410c}.blocked-info{font-size:.75rem;color:#475569;line-height:1.45}.blocked-actions{display:flex;align-items:center;justify-content:flex-end;gap:.4rem;flex-wrap:wrap}.blocked-origin{font-size:.68rem;font-weight:800;padding:.25rem .45rem;border-radius:999px;background:#ffedd5;color:#9a3412;text-decoration:none}.blocked-origin.kit{background:#dbeafe;color:#1d4ed8}.btn-link{display:inline-flex;align-items:center;text-decoration:none;border-radius:.55rem;padding:.4rem .58rem;font-size:.7rem;font-weight:800;background:#dbeafe;color:#1d4ed8;}.admin-unlock{display:none!important;background:#7c2d12;color:#fff}.cf-material-admin .admin-unlock{display:inline-flex!important}.kit-lock{margin:.7rem 0 0;padding:.6rem .7rem;border-radius:.6rem;background:#fff7ed;color:#9a3412;font-size:.72rem;line-height:1.45}
+        .qty{font-weight:800;font-variant-numeric:tabular-nums}.qty.assigned{color:#2563eb}.qty.available{color:#059669}
+        .actions{display:flex;gap:.4rem;justify-content:flex-end;white-space:nowrap;}
+        button{border:0;border-radius:.55rem;padding:.55rem .8rem;font-weight:800;font-size:.76rem;cursor:pointer;transition:.15s ease;}
+        button:hover{transform:translateY(-1px)}button:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+        .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+        .btn-secondary{background:#e2e8f0;color:#334155}.btn-danger,.btn-remove{background:#fee2e2;color:#b91c1c}.btn-small{padding:.4rem .58rem;font-size:.7rem;}
+        .add-form-box{background:#f8fafc;border:1px solid var(--border);border-radius:.8rem;padding:1rem;margin-top:1rem;}
+        .form-title{font-size:.82rem;font-weight:800;margin-bottom:.8rem;}
+        .form-grid{display:grid;grid-template-columns:1.2fr 2fr .7fr auto;gap:.75rem;align-items:end;}
+        .kit-form-grid{grid-template-columns:1fr 1.4fr auto;}
+        label{display:block;font-size:.72rem;font-weight:800;color:#475569;margin-bottom:.35rem;}
+        input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:.55rem;padding:.62rem .7rem;background:#fff;color:var(--text);font-size:.85rem;}
+        textarea{resize:vertical;min-height:42px}input:focus,select:focus,textarea:focus{outline:2px solid #fecaca;border-color:var(--primary);}
+        .form-actions{display:flex;gap:.45rem;align-items:center;}
+        .kits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:1rem;}
+        .kit-card{border:1px solid var(--border);border-radius:.9rem;overflow:hidden;background:#fff;box-shadow:0 3px 10px rgba(15,23,42,.05);}
+        .kit-header{padding:1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;border-top:9px solid var(--kit-color,#64748b);background:linear-gradient(135deg,var(--kit-soft,#f8fafc),#fff);}
+        .kit-identity{display:flex;align-items:center;gap:.7rem;min-width:0}.color-dot{width:32px;height:32px;border-radius:50%;background:var(--kit-color);border:3px solid #fff;box-shadow:0 0 0 1px rgba(15,23,42,.18);flex:none;}
+        .kit-name{font-weight:800;font-size:1rem}.kit-type{display:inline-block;margin-top:.2rem;padding:.18rem .45rem;border-radius:999px;background:#e2e8f0;color:#334155;font-size:.66rem;font-weight:800;}
+        .kit-body{padding:1rem}.kit-material-row{display:grid;grid-template-columns:minmax(0,1fr) 74px auto;gap:.45rem;align-items:center;padding:.55rem 0;border-bottom:1px solid #f1f5f9;}
+        .kit-material-row:last-child{border-bottom:0}.kit-material-name{font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;}.kit-material-row input{padding:.45rem;text-align:center;}
+        .kit-row-actions{display:flex;gap:.3rem}.empty{padding:1.2rem;text-align:center;color:var(--muted);font-size:.84rem;border:1px dashed #cbd5e1;border-radius:.65rem;}
+        .assignment-form{display:grid;grid-template-columns:minmax(0,1fr) 80px auto;gap:.45rem;align-items:end;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);}
+        .obs-list{display:flex;flex-direction:column;gap:.7rem;}
+        .obs-item{border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:.7rem;padding:.85rem;background:#fff;}
+        .obs-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.45rem;}
+        .obs-meta{font-size:.76rem;color:var(--muted);}.obs-meta strong{color:#334155;}
+        .obs-text{font-size:.86rem;color:#334155;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;}
+        .add-obs-form{background:#f8fafc;border:1px solid var(--border);border-radius:.8rem;padding:1rem;margin-top:1rem;}
+        .obs-form-grid{display:grid;grid-template-columns:1fr 180px auto;gap:.75rem;align-items:end;margin-bottom:.75rem;}
+        .feedback{display:none;margin-bottom:1rem;padding:.75rem .9rem;border-radius:.65rem;font-size:.82rem;font-weight:700;}
+        .feedback.show{display:block}.feedback.error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}.feedback.success{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+        @media(max-width:760px){body{padding:.9rem}.card{padding:1rem}.summary{grid-template-columns:1fr}.form-grid,.kit-form-grid,.obs-form-grid{grid-template-columns:1fr}.form-actions{justify-content:flex-end}.kits-grid{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}.kit-material-row{grid-template-columns:minmax(0,1fr) 70px}.kit-row-actions{grid-column:1/-1;justify-content:flex-end}.assignment-form{grid-template-columns:1fr 75px}.assignment-form button{grid-column:1/-1}.stat{padding:.9rem}.stat-value{font-size:1.45rem}.blocked-entry{grid-template-columns:55px 1fr}.blocked-actions{grid-column:2;justify-content:flex-start}}
+    </style>
+</head>
+<body>
+    <main class="page">
+        <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+
+        <section class="summary" aria-label="Resum de l'inventari">
+            <div class="stat"><div class="stat-label">Tipus de material</div><div class="stat-value" id="stat-materials">0</div></div>
+            <div class="stat assigned"><div class="stat-label">Unitats assignades</div><div class="stat-value" id="stat-assigned">0</div></div>
+            <div class="stat available"><div class="stat-label">Unitats disponibles</div><div class="stat-value" id="stat-available">0</div></div>
+        </section>
+
+        <section class="card">
+            <div class="section-head">
+                <div><h2>Inventari del club</h2><p>Existències totals i repartiment actual entre els kits.</p></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Material</th><th>Total</th><th>Assignat</th><th>Disponible</th><th>Accions</th></tr></thead>
+                    <tbody id="material-body"></tbody>
+                </table>
+            </div>
+            <div class="add-form-box">
+                <div class="form-title" id="material-form-title">Alta de material</div>
+                <form id="material-form" class="form-grid">
+                    <div><label for="material-name">Nom</label><input id="material-name" maxlength="120" required placeholder="Ex. Pilotes"></div>
+                    <div><label for="material-description">Descripció</label><input id="material-description" placeholder="Característiques o observacions"></div>
+                    <div><label for="material-quantity">Quantitat total</label><input id="material-quantity" type="number" min="0" step="1" required value="0"></div>
+                    <div class="form-actions"><button class="btn-secondary" id="material-cancel" type="button" hidden>Cancel·lar</button><button class="btn-primary" type="submit">Desar</button></div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="section-head">
+                <div><h2>Kits d’entrenament</h2><p>Organització visual per color i tipus de futbol.</p></div>
+            </div>
+            <div id="kits-grid" class="kits-grid"></div>
+            <div class="add-form-box">
+                <div class="form-title" id="kit-form-title">Alta de kit</div>
+                <form id="kit-form" class="form-grid kit-form-grid">
+                    <div><label for="kit-type">Tipus</label><select id="kit-type"><option>F7</option><option>F11</option></select></div>
+                    <div><label for="kit-color">Color / nom del kit</label><input id="kit-color" list="kit-colors" maxlength="60" required placeholder="Ex. Blau"><datalist id="kit-colors"><option value="Vermell"><option value="Blau"><option value="Groc"><option value="Verd"><option value="Blanc"><option value="Negre"><option value="Taronja"><option value="Lila"></datalist></div>
+                    <div class="form-actions"><button class="btn-secondary" id="kit-cancel" type="button" hidden>Cancel·lar</button><button class="btn-primary" type="submit">Desar kit</button></div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="section-head">
+                <div><h2>💬 Observacions i Comentaris</h2><p>Anotacions generals de l’encarregat de material.</p></div>
+            </div>
+            <div id="observations-list" class="obs-list"><div class="empty">Sense observacions registrades.</div></div>
+            <form id="observation-form" class="add-obs-form">
+                <div class="form-title">Nou comentari</div>
+                <div class="obs-form-grid">
+                    <div><label for="observation-author">Autor</label><input id="observation-author" maxlength="120" placeholder="Qui fa el comentari..."></div>
+                    <div><label for="observation-date">Data</label><input id="observation-date" type="date" required></div>
+                    <button class="btn-primary" type="submit">Afegir</button>
+                </div>
+                <div><label for="observation-text">Comentari</label><textarea id="observation-text" required placeholder="Escriu el comentari..."></textarea></div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const API='/api/material';
+        const OBSERVATIONS_API='/api/observacions';
+        const OBSERVATIONS_SCOPE='seccio_material';
+        let state={materials:[],kits:[]};
+        let observations=[];
+        let editingMaterialId=null;
+        let editingKitId=null;
+
+        const $=id=>document.getElementById(id);
+        const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+        function colorInfo(name){
+            const colors={vermell:['#dc2626','#fef2f2'],blau:['#2563eb','#eff6ff'],groc:['#eab308','#fefce8'],verd:['#16a34a','#f0fdf4'],blanc:['#f8fafc','#f8fafc'],negre:['#111827','#f1f5f9'],taronja:['#f97316','#fff7ed'],lila:['#9333ea','#faf5ff'],rosa:['#db2777','#fdf2f8'],gris:['#64748b','#f8fafc'],marro:['#92400e','#fffbeb'],turquesa:['#0d9488','#f0fdfa'],granat:['#881337','#fff1f2'],fucsia:['#c026d3','#fdf4ff']};
+            const key=normalize(name);if(colors[key])return colors[key];
+            const hue=[...key].reduce((value,char)=>(value*31+char.charCodeAt(0))%360,0);
+            return [`hsl(${hue} 60% 45%)`,`hsl(${hue} 55% 96%)`];
+        }
+
+        async function request(url,options={}){
+            const response=await fetch(url,options);
+            const text=await response.text();
+            let data={};
+            try{data=text?JSON.parse(text):{};}catch(_){data={};}
+            if(!response.ok) throw new Error(data.details||data.error||text||`HTTP ${response.status}`);
+            return data;
+        }
+
+        function notify(message,type='success'){
+            const el=$('feedback');
+            el.textContent=message;el.className=`feedback show ${type}`;
+            clearTimeout(notify.timer);notify.timer=setTimeout(()=>el.classList.remove('show'),4000);
+        }
+
+        function materialById(id){return state.materials.find(item=>Number(item.id)===Number(id));}
+
+        async function load(){
+            try{
+                const [inventory,observationRows]=await Promise.all([
+                    request(API),
+                    request(`${OBSERVATIONS_API}?scope=${encodeURIComponent(OBSERVATIONS_SCOPE)}`)
+                ]);
+                state=inventory;observations=Array.isArray(observationRows)?observationRows:[];render();
+            }
+            catch(error){notify(error.message,'error');}
+        }
+
+        function render(){
+            const assigned=state.materials.reduce((sum,item)=>sum+Number(item.assignada||0),0);
+            const available=state.materials.reduce((sum,item)=>sum+Number(item.disponible||0),0);
+            $('stat-materials').textContent=state.materials.length;
+            $('stat-assigned').textContent=assigned;
+            $('stat-available').textContent=available;
+            renderMaterials();renderKits();renderObservations();
+        }
+
+        function formatDate(value){
+            if(!value)return'-';
+            return new Date(`${value}T12:00:00`).toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+        }
+
+        function formatDateTime(value){return value?new Date(value).toLocaleString('ca-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';}
+
+        function renderObservations(){
+            const list=$('observations-list');
+            if(!observations.length){list.innerHTML='<div class="empty">Sense observacions registrades.</div>';return;}
+            list.innerHTML=observations.map(item=>`<article class="obs-item"><div class="obs-header"><div class="obs-meta"><strong>${esc(item.autor||'Anònim')}</strong> — ${formatDate(item.data)}</div><button class="btn-danger btn-remove btn-small delete-observation" data-id="${esc(item.id)}" aria-label="Eliminar comentari">×</button></div><div class="obs-text">${esc(item.text)}</div></article>`).join('');
+            list.querySelectorAll('.delete-observation').forEach(button=>button.addEventListener('click',()=>removeObservation(button.dataset.id)));
+        }
+
+        function renderMaterials(){
+            const body=$('material-body');
+            if(!state.materials.length){body.innerHTML='<tr><td colspan="5"><div class="empty">Encara no hi ha material registrat.</div></td></tr>';return;}
+            body.innerHTML=state.materials.map(item=>{const bloquejos=Array.isArray(item.bloquejos)?item.bloquejos:[];return`<tr>
+                <td><div class="material-name">${esc(item.nom)}</div><div class="description">${esc(item.descripcio||'Sense descripció')}</div></td>
+                <td><span class="qty">${Number(item.cantidad)}</span></td>
+                <td><span class="qty assigned">${Number(item.assignada)}</span></td>
+                <td><span class="qty available">${Number(item.disponible)}</span></td>
+                <td><div class="actions"><button class="btn-secondary btn-small edit-material material-write-action" data-id="${item.id}">Editar</button><button class="btn-danger btn-remove btn-small delete-material" data-id="${item.id}">Eliminar</button></div></td>
+            </tr>${bloquejos.length?`<tr class="blocked-detail"><td colspan="5"><div class="blocked-list">${bloquejos.map(lock=>`<div class="blocked-entry"><div class="blocked-count">${lock.cantidad} u.</div><div class="blocked-info"><strong>${esc(lock.staff_nom)}</strong> · ${esc(lock.equip_nom)}<br>${formatDateTime(lock.data)}</div><div class="blocked-actions">${lock.origen==='kit'?`<a class="blocked-origin kit" href="kit-material-detall.html?kitId=${lock.kit_id}">Kit ${esc(lock.kit_nom)}</a>`:'<span class="blocked-origin">Compartit</span>'}<button class="admin-unlock btn-small unlock-material" data-session="${lock.sessio_id}" data-material="${item.id}">Desbloquejar</button></div></div>`).join('')}</div></td></tr>`:''}`}).join('');
+            body.querySelectorAll('.edit-material').forEach(btn=>btn.addEventListener('click',()=>startMaterialEdit(btn.dataset.id)));
+            body.querySelectorAll('.delete-material').forEach(btn=>btn.addEventListener('click',()=>removeMaterial(btn.dataset.id)));
+            body.querySelectorAll('.unlock-material').forEach(btn=>btn.addEventListener('click',()=>unlockSession(btn.dataset.session,btn.dataset.material)));
+        }
+
+        function renderKits(){
+            const grid=$('kits-grid');
+            if(!state.kits.length){grid.innerHTML='<div class="empty">Encara no hi ha cap kit d’entrenament.</div>';return;}
+            grid.innerHTML=state.kits.map(kit=>{
+                const [color,soft]=colorInfo(kit.color);
+                const assignedIds=new Set((kit.materials||[]).map(item=>Number(item.material_id)));
+                const options=state.materials.filter(item=>!assignedIds.has(Number(item.id))).map(item=>`<option value="${item.id}">${esc(item.nom)} (${item.disponible} disponibles)</option>`).join('');
+                const rows=(kit.materials||[]).map(assignment=>{
+                    const material=materialById(assignment.material_id);
+                    if(!material)return'';
+                    const max=Number(material.disponible)+Number(assignment.cantidad);
+                    return `<div class="kit-material-row"><div class="kit-material-name">${esc(material.nom)}</div><input class="assignment-qty" type="number" min="1" max="${max}" value="${assignment.cantidad}" aria-label="Unitats de ${esc(material.nom)}"><div class="kit-row-actions"><button class="btn-primary btn-small save-assignment material-write-action" data-kit="${kit.id}" data-material="${material.id}">Desar</button><button class="btn-danger btn-remove btn-small delete-assignment" data-kit="${kit.id}" data-material="${material.id}">Treure</button></div></div>`;
+                }).join('')||'<div class="empty">Kit sense material assignat.</div>';
+                const lock=kit.bloqueig;
+                return `<article class="kit-card" style="--kit-color:${color};--kit-soft:${soft}"><header class="kit-header"><div class="kit-identity"><span class="color-dot"></span><div><div class="kit-name">${esc(kit.color)}</div><span class="kit-type">${esc(kit.tipus)}</span></div></div><div class="actions"><a class="btn-link" href="kit-material-detall.html?kitId=${kit.id}">Historial</a>${lock?`<button class="admin-unlock btn-small unlock-kit" data-session="${lock.sessio_id}">Desbloquejar kit</button>`:''}<button class="btn-secondary btn-small edit-kit material-write-action" data-id="${kit.id}">Editar</button><button class="btn-danger btn-remove btn-small delete-kit" data-id="${kit.id}">Eliminar</button></div></header><div class="kit-body">${lock?`<div class="kit-lock"><strong>Bloquejat per ${esc(lock.equip_nom)}</strong><br>${esc(lock.staff_nom)} · ${formatDateTime(lock.data)}</div>`:''}${rows}<div class="assignment-form"><div><label>Afegir material</label><select class="new-material" ${options?'':'disabled'}><option value="">${options?'Selecciona...':'Tot el material ja està assignat'}</option>${options}</select></div><div><label>Unitats</label><input class="new-quantity" type="number" min="1" step="1" value="1"></div><button class="btn-primary add-assignment material-write-action" data-kit="${kit.id}" ${options?'':'disabled'}>Afegir</button></div></div></article>`;
+            }).join('');
+
+            grid.querySelectorAll('.edit-kit').forEach(btn=>btn.addEventListener('click',()=>startKitEdit(btn.dataset.id)));
+            grid.querySelectorAll('.delete-kit').forEach(btn=>btn.addEventListener('click',()=>removeKit(btn.dataset.id)));
+            grid.querySelectorAll('.save-assignment').forEach(btn=>btn.addEventListener('click',()=>saveExistingAssignment(btn)));
+            grid.querySelectorAll('.delete-assignment').forEach(btn=>btn.addEventListener('click',()=>removeAssignment(btn.dataset.kit,btn.dataset.material)));
+            grid.querySelectorAll('.add-assignment').forEach(btn=>btn.addEventListener('click',()=>addAssignment(btn)));
+            grid.querySelectorAll('.unlock-kit').forEach(btn=>btn.addEventListener('click',()=>unlockSession(btn.dataset.session)));
+        }
+
+        async function unlockSession(sessionId,materialId=null){
+            const target=materialId?'aquest material':'tot el kit i el material compartit de la sessió';
+            if(!confirm(`Vols desbloquejar ${target}? Aquesta acció quedarà registrada a l’historial.`))return;
+            const motiu=prompt('Motiu del desbloqueig administratiu:','Retorn no registrat per l’equip');
+            if(motiu===null)return;
+            const payload={sessio_id:Number(sessionId),motiu:motiu.trim()||'Retorn no registrat per l’equip'};
+            if(materialId)payload.material_id=Number(materialId);
+            try{await request(`${API}/admin/desbloquejar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});notify(materialId?'Material desbloquejat.':'Kit desbloquejat.');await load();}catch(error){notify(error.message,'error');}
+        }
+
+        function startMaterialEdit(id){
+            const item=materialById(id);if(!item)return;
+            editingMaterialId=Number(id);$('material-name').value=item.nom;$('material-description').value=item.descripcio||'';$('material-quantity').value=item.cantidad;
+            $('material-form-title').textContent='Modificar material';$('material-cancel').hidden=false;$('material-name').focus();
+        }
+        function resetMaterialForm(){editingMaterialId=null;$('material-form').reset();$('material-quantity').value=0;$('material-form-title').textContent='Alta de material';$('material-cancel').hidden=true;}
+
+        $('material-form').addEventListener('submit',async event=>{
+            event.preventDefault();
+            const payload={nom:$('material-name').value,descripcio:$('material-description').value,cantidad:Number($('material-quantity').value)};
+            try{await request(editingMaterialId?`${API}?id=${editingMaterialId}`:API,{method:editingMaterialId?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});notify(editingMaterialId?'Material modificat.':'Material creat.');resetMaterialForm();await load();}catch(error){notify(error.message,'error');}
+        });
+        $('material-cancel').addEventListener('click',resetMaterialForm);
+
+        async function removeMaterial(id){
+            const item=materialById(id);if(!item||!confirm(`Eliminar el material “${item.nom}” i totes les seves assignacions?`))return;
+            try{await request(`${API}?id=${id}`,{method:'DELETE'});notify('Material eliminat.');await load();}catch(error){notify(error.message,'error');}
+        }
+
+        function startKitEdit(id){
+            const kit=state.kits.find(item=>Number(item.id)===Number(id));if(!kit)return;
+            editingKitId=Number(id);$('kit-type').value=kit.tipus;$('kit-color').value=kit.color;$('kit-form-title').textContent='Modificar kit';$('kit-cancel').hidden=false;$('kit-color').focus();
+        }
+        function resetKitForm(){editingKitId=null;$('kit-form').reset();$('kit-form-title').textContent='Alta de kit';$('kit-cancel').hidden=true;}
+
+        $('kit-form').addEventListener('submit',async event=>{
+            event.preventDefault();const payload={tipus:$('kit-type').value,color:$('kit-color').value};
+            try{await request(editingKitId?`${API}/kits?id=${editingKitId}`:`${API}/kits`,{method:editingKitId?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});notify(editingKitId?'Kit modificat.':'Kit creat.');resetKitForm();await load();}catch(error){notify(error.message,'error');}
+        });
+        $('kit-cancel').addEventListener('click',resetKitForm);
+
+        async function removeKit(id){
+            const kit=state.kits.find(item=>Number(item.id)===Number(id));if(!kit||!confirm(`Eliminar el kit “${kit.color}” i les seves assignacions?`))return;
+            try{await request(`${API}/kits?id=${id}`,{method:'DELETE'});notify('Kit eliminat.');await load();}catch(error){notify(error.message,'error');}
+        }
+
+        async function saveAssignment(kitId,materialId,cantidad){
+            await request(`${API}/assignments`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kit_entreno_id:Number(kitId),material_id:Number(materialId),cantidad:Number(cantidad)})});
+            notify('Assignació actualitzada.');await load();
+        }
+        async function saveExistingAssignment(button){
+            const input=button.closest('.kit-material-row').querySelector('.assignment-qty');
+            try{await saveAssignment(button.dataset.kit,button.dataset.material,input.value);}catch(error){notify(error.message,'error');}
+        }
+        async function addAssignment(button){
+            const form=button.closest('.assignment-form');const materialId=form.querySelector('.new-material').value;const quantity=form.querySelector('.new-quantity').value;
+            if(!materialId){notify('Selecciona un material.','error');return;}
+            try{await saveAssignment(button.dataset.kit,materialId,quantity);}catch(error){notify(error.message,'error');}
+        }
+        async function removeAssignment(kitId,materialId){
+            if(!confirm('Treure aquest material del kit?'))return;
+            try{await request(`${API}/assignments?kitId=${kitId}&materialId=${materialId}`,{method:'DELETE'});notify('Material retirat del kit.');await load();}catch(error){notify(error.message,'error');}
+        }
+
+        $('observation-date').value=new Date().toISOString().split('T')[0];
+        $('observation-form').addEventListener('submit',async event=>{
+            event.preventDefault();
+            const payload={autor:$('observation-author').value.trim()||'Anònim',data:$('observation-date').value,text:$('observation-text').value.trim()};
+            if(!payload.text)return;
+            try{
+                await request(`${OBSERVATIONS_API}?scope=${encodeURIComponent(OBSERVATIONS_SCOPE)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+                $('observation-author').value='';$('observation-text').value='';$('observation-date').value=new Date().toISOString().split('T')[0];
+                notify('Comentari afegit.');await load();
+            }catch(error){notify(error.message,'error');}
+        });
+
+        async function removeObservation(id){
+            if(!id||!confirm('Segur que vols eliminar aquest comentari?'))return;
+            try{
+                await request(`${OBSERVATIONS_API}?scope=${encodeURIComponent(OBSERVATIONS_SCOPE)}&id=${encodeURIComponent(id)}`,{method:'DELETE'});
+                notify('Comentari eliminat.');await load();
+            }catch(error){notify(error.message,'error');}
+        }
+
+        load();
+    </script>
+</body>
+</html>

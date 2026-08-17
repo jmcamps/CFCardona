@@ -3,10 +3,14 @@
     const pathname = pathnameRaw.toLowerCase();
     const inSections = pathname.includes('/seccions/');
     const base = inSections ? '..' : '.';
+    const isPublicMaterialMovementPage = pathname.endsWith('/seccions/moviment-material.html');
 
     const links = {
         logo: `${base}/assets/images/ESCUT CF CARDONA.jpeg`,
         home: `${base}/index.html`,
+        materialAdmin: `${base}/seccions/material.html`,
+        materialCollect: `${base}/seccions/moviment-material.html?mode=recollida`,
+        materialReturn: `${base}/seccions/moviment-material.html?mode=retorn`,
         estructura: `${base}/index.html`,
         horaris: `${base}/seccions/horari-setmanal.html`,
         comissio: `${base}/seccions/comissio-esportiva.html`,
@@ -27,7 +31,8 @@
         s12: `${base}/seccions/s12.html`,
         s14: `${base}/seccions/s14.html`,
         s16: `${base}/seccions/s16.html`,
-        juvenilMasculi: `${base}/seccions/juvenil-masculi.html`,
+        juvenilMasculiA: `${base}/seccions/juvenil-masculi.html?equip=A`,
+        juvenilMasculiB: `${base}/seccions/juvenil-masculi.html?equip=B`,
         aleviFemeni: `${base}/seccions/alevi-femeni.html`,
         cadetFemeni: `${base}/seccions/cadet-femeni.html`,
         juvenilFemeni: `${base}/seccions/juvenil-femeni.html`,
@@ -179,6 +184,28 @@
 
         #cf-nav-senior-menu {
             width: min(92vw, 500px);
+        }
+
+        #cf-nav-material-menu {
+            width: min(92vw, 410px);
+        }
+
+        #cf-nav-material-menu .cf-nav-feature-grid {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        #cf-nav-material-menu .cf-nav-feature {
+            padding: 0.8rem 0.9rem;
+        }
+
+        #cf-nav-material-menu .cf-nav-feature-title {
+            font-size: 0.9rem;
+            margin-bottom: 0.18rem;
+        }
+
+        #cf-nav-material-menu .cf-nav-feature-desc {
+            font-size: 0.74rem;
         }
 
         #cf-nav-fb-menu {
@@ -583,6 +610,10 @@
                 max-width: none;
             }
 
+            #cf-nav-material-menu {
+                width: 100%;
+            }
+
             .cf-nav-feature-grid {
                 grid-template-columns: 1fr !important;
             }
@@ -663,8 +694,12 @@
                                 <span class="cf-nav-feature-sub-title">S15-S16</span>
                                 <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2011 i 2012.</span>
                             </a>
-                            <a class="cf-nav-feature-sub" href="${links.juvenilMasculi}">
-                                <span class="cf-nav-feature-sub-title">Juvenil Masculí</span>
+                            <a class="cf-nav-feature-sub" href="${links.juvenilMasculiA}">
+                                <span class="cf-nav-feature-sub-title">Juvenil Masculí - A</span>
+                                <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2008, 2009 i 2010.</span>
+                            </a>
+                            <a class="cf-nav-feature-sub" href="${links.juvenilMasculiB}">
+                                <span class="cf-nav-feature-sub-title">Juvenil Masculí - B</span>
                                 <span class="cf-nav-feature-sub-desc">Jugadors nascuts el 2008, 2009 i 2010.</span>
                             </a>
                         </div>
@@ -710,6 +745,28 @@
         </div>
     `;
 
+    const materialMenuHtml = `
+        <div class="cf-nav-dropdown" id="cf-nav-material-dropdown">
+            <button class="cf-nav-drop-btn" type="button" id="cf-nav-material-btn">Material <span class="cf-caret">▾</span></button>
+            <div class="cf-nav-menu" id="cf-nav-material-menu">
+                <div class="cf-nav-feature-grid">
+                    <a class="cf-nav-feature" href="${links.materialAdmin}">
+                        <span class="cf-nav-feature-title"><span class="icon">📦</span>Gestió de material</span>
+                        <span class="cf-nav-feature-desc">Inventari, kits i existències del club.</span>
+                    </a>
+                    <a class="cf-nav-feature" href="${links.materialCollect}">
+                        <span class="cf-nav-feature-title"><span class="icon">↗️</span>Recollir material</span>
+                        <span class="cf-nav-feature-desc">Agafa un kit i material compartit per entrenar.</span>
+                    </a>
+                    <a class="cf-nav-feature" href="${links.materialReturn}">
+                        <span class="cf-nav-feature-title"><span class="icon">↩️</span>Tornar material</span>
+                        <span class="cf-nav-feature-desc">Confirma el retorn o registra una incidència.</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+
     nav.innerHTML = `
         <a class="cf-brand" href="${links.home}">
             <img src="${links.logo}" alt="Escut CF Cardona" class="cf-brand-logo">
@@ -721,6 +778,7 @@
 
         <div class="cf-nav" id="cf-main-nav" aria-hidden="false">
             <a class="cf-nav-link cf-nav-link-home" href="${links.home}">Inici</a>
+            ${materialMenuHtml}
 
             <div class="cf-nav-dropdown" id="cf-nav-dropdown">
                 <button class="cf-nav-drop-btn" type="button" id="cf-nav-drop-btn">Direcció esportiva <span class="cf-caret">▾</span></button>
@@ -758,6 +816,9 @@
     `;
 
     wrap.appendChild(nav);
+    if (isPublicMaterialMovementPage) {
+        wrap.hidden = true;
+    }
     document.head.appendChild(style);
     document.body.prepend(wrap);
 
@@ -773,18 +834,25 @@
         's12.html': 'S12',
         's14.html': 'S13-S14',
         's16.html': 'S15-S16',
-        'juvenil-masculi.html': 'Juvenil Masculí',
+        'juvenil-masculi.html': new URLSearchParams(window.location.search).get('equip') === 'B' ? 'Juvenil Masculí - B' : 'Juvenil Masculí - A',
         'alevi-femeni.html': 'Aleví Femení',
         'cadet-femeni.html': 'Infantil-Cadet Femení',
         'juvenil-femeni.html': 'Juvenil Femení',
+        'material.html': 'Material d’entrenament',
+        'kit-material-detall.html': 'Historial del kit',
+        'moviment-material.html': new URLSearchParams(window.location.search).get('mode') === 'retorn' ? 'Tornar material' : 'Recollir material',
         'staff-club.html': 'Gestió Staff Club'
     };
 
     const teamTitle = teamPageTitles[filename];
+    let titleWrap = null;
     if (teamTitle) {
-        const titleWrap = document.createElement('div');
+        titleWrap = document.createElement('div');
         titleWrap.className = 'cf-page-title-wrap';
         titleWrap.innerHTML = `<h1 class="cf-page-title">${teamTitle}</h1>`;
+        if (isPublicMaterialMovementPage) {
+            titleWrap.hidden = true;
+        }
         wrap.insertAdjacentElement('afterend', titleWrap);
     }
 
@@ -794,6 +862,8 @@
     const fbBtn = document.getElementById('cf-nav-fb-btn');
     const seniorDrop = document.getElementById('cf-nav-senior-dropdown');
     const seniorBtn = document.getElementById('cf-nav-senior-btn');
+    const materialDrop = document.getElementById('cf-nav-material-dropdown');
+    const materialBtn = document.getElementById('cf-nav-material-btn');
     const logoutBtn = document.getElementById('cf-logout-btn');
 
     const mainNav = document.getElementById('cf-main-nav');
@@ -803,6 +873,7 @@
     const homePath = normalizePath(links.home);
     const READONLY_HIDE_SELECTOR = [
         '.btn-remove',
+        '.material-write-action',
         '.btn-delete-small',
         '.delete-x',
         '[data-action="delete"]',
@@ -2116,13 +2187,19 @@
         const allLinks = nav.querySelectorAll('a[href]');
         const hashPath = normalizePath(extractHashRoutePath() || '');
         const inSections = currentPath.includes('/seccions/') || hashPath.includes('/seccions/');
-        const hasOpenDropdown = [drop, fbDrop, seniorDrop].some(function (dropdownEl) {
+        const hasOpenDropdown = [drop, fbDrop, seniorDrop, materialDrop].some(function (dropdownEl) {
             return !!(dropdownEl && dropdownEl.classList.contains('open'));
         });
 
         allLinks.forEach(function (anchor) {
             const targetPath = normalizePath(anchor.getAttribute('href'));
             let active = isSamePath(currentPath, targetPath);
+
+            if (active && targetPath.endsWith('/seccions/moviment-material.html')) {
+                const targetMode = new URL(anchor.href, window.location.href).searchParams.get('mode') || 'recollida';
+                const currentMode = new URL(window.location.href).searchParams.get('mode') || 'recollida';
+                active = targetMode === currentMode;
+            }
 
             if (anchor.classList.contains('cf-nav-link-home')) {
                 active = !inSections && isSamePath(currentPath, homePath) && !hasOpenDropdown;
@@ -2140,6 +2217,9 @@
         if (seniorDrop) {
             seniorDrop.classList.toggle('has-active', !!seniorDrop.querySelector('a.active'));
         }
+        if (materialDrop) {
+            materialDrop.classList.toggle('has-active', !!materialDrop.querySelector('a.active'));
+        }
     }
 
     function closeAllDropdowns() {
@@ -2155,6 +2235,10 @@
         }
         if (seniorDrop && seniorDrop.classList.contains('open')) {
             seniorDrop.classList.remove('open');
+            changed = true;
+        }
+        if (materialDrop && materialDrop.classList.contains('open')) {
+            materialDrop.classList.remove('open');
             changed = true;
         }
 
@@ -2244,7 +2328,7 @@
 
         setMobileMenuOpen(false);
 
-        [drop, fbDrop, seniorDrop].forEach(function (dropdownEl) {
+        [drop, fbDrop, seniorDrop, materialDrop].forEach(function (dropdownEl) {
             if (dropdownEl && dropdownEl.classList.contains('open')) {
                 positionDropdownMenu(dropdownEl);
             }
@@ -2269,6 +2353,13 @@
         seniorBtn.addEventListener('click', function (event) {
             event.stopPropagation();
             toggleDropdown(seniorDrop);
+        });
+    }
+
+    if (materialBtn) {
+        materialBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            toggleDropdown(materialDrop);
         });
     }
 
@@ -2298,6 +2389,10 @@
         }
         if (seniorDrop && !seniorDrop.contains(event.target) && seniorDrop.classList.contains('open')) {
             seniorDrop.classList.remove('open');
+            changed = true;
+        }
+        if (materialDrop && !materialDrop.contains(event.target) && materialDrop.classList.contains('open')) {
+            materialDrop.classList.remove('open');
             changed = true;
         }
 
@@ -2756,6 +2851,10 @@
             if (!res.ok) return;
 
             const data = await res.json();
+            if (isPublicMaterialMovementPage && data && data.authenticated) {
+                wrap.hidden = false;
+                if (titleWrap) titleWrap.hidden = false;
+            }
             const roles = normalizeRoleList(
                 (data && data.user && (data.user.roles ?? data.user.role)) ??
                 (data ? (data.roles ?? data.role) : [])
@@ -2770,6 +2869,10 @@
             const seniorAllowed = hasAnyRole(roles, ['direccio', 'senior']);
             const baseAllowed = hasAnyRole(roles, ['direccio', 'futbol_base']);
             const scoutingAllowed = hasAnyRole(roles, ['direccio', 'scouting']);
+
+            if (direccioAllowed && document.body) {
+                document.body.classList.add('cf-material-admin');
+            }
 
             if (seniorDrop) seniorDrop.style.display = seniorAllowed ? '' : 'none';
             if (fbDrop) fbDrop.style.display = baseAllowed ? '' : 'none';
