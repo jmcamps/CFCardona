@@ -36,7 +36,7 @@
 <body>
 <main class="page"><div class="flow" id="flow">
     <div class="mode-tabs"><button id="tab-collect" class="mode-tab collect">↗️ Recollir</button><button id="tab-return" class="mode-tab return">↩️ Tornar</button></div>
-    <header class="hero" id="hero"><h1 id="hero-title"></h1><p id="hero-copy"></p></header>
+    <header class="hero" id="hero"><p id="hero-copy"></p></header>
     <div id="feedback" class="feedback hidden" role="status"></div>
 
     <section class="card" id="pickup-start">
@@ -88,7 +88,7 @@ async function load(){try{setBusy(true);data=await request(API);renderBase()}cat
 function setMode(next){mode=next;history.replaceState(null,'',`?mode=${mode}`);selectedKit=null;selectedSession=null;selectedPickupSession=null;pickupStartMode='';kitMode='';$('kit-select').value='';$('kit-check').classList.add('hidden');$('shared-step').classList.add('hidden');$('return-check').classList.add('hidden');$('return-shared-step').classList.add('hidden');$('return-shared-list').innerHTML='';renderBase()}
 function renderBase(){
  $('tab-collect').classList.toggle('active',mode==='recollida');$('tab-return').classList.toggle('active',mode==='retorn');$('collect-flow').classList.toggle('hidden',mode!=='recollida');$('return-flow').classList.toggle('hidden',mode!=='retorn');$('hero').classList.toggle('return',mode==='retorn');
- $('hero-title').textContent=mode==='recollida'?'Recollir material':'Torna el material ràpidament';$('hero-copy').textContent=mode==='recollida'?'Inicia una sessió nova o afegeix material a una que ja està activa.':'Selecciona la sessió, confirma què torna i informa de qualsevol incidència.';document.title=`${mode==='recollida'?'Recollir':'Tornar'} material | CF Cardona`;
+ $('hero-copy').textContent=mode==='recollida'?'Inicia una sessió nova o afegeix material a una que ja està activa.':'Selecciona la sessió, confirma què torna i informa de qualsevol incidència.';document.title=`${mode==='recollida'?'Recollir':'Tornar'} material | CF Cardona`;
  const current=$('team-select').value,teams=orderedTeams();$('team-select').innerHTML='<option value="">Selecciona l’equip...</option>'+teams.map(e=>`<option value="${e.id}">${esc(e.name||e.nom)}</option>`).join('');if(teams.some(e=>String(e.id)===current))$('team-select').value=current;renderStaff();renderKits();renderSessions();renderPickupStart();
 }
 function renderStaff(){const team=Number($('team-select').value);const ids=new Set(data.staff_assignments.filter(a=>Number(a.equip_id)===team).map(a=>Number(a.staff_membre_id)));const rows=data.staff.filter(s=>ids.has(Number(s.id))&&s.actiu!==false);const old=$('staff-select').value;$('staff-select').disabled=!team;$('staff-select').innerHTML=`<option value="">${team?'Selecciona el membre del staff...':'Selecciona primer l’equip...'}</option>`+rows.map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('');if(rows.some(s=>String(s.id)===old))$('staff-select').value=old}

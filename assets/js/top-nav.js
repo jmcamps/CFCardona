@@ -840,7 +840,6 @@
         'juvenil-femeni.html': 'Juvenil Femení',
         'material.html': 'Material d’entrenament',
         'kit-material-detall.html': 'Historial del kit',
-        'moviment-material.html': new URLSearchParams(window.location.search).get('mode') === 'retorn' ? 'Tornar material' : 'Recollir material',
         'staff-club.html': 'Gestió Staff Club'
     };
 
