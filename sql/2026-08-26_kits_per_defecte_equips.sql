@@ -27,8 +27,8 @@ with assignacions(nom_equip, tipus, color) as (
     ('Juvenil Masculi - B', 'F11', 'Negre'),
     ('Aleví Femení', 'F7', 'Vermell'),
     ('Alevi Femeni', 'F7', 'Vermell'),
-    ('Infantil-Cadet Femení', 'F11', 'Groc'),
-    ('Infantil-Cadet Femeni', 'F11', 'Groc'),
+    ('Infantil-Cadet Femení', 'F7', 'Groc'),
+    ('Infantil-Cadet Femeni', 'F7', 'Groc'),
     ('Juvenil Femení', 'F11', 'Blanc'),
     ('Juvenil Femeni', 'F11', 'Blanc')
 ), resoltes as (

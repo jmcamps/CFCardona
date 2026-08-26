@@ -83,7 +83,7 @@ const DEFAULT_TEAM_KITS={
  'minis-s7':['F7','vermell'],minis:['F7','vermell'],s7:['F7','vermell'],s8:['F7','vermell'],s9:['F7','blau'],s10:['F7','verd'],s11:['F7','groc'],s12:['F7','blau'],
  's13-s14':['F11','negre'],s13:['F11','negre'],s14:['F11','negre'],'s15-s16':['F11','blanc'],s15:['F11','blanc'],s16:['F11','blanc'],'s16 (cadet)':['F11','blanc'],
  'juvenil masculi - a':['F11','blanc'],'juvenil masculi a':['F11','blanc'],'juvenil masculi - b':['F11','negre'],'juvenil masculi b':['F11','negre'],
- 'alevi femeni':['F7','vermell'],'infantil-cadet femeni':['F11','groc'],'infantil cadet femeni':['F11','groc'],'juvenil femeni':['F11','blanc']
+ 'alevi femeni':['F7','vermell'],'infantil-cadet femeni':['F7','groc'],'infantil cadet femeni':['F7','groc'],'juvenil femeni':['F11','blanc']
 };
 function defaultKitForTeam(team){if(!team)return null;const configured=kit(team.kit_entreno_defecte_id);if(configured)return configured;const fallback=DEFAULT_TEAM_KITS[norm(team.name||team.nom).replace(/\s+/g,' ')];if(!fallback)return null;return data.inventory.kits.find(k=>String(k.tipus).toUpperCase()===fallback[0]&&norm(k.color)===fallback[1])||null}
 function activePickupSessions(teamId=null){const team=Number(teamId);return data.sessions.filter(s=>!team||Number(s.equip_id)===team)}
