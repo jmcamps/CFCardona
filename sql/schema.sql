@@ -48,6 +48,10 @@ create table if not exists kit_entreno (
   unique (tipus, color)
 );
 
+alter table equip
+  add column if not exists kit_entreno_defecte_id bigint
+  references kit_entreno(id) on delete set null;
+
 create table if not exists kit_entreno_material (
   kit_entreno_id bigint not null references kit_entreno(id) on delete cascade,
   material_id bigint not null references material(id) on delete cascade,

@@ -593,9 +593,19 @@ async function readHorarios() {
 
 async function readEquips() {
     if (USE_SUPABASE) {
-        const rows = await supabaseRestRequest('GET', '/rest/v1/equip?select=id,nom&order=nom.asc');
+        let rows = [];
+        try {
+            rows = await supabaseRestRequest('GET', '/rest/v1/equip?select=id,nom,kit_entreno_defecte_id&order=nom.asc');
+        } catch (err) {
+            if (!isMissingSupabaseColumnError(err, 'kit_entreno_defecte_id')) throw err;
+            rows = await supabaseRestRequest('GET', '/rest/v1/equip?select=id,nom&order=nom.asc');
+        }
         return Array.isArray(rows)
-            ? rows.map(row => ({ id: String(row.id), name: row.nom }))
+            ? rows.map(row => ({
+                id: String(row.id),
+                name: row.nom,
+                kit_entreno_defecte_id: normalizePositiveInteger(row.kit_entreno_defecte_id)
+            }))
             : [];
     }
 
@@ -1056,6 +1066,20 @@ function normalizeNonNegativeInteger(value, fieldName = 'cantidad') {
     return parsed;
 }
 
+function normalizeKitMaterialName(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+}
+
+function compareKitMaterialNames(left, right) {
+    const leftName = normalizeKitMaterialName(left);
+    const rightName = normalizeKitMaterialName(right);
+    return leftName.localeCompare(rightName, 'ca');
+}
+
 function normalizeMaterialInput(payload) {
     const source = payload && typeof payload === 'object' ? payload : {};
     const nom = String(source.nom || '').trim();
@@ -1105,6 +1129,7 @@ async function readMaterialInventory() {
     const equipMap = new Map((Array.isArray(equips) ? equips : []).map((row) => [Number(row.id), String(row.name || row.nom || '')]));
     const staffMap = new Map((Array.isArray(staff) ? staff : []).map((row) => [Number(row.id), String(row.nom || '')]));
     const kitMap = new Map((Array.isArray(kitRows) ? kitRows : []).map((row) => [Number(row.id), row]));
+    const materialNameMap = new Map((Array.isArray(materialRows) ? materialRows : []).map((row) => [Number(row.id), String(row.nom || '')]));
     const sharedLoans = (Array.isArray(sharedLoanRows) ? sharedLoanRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
     const kitControls = (Array.isArray(kitControlRows) ? kitControlRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
     const expansions = (Array.isArray(expansionRows) ? expansionRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
@@ -1186,6 +1211,7 @@ async function readMaterialInventory() {
         })(),
         materials: assignments
             .filter((item) => item.kit_entreno_id === Number(row.id))
+            .sort((left, right) => compareKitMaterialNames(materialNameMap.get(left.material_id), materialNameMap.get(right.material_id)))
             .map((item) => ({ material_id: item.material_id, cantidad: item.cantidad }))
     }));
 
@@ -1229,7 +1255,9 @@ async function readTrainingKitDetail(kitIdValue) {
     return {
         kit: {
             id: Number(kit.id), tipus: String(kit.tipus || ''), color: String(kit.color || ''),
-            materials: (Array.isArray(assignmentRows) ? assignmentRows : []).map((row) => ({ material_id: Number(row.material_id), material_nom: materialMap.get(Number(row.material_id)) || '', cantidad: Number(row.cantidad) || 0 }))
+            materials: (Array.isArray(assignmentRows) ? assignmentRows : [])
+                .map((row) => ({ material_id: Number(row.material_id), material_nom: materialMap.get(Number(row.material_id)) || '', cantidad: Number(row.cantidad) || 0 }))
+                .sort((left, right) => compareKitMaterialNames(left.material_nom, right.material_nom))
         },
         sessions: sessionsRaw.map((session) => ({
             id: Number(session.id), data_recollida: session.data_recollida, data_retorn: session.data_retorn, data_actualitzacio: session.updated_at,
@@ -1237,7 +1265,10 @@ async function readTrainingKitDetail(kitIdValue) {
             staff_recollida_nom: staffMap.get(Number(session.staff_membre_id)) || `Staff ${session.staff_membre_id}`,
             staff_retorn_nom: session.staff_retorn_id ? (staffMap.get(Number(session.staff_retorn_id)) || `Staff ${session.staff_retorn_id}`) : '',
             estat: String(session.estat || ''),
-            kit_items: kitControls.filter((row) => Number(row.sessio_id) === Number(session.id)).map(normalizeItem),
+            kit_items: kitControls
+                .filter((row) => Number(row.sessio_id) === Number(session.id))
+                .map(normalizeItem)
+                .sort((left, right) => compareKitMaterialNames(left.material_nom, right.material_nom)),
             material_compartit: shared.filter((row) => Number(row.sessio_id) === Number(session.id)).map((row) => ({
                 material_id: Number(row.material_id), material_nom: materialMap.get(Number(row.material_id)) || '',
                 cantidad_recollida: Number(row.cantidad_recollida) || 0,
@@ -1382,6 +1413,7 @@ async function readMaterialMovementsData() {
     const sharedItems = (Array.isArray(sharedRows) ? sharedRows : []).filter((row) => activeIds.has(Number(row.sessio_id)));
     const equipMap = new Map((Array.isArray(equips) ? equips : []).map((row) => [Number(row.id), String(row.name || row.nom || '')]));
     const staffMap = new Map((Array.isArray(staff) ? staff : []).map((row) => [Number(row.id), String(row.nom || '')]));
+    const movementMaterialMap = new Map((Array.isArray(inventory.materials) ? inventory.materials : []).map((row) => [Number(row.id), String(row.nom || '')]));
 
     const sessions = activeSessions.map((row) => ({
         id: Number(row.id),
@@ -1392,15 +1424,18 @@ async function readMaterialMovementsData() {
         staff_nom: staffMap.get(Number(row.staff_membre_id)) || `Staff ${row.staff_membre_id}`,
         kit_entreno_id: Number(row.kit_entreno_id),
         estat: String(row.estat || 'oberta'),
-        kit_items: kitControls.filter((item) => Number(item.sessio_id) === Number(row.id)).map((item) => ({
-            material_id: Number(item.material_id),
-            cantidad_esperada: Number(item.cantidad_esperada) || 0,
-            cantidad_recollida: Number(item.cantidad_recollida) || 0,
-            cantidad_retornada: Math.max(0, Number(item.cantidad_retornada || 0) - Number(item.cantidad_no_retornada || 0)),
-            cantidad_no_retornada: Number(item.cantidad_no_retornada) || 0,
-            incidencia_recollida: String(item.incidencia_recollida || ''),
-            incidencia_retorn: String(item.incidencia_retorn || '')
-        })),
+        kit_items: kitControls
+            .filter((item) => Number(item.sessio_id) === Number(row.id))
+            .map((item) => ({
+                material_id: Number(item.material_id),
+                cantidad_esperada: Number(item.cantidad_esperada) || 0,
+                cantidad_recollida: Number(item.cantidad_recollida) || 0,
+                cantidad_retornada: Math.max(0, Number(item.cantidad_retornada || 0) - Number(item.cantidad_no_retornada || 0)),
+                cantidad_no_retornada: Number(item.cantidad_no_retornada) || 0,
+                incidencia_recollida: String(item.incidencia_recollida || ''),
+                incidencia_retorn: String(item.incidencia_retorn || '')
+            }))
+            .sort((left, right) => compareKitMaterialNames(movementMaterialMap.get(left.material_id), movementMaterialMap.get(right.material_id))),
         material_compartit: sharedItems.filter((item) => Number(item.sessio_id) === Number(row.id)).map((item) => ({
             material_id: Number(item.material_id),
             cantidad_recollida: Number(item.cantidad_recollida) || 0,
