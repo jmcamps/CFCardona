@@ -85,7 +85,18 @@ const DEFAULT_TEAM_KITS={
  'juvenil masculi - a':['F11','blanc'],'juvenil masculi a':['F11','blanc'],'juvenil masculi - b':['F11','negre'],'juvenil masculi b':['F11','negre'],
  'alevi femeni':['F7','vermell'],'infantil-cadet femeni':['F7','groc'],'infantil cadet femeni':['F7','groc'],'juvenil femeni':['F11','blanc']
 };
-function defaultKitForTeam(team){if(!team)return null;const configured=kit(team.kit_entreno_defecte_id);if(configured)return configured;const fallback=DEFAULT_TEAM_KITS[norm(team.name||team.nom).replace(/\s+/g,' ')];if(!fallback)return null;return data.inventory.kits.find(k=>String(k.tipus).toUpperCase()===fallback[0]&&norm(k.color)===fallback[1])||null}
+function defaultKitForTeam(team){
+ if(!team)return null;
+ const configured=kit(team.kit_entreno_defecte_id),fallback=DEFAULT_TEAM_KITS[norm(team.name||team.nom).replace(/\s+/g,' ')];
+ const type=configured?String(configured.tipus).toUpperCase():fallback?.[0];
+ if(type==='F11'){
+  const available=data.inventory.kits.filter(k=>String(k.tipus).toUpperCase()==='F11'&&k.disponible);
+  return available.length?available[Math.floor(Math.random()*available.length)]:null;
+ }
+ if(configured)return configured;
+ if(!fallback)return null;
+ return data.inventory.kits.find(k=>String(k.tipus).toUpperCase()===fallback[0]&&norm(k.color)===fallback[1])||null;
+}
 function activePickupSessions(teamId=null){const team=Number(teamId);return data.sessions.filter(s=>!team||Number(s.equip_id)===team)}
 function sessionKitLabel(session){const currentKit=kit(session.kit_entreno_id)||{color:'Kit',tipus:''};return `${currentKit.color} · ${currentKit.tipus}`}
 function teamName(id){const team=data.equips.find(e=>Number(e.id)===Number(id));return team?String(team.name||team.nom):`Equip ${id}`}
