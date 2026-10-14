@@ -5,12 +5,17 @@
   "description": "Web CF Cardona amb servidor Node.js",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/jornada.test.js tests/cartell.test.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "html-to-image": "^1.11.13"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.0"
   }
 }

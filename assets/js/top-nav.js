@@ -13,6 +13,7 @@
         materialReturn: `${base}/seccions/moviment-material.html?mode=retorn`,
         estructura: `${base}/index.html`,
         horaris: `${base}/seccions/horari-setmanal.html`,
+        jornada: `${base}/seccions/planificacio-jornada.html`,
         comissio: `${base}/seccions/comissio-esportiva.html`,
         staffClub: `${base}/seccions/staff-club.html`,
         senior: `${base}/seccions/senior.html`,
@@ -787,6 +788,10 @@
                         <a class="cf-nav-feature" href="${links.horaris}">
                             <span class="cf-nav-feature-title"><span class="icon">🗓️</span>Horaris</span>
                             <span class="cf-nav-feature-desc">Planifica franges d’entrenament, camps i vestidors per cada equip.</span>
+                        </a>
+                        <a class="cf-nav-feature" href="${links.jornada}">
+                            <span class="cf-nav-feature-title"><span class="icon">⚽</span>Planificació de la jornada</span>
+                            <span class="cf-nav-feature-desc">Partits a casa, vestidors, gravació VEO i assignació de camp.</span>
                         </a>
                         <a class="cf-nav-feature" href="${links.comissio}">
                             <span class="cf-nav-feature-title"><span class="icon">👥</span>Comissió esportiva</span>

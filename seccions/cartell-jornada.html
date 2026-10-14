@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartell de la jornada | CF Cardona</title>
+    <link rel="stylesheet" href="../assets/css/cartell-jornada.css">
+    <script src="../assets/js/jornada-data.js" defer></script>
+    <script src="../assets/js/cartell-template.js" defer></script>
+    <script src="../assets/vendor/html-to-image.js" defer></script>
+    <script src="../assets/js/cartell-jornada.js" defer></script>
+</head>
+<body>
+    <header class="toolbar">
+        <a class="button" id="backLink" href="planificacio-jornada.html">← Tornar a la jornada</a>
+        <div class="toolbar-actions"><button class="button primary" id="downloadPoster" type="button" disabled>Descarregar PNG</button><button class="button" id="printPoster" type="button" disabled>Imprimir</button></div>
+        <p>Cartell d’alta resolució per penjar al camp. La imatge inclou les dades i observacions de la jornada seleccionada.</p>
+        <p id="posterStatus" role="status" aria-live="polite">Carregant cartell…</p>
+    </header>
+    <main class="preview" id="preview" aria-label="Previsualització del cartell"><article class="poster" id="poster" hidden></article></main>
+</body>
+</html>

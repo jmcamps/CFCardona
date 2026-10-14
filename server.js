@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const JornadaData = require('./assets/js/jornada-data');
 require('dotenv').config();
 
 function cleanEnvVar(value) {
@@ -340,6 +341,10 @@ function isScoutingPath(pathname) {
 function getAuthorizationRule(pathname, method) {
     const p = String(pathname || '').toLowerCase();
     const m = String(method || 'GET').toUpperCase();
+
+    if (p.startsWith('/api/planificacio-jornada') || p === '/seccions/gestionar-partits-local.html') {
+        return { requiredRoles: p.startsWith('/api/') && isReadMethod(m) ? [] : [ROLES.DIRECCIO], readOnlyAllowed: false };
+    }
 
     if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/session' || p === '/api/auth/exchange') {
         return { requiredRoles: [], readOnlyAllowed: true };
@@ -3784,7 +3789,7 @@ const server = http.createServer(async (req, res) => {
     const storageBackend = USE_SUPABASE ? 'supabase' : 'file';
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -4638,6 +4643,66 @@ const server = http.createServer(async (req, res) => {
                 }));
             }
         })();
+    } else if (pathname === '/api/planificacio-jornada') {
+        (async () => {
+            try {
+                let weekend;
+                try { weekend = JornadaData.validateWeekend(requestUrl.searchParams.get('weekend')); }
+                catch (error) { error.status = 400; throw error; }
+                const scope = `seccio_planificacio_jornada_${weekend}`;
+                const filter = `scope=eq.${encodeURIComponent(scope)}`;
+                if (req.method === 'GET') {
+                    const rows = await supabaseRestRequest('GET', `/rest/v1/${SUPABASE_SECCIONS_TABLE}?${filter}&select=payload`);
+                    const payload = rows[0]?.payload || { matches: [], revision: null };
+                    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                    res.end(JSON.stringify({ weekend, matches: payload.matches || [], revision: payload.revision || null }));
+                } else if (req.method === 'PUT') {
+                    let body, matches;
+                    try {
+                        body = JSON.parse(await readBody(req));
+                        if (!body || typeof body !== 'object' || (body.revision !== null && (typeof body.revision !== 'string' || body.revision.length > 100))) throw new Error('Dades de jornada invàlides');
+                        matches = JornadaData.normalizeMatches(body.matches, weekend);
+                        JornadaData.validateSchedule(matches);
+                    } catch (error) { error.status = 400; throw error; }
+                    const teams = await readEquips();
+                    if (matches.some(match => !teams.some(team => String(team.id) === match.team_id))) {
+                        const error = new Error('Equip local inexistent');
+                        error.status = 400;
+                        throw error;
+                    }
+                    matches = JornadaData.withSharedLockerNotes(matches, teams);
+                    const payload = { matches, revision: randomUUID() };
+                    if (body.revision) {
+                        const rows = await supabaseRestRequest('PATCH', `/rest/v1/${SUPABASE_SECCIONS_TABLE}?${filter}&payload->>revision=eq.${encodeURIComponent(body.revision)}`,
+                            { payload, updated_at: new Date().toISOString() }, 'return=representation');
+                        if (!Array.isArray(rows) || !rows.length) {
+                            const error = new Error('Una altra persona ha modificat aquesta jornada. Recarrega les dades abans de desar.');
+                            error.status = 409;
+                            throw error;
+                        }
+                    } else {
+                        try {
+                            await supabaseRestRequest('POST', `/rest/v1/${SUPABASE_SECCIONS_TABLE}`, [{ scope, payload }]);
+                        } catch (error) {
+                            if (/23505|409|duplicate/i.test(error.message)) {
+                                error.status = 409;
+                                error.message = 'La jornada ja ha estat creada. Recarrega les dades abans de desar.';
+                            }
+                            throw error;
+                        }
+                    }
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ weekend, ...payload }));
+                } else {
+                    res.writeHead(405, { 'Content-Type': 'application/json', Allow: 'GET, PUT' });
+                    res.end(JSON.stringify({ error: 'Mètode no permès' }));
+                }
+            } catch (error) {
+                res.writeHead(error.status || 500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: error.status ? error.message : 'No s’ha pogut carregar o desar la jornada.' }));
+                if (!error.status) console.error('Error planificació jornada:', error.message);
+            }
+        })();
     } else if (pathname === '/api/horarios' && req.method === 'GET') {
         (async () => {
             try {
@@ -4905,6 +4970,9 @@ const server = http.createServer(async (req, res) => {
         const staticPath = pathname === '/' ? '/index.html' : pathname;
         const decodedPath = decodeURIComponent(staticPath);
         let filePath = path.join(__dirname, decodedPath);
+        if (decodedPath === '/assets/vendor/html-to-image.js') {
+            filePath = path.join(__dirname, 'node_modules/html-to-image/dist/html-to-image.js');
+        }
         
         // Securitat: evita path traversal
         if (!filePath.startsWith(__dirname)) {

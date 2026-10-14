@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificació de la jornada | CF Cardona</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/planificacio-jornada.css">
+    <script src="../assets/js/top-nav.js" defer></script>
+    <script src="../assets/js/jornada-data.js" defer></script>
+    <script src="../assets/js/planificacio-jornada.js" defer></script>
+</head>
+<body>
+    <main class="wrap">
+        <section class="head">
+            <div class="head-top">
+                <div><h1>Planificació de la jornada</h1><p>Partits a casa, vestidors i organització del cap de setmana.</p></div>
+                <div class="actions"><button class="btn" id="generatePosterBtn" type="button" disabled>Generar cartell</button><a class="btn primary" id="manageMatchesBtn" href="gestionar-partits-local.html" hidden>Gestionar partits com a local</a></div>
+            </div>
+            <div class="weekend-picker"><label for="weekend">Cap de setmana</label><select id="weekend" disabled></select></div>
+        </section>
+        <p id="status" role="status" aria-live="polite">Carregant dades…</p>
+        <section class="content" aria-labelledby="weekendTitle">
+            <h2 id="weekendTitle">Partits planificats</h2>
+            <p id="matchCount" class="muted"></p>
+            <div id="matches"></div>
+        </section>
+    </main>
+</body>
+</html>
