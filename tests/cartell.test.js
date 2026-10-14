@@ -99,7 +99,7 @@ test('Navegador: botó, previsualització responsive, PNG real de 2700 px i impr
     assert.equal(layout.centered, true);
     assert.equal(layout.lockerBelow, true);
     assert.equal(layout.iconsBelow, true);
-    assert.equal(layout.iconText, '17');
+    assert.equal(layout.iconText, '27');
     assert.equal(layout.lockerIconText, '');
     assert.ok(layout.largestIcon <= 28);
     const screenshotPath = path.join(os.tmpdir(), 'cfcardona-cartell-preview.png');

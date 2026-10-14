@@ -19,8 +19,8 @@
         return '<svg class="pitch-full" viewBox="0 0 54 70" role="img" aria-label="Camp complet F11"><rect width="54" height="70" rx="5" fill="#137b37"/><g fill="none" stroke="white" stroke-width="1.4"><rect x="4" y="4" width="46" height="62"/><path d="M4 35h46M15 4v12h24V4M15 66V54h24v12M22 4v5h10V4M22 66v-5h10v5"/><circle cx="27" cy="35" r="7"/></g></svg>';
     }
     function pitch(field) {
-        const number = field === 'esquerre' ? '2' : '1';
-        return `<span class="pitch-badge" role="img" aria-label="Camp ${field}, ${number}">${image('camp_dret.png', '', `pitch-half ${field === 'esquerre' ? 'mirror' : ''}`)}<strong>${number}</strong></span>`;
+        const number = field === 'esquerre' ? '1' : '2';
+        return `<span class="pitch-badge" role="img" aria-label="Camp ${field}, ${number}">${image('camp_dret.png', '', `pitch-half ${field === 'dret' ? 'mirror' : ''}`)}<strong>${number}</strong></span>`;
     }
     function formatIcon(format) {
         const number = format === 'F7' ? '7' : '11';
@@ -52,7 +52,7 @@
                     ${match.comments ? `<p class="match-comments"><strong>Observacions del partit:</strong> ${esc(match.comments)}</p>` : ''}
                 </section>`;
             }).join('')}</div>
-            <footer class="poster-footer"><div class="legend"><div>${image('veo.jpeg', '', 'legend-veo')}<span>Gravació<br><strong>VEO</strong></span></div><div>${pitch('dret')}<span>Camp<br><strong>dret</strong></span></div><div>${pitch('esquerre')}<span>Camp<br><strong>esquerre</strong></span></div><div>${formatIcon('F7')}${formatIcon('F11')}<span><strong>F7 / F11</strong></span></div><div>${lockerIcon()}<span><strong>Vestidor</strong></span></div></div><p class="poster-note">Vestidors 1+2: assignació conjunta dels dos vestidors. En cas de dubte, consulteu el responsable de la jornada.</p><p class="club-footer">CLUB DE FUTBOL CARDONA · ENS VEIEM AL CAMP!</p></footer>`;
+            <footer class="poster-footer"><div class="legend"><div>${image('veo.jpeg', '', 'legend-veo')}<span>Gravació<br><strong>VEO</strong></span></div><div>${pitch('esquerre')}<span>Camp 1<br><strong>esquerre</strong></span></div><div>${pitch('dret')}<span>Camp 2<br><strong>dret</strong></span></div><div>${formatIcon('F7')}${formatIcon('F11')}<span><strong>F7 / F11</strong></span></div><div>${lockerIcon()}<span><strong>Vestidor</strong></span></div></div><p class="poster-note">Vestidors 1+2: assignació conjunta dels dos vestidors. En cas de dubte, consulteu el responsable de la jornada.</p><p class="club-footer">CLUB DE FUTBOL CARDONA · ENS VEIEM AL CAMP!</p></footer>`;
     }
     return { render, weekendLabel };
 });
